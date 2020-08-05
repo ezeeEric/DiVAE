@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true,
+		"python.venvPath": "/Users/drdre/codez/qVAE/DiVAE/"
+	}
+}
