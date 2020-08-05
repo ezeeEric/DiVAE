@@ -3,6 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.DS_Store
+*.swp
+.vscode/
+data/
+output/
+sources/
+.gif
+venv_divae/
+
 # C extensions
 *.so
 
