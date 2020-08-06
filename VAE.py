@@ -17,15 +17,16 @@ from torch.distributions import Normal
 import numpy as np
 
 from torch.distributions import Normal, Uniform, Bernoulli
-from smoothers import SymmetricSmoother
+import logging
+logger = logging.getLogger(__name__)
 
 torch.manual_seed(1)
 
 class VAE(nn.Module):
     def __init__(self, 
-            latent_dimensions=32,
+            latent_dimensions=32,   
             rbm_block_size=16,
-            smoother=SymmetricSmoother()
+            smoother=None
             ):
         super(VAE, self).__init__()
 
@@ -58,7 +59,7 @@ class VAE(nn.Module):
         self.sigmoid = nn.Sigmoid()
         
         #smoothing function used to 'blur' discrete latent variables
-        self.smoother = smoother 
+        # self.smoother = smoother 
 
         ###################################################################################
         ###################################### PRIOR ######################################
@@ -102,7 +103,11 @@ class VAE(nn.Module):
         mu, logvar = self.encode(x.view(-1, 784))
         z = self.reparameterize(mu, logvar)
         x_prime = self.decode(z)
-        return x_prime, mu, logvar
+        return x_prime, mu, logvar    
+    
+    def print_model_info(self):
+        for par in self.__dict__.items():
+            logger.debug(par)
 
 if __name__=="__main__":
     print("Testing Model Setup for VAE")

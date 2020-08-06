@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Run diVAE
+Run AE
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
@@ -14,7 +14,7 @@ import pickle
 from data.loadMNIST import loadMNIST
 
 from modelTuner import train,test,evaluate
-from diVAE import VAE
+from diVAE import AE
 from helpers import plot_MNIST_output, gif_output
 
 from copy import copy
@@ -22,7 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
 
-NUM_EVTS = -1
+NUM_EVTS = 100
 BATCH_SIZE = 100 
 EPOCHS = 10
 LEARNING_RATE = 1e-3
@@ -32,7 +32,7 @@ torch.manual_seed(1)
 
 train_loader,test_loader=loadMNIST(batch_size=BATCH_SIZE,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
 
-model = VAE(latent_dimensions=2)
+model = AE(latent_dimensions=16)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 model.print_model_info()
 
@@ -52,7 +52,7 @@ logger.debug("Finished Epoch Loop")
 
 configString="_".join(str(i) for i in [NUM_EVTS,BATCH_SIZE,EPOCHS,LEARNING_RATE,LATENT_DIMS])
 
-gif.save(gif_frames,"./output/200806_VAEruns_{0}.gif".format(configString),duration=100)
+gif.save(gif_frames,"./output/200806_AEruns_{0}.gif".format(configString),duration=100)
 
 #possible to return many other parameters, x, x' just for plotting
 x_true, x_recon = evaluate(model, test_loader, batch_size=BATCH_SIZE, latent_dimensions=LATENT_DIMS)

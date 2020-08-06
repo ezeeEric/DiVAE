@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Discrete Variational Autoencoder
-
-Main Module
+Discrete Variational Autoencoder Class Structures
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
@@ -15,7 +13,7 @@ import torch.nn as nn
 import torch.distributions as dist
 import numpy as np
 
-from networks import Encoder,Decoder,Prior
+from networks import Encoder,Decoder
 from rbm import RBM
 
 from copy import copy
@@ -24,19 +22,39 @@ logger = logging.getLogger(__name__)
 
 torch.manual_seed(1)
 
-class DiVAE(nn.Module):
-    def __init__(self, isVAE=False, latent_dimensions=32):
-        super(DiVAE, self).__init__()
-       
-        self.isVAE = isVAE
-        
-        self.latent_dimensions=latent_dimensions
-        self._encoderNodes=[(784,128),]
-        self._reparamNodes=(128,latent_dimensions)  
-        self._decoderNodes=[(latent_dimensions,128),]
+class AEBase(nn.Module):
+    def __init__(self, latent_dimensions=32, **kwargs):
+        super(AEBase,self).__init__(**kwargs)
+        self.type=None
+        self._latent_dimensions=latent_dimensions
 
-        self._outputNodes=(128,784)     
+    def _create_encoder(self):
+        raise NotImplementedError
+
+    def _create_decoder(self):
+        raise NotImplementedError
+    
+    def __repr__(self):
+        parameter_string="\n".join([str(par) for par in self.__dict__.items()])
+        return parameter_string
+    
+    def forward(self, x):
+        raise NotImplementedError
+
+    def print_model_info(self):
+        for par in self.__dict__.items():
+            logger.debug(par)
+
+#AE implementation, base class for VAE and DiVAE
+class AE(AEBase):
+
+    def __init__(self, latent_dimensions=32, **kwargs):
+        super(AE,self).__init__(**kwargs)
+        self.type="AE"
         
+        self._encoder_nodes=[(784,128),(128,self._latent_dimensions)]
+        self._decoder_nodes=[(self._latent_dimensions,128),(128,784)]
+                
         # TODO replace the above with a more elegant solution
         # self.networkStructures={
         #     'encoder':[784,128,32],
@@ -45,31 +63,60 @@ class DiVAE(nn.Module):
 
         self.encoder=self._create_encoder()
         self.decoder=self._create_decoder()
-        self.prior=self._create_prior()
+        
+        #TODO which is the best loss function for AE? Research.
+        # nn.BCELoss(x_true,x_recon)
+        self._loss_fct= nn.functional.binary_cross_entropy
 
-    
     def _create_encoder(self):
         logger.debug("_create_encoder")
-        #TODO hacked
-        node_sequence=self._encoderNodes if self.isVAE else self._encoderNodes+[self._reparamNodes]
-        return Encoder(node_sequence=node_sequence, activation_fct=nn.ReLU())
+        return Encoder(node_sequence=self._encoder_nodes, activation_fct=nn.ReLU())
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
-        return Decoder(
-            node_sequence=self._decoderNodes,
-            activation_fct=nn.ReLU(),
-            output_nodes=self._outputNodes,
-            output_activation_fct=nn.Sigmoid(),
-            )
+        return Decoder(node_sequence=self._decoder_nodes, activation_fct=nn.ReLU(), output_activation_fct=nn.Sigmoid())
 
-    def _create_prior(self):
-        logger.debug("_create_prior")
-        if self.isVAE:
-            return Prior(node_sequence=self._reparamNodes)
-        else:
-            return RBM(n_visible=4,n_hidden=4,node_sequence=self._reparamNodes)
+    def forward(self, x):
+        zeta = self.encoder.encode(x.view(-1, 784))
+        x_recon = self.decoder.decode(zeta)
+        return x_recon
     
+    def loss(self, x_true, x_recon):
+        return self._loss_fct(x_recon, x_true.view(-1, 784), reduction='sum')
+
+
+#VAE implementation
+class VAE(AEBase):
+    def __init__(self, **kwargs):
+        super(VAE, self).__init__()
+        
+        self.type="VAE"
+
+        self._encoder_nodes=[(784,128)]
+        self._reparamNodes=(128,self._latent_dimensions)   
+        self._decoder_nodes=[(self._latent_dimensions,128),(128,784)]
+
+        self._reparamLayers=nn.ModuleDict(
+            {'mu':nn.Linear(self._reparamNodes[0],self._reparamNodes[1]),
+             'var':nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
+             })
+        self.encoder=self._create_encoder()
+        self.decoder=self._create_decoder()
+
+    def _create_encoder(self):
+        logger.debug("_create_encoder")
+        return Encoder(node_sequence=self._encoder_nodes, activation_fct=nn.ReLU())
+
+    def _create_decoder(self):
+        logger.debug("_create_decoder")
+        return Decoder(node_sequence=self._decoder_nodes, activation_fct=nn.ReLU(), output_activation_fct=nn.Sigmoid())
+        
+    def reparameterize(self, mu, logvar):
+        """ Sample from the normal distributions corres and return var * samples + mu
+        """
+        eps = torch.randn_like(mu)
+        return mu + eps*torch.exp(0.5 * logvar)
+        
     def loss(self, x, x_recon, mu, logvar):
         logger.debug("loss")
         # Autoencoding term
@@ -78,9 +125,58 @@ class DiVAE(nn.Module):
         # KL loss term assuming Gaussian-distributed latent variables
         kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
         return auto_loss - kl_loss
+                            
+    def forward(self, x):
+        x_prime = self.encoder.encode(x.view(-1, 784))
+        mu = self._reparamLayers['mu'](x_prime)
+        logvar = self._reparamLayers['var'](x_prime)
+        z = self.reparameterize(mu, logvar)
+        x_recon = self.decoder.decode(z)
+        return x_recon, mu, logvar    
+
+class DiVAE(AE):
+    def __init__(self, **kwargs):
+        super(DiVAE, self).__init__(**kwargs)
+        self.type="DiVAE"
+
+        self._latent_dimensions=latent_dimensions
+        self._encoder_nodes=[(784,128),]
+        self._reparamNodes=(128,latent_dimensions)  
+        self._decoder_nodes=[(latent_dimensions,128),]
+        self._outputNodes=(128,784)     
+
+
+        self.encoder=self._create_encoder()
+        self.decoder=self._create_decoder()
+        self.prior=self._create_prior()
+    
+    def _create_encoder(self):
+        logger.debug("_create_encoder")
+        #TODO hacked
+        node_sequence=self._encoder_nodes+[self._reparamNodes]
+        return Encoder(node_sequence=node_sequence, activation_fct=nn.ReLU())
+
+    def _create_decoder(self):
+        logger.debug("_create_decoder")
+        return Decoder(
+            node_sequence=self._decoder_nodes,
+            activation_fct=nn.ReLU(),
+            output_nodes=self._outputNodes,
+            output_activation_fct=nn.Sigmoid(),
+            )
+
+    def _create_prior(self):
+        logger.debug("_create_prior")
+        return RBM(n_visible=4,n_hidden=4)
    
     def lossDiVAE(self, x, x_recon, posterior_distribution,posterior_samples):
         logger.debug("lossDiVAE")
+        #TODO
+        hierarchical_posterior=posterior_distribution
+        prior=self.prior
+        auto_loss=0
+        kl_loss=self.kl_divergence(hierarchical_posterior,prior)
+        return auto_loss - kl_loss
             #encoder.hierarchical_posterior
             #decoder.reconstruct
             #createOutput - #TODO missing distribution creation
@@ -109,11 +205,7 @@ class DiVAE(nn.Module):
             # this can be calculated analytically... vs the pytorch implementation...
             # kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
 
-            #TODO
-            hierarchical_posterior=posterior_distribution
-            prior=self.prior
-            kl_loss=kl_divergence(hierarchical_posterior,prior)
-            return auto_loss - kl_loss
+        
         
         #encoder.hierarchical_posterior
         #decoder.reconstruct
@@ -121,7 +213,10 @@ class DiVAE(nn.Module):
         #calculate KLD and loss
     
     def kl_divergence(self, posterior , prior):
-        tochKLD=dist.kl.kl_divergence(posterior,prior)
+        torchKLD=dist.kl.kl_divergence(posterior,prior)
+        
+        print(torchKLD)
+        return torchKLD
         # #TODO
         # print("Calling Dummy implementation of kl divergence")
         # means=[0.9,0.8]
@@ -153,34 +248,19 @@ class DiVAE(nn.Module):
 
     def forward(self, x):
         logger.debug("forward")
-        if self.isVAE:
-            mu, logvar = self.hierarchical_posterior(x.view(-1, 784))
-            z = self.prior.sample_z(mu, logvar)
-            x_prime = self.decoder.decode(z)
-            return x_prime, mu, logvar
-        else:
-            #TODO this should yield posterior distribution and samples
-            #this now (200806) gives back "smoother" and samples from smoother. not
-            #hierarchical yet.
-            posterior_distribution, posterior_samples = self.encoder.hierarchical_posterior(x.view(-1, 784))
-            print(posterior_samples[0])
-            x_prime = self.decoder.decode_posterior_sample(posterior_samples[0])
-            
-            return x_prime, posterior_distribution, posterior_samples
-
-#from other code
-        #  form the encoder for z
-        # posterior, post_samples = self.encoder.hierarchical_posterior(encoder_input, is_training)
-
-    # def print_model_info(self):
-    #     for par in self.parameters():
-    #         logger.debug(len(par))
-    def print_model_info(self):
-        for par in self.__dict__.items():
-            logger.debug(par)
+        #TODO this should yield posterior distribution and samples
+        #this now (200806) gives back "smoother" and samples from smoother. not
+        #hierarchical yet.
+        posterior_distribution, posterior_samples = self.encoder.hierarchical_posterior(x.view(-1, 784))
+        print(posterior_samples[0])
+        x_prime = self.decoder.decode_posterior_sample(posterior_samples[0])
+        
+        return x_prime, posterior_distribution, posterior_samples
 
 if __name__=="__main__":
     logger.debug("Testing Model Setup") 
-    model=DiVAE()
+    model=VAE()
+    print(model)
+    # model=DiVAE()
     logger.debug("Success")
     pass

@@ -14,15 +14,15 @@ Based on work from Olivia di Matteo.
 import numpy as np
 import torch
 
-from networks import Prior
+# from networks import Prior
 
 from torch import nn
-from torch.distributions import Normal, Uniform, Bernoulli
+from torch.distributions import Distribution, Normal, Uniform
 
 # Keep things simple for now
-class RBM(Prior):
+class RBM(Distribution):
 	def __init__(self, n_visible, n_hidden, eps=1e-3, **kwargs):
-		super(Prior, self).__init__(create_module_list=False, **kwargs)
+		super(Distribution, self).__init__(**kwargs)
 
 		r""" A class for an RBM that is co-trained with the rest of a VAE.
 		:param int n_visible: Number of visible nodes.
@@ -118,8 +118,11 @@ class RBM(Prior):
 		pass
 		# for datum in X:
 			# self.contrastive_divergence(datum[:self.n_visible])
-			#self.contrastive_divergence(datum.view(1, datum.size()[0])) 
+			#self.contrastive_divergence(datum.view(1, datum.size()[0]))
 
+# @register_kl	
+# def kl_divergence(p,q):
+# 	pass
 
 if __name__=="__main__":
     print("Testing RBM Setup")
