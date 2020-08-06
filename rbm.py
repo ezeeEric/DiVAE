@@ -14,12 +14,16 @@ Based on work from Olivia di Matteo.
 import numpy as np
 import torch
 
+from networks import Prior
+
 from torch import nn
 from torch.distributions import Normal, Uniform, Bernoulli
 
 # Keep things simple for now
-class RBM():
-	def __init__(self, n_visible, n_hidden, eps=1e-3):
+class RBM(Prior):
+	def __init__(self, n_visible, n_hidden, eps=1e-3, **kwargs):
+		super(Prior, self).__init__(create_module_list=False, **kwargs)
+
 		r""" A class for an RBM that is co-trained with the rest of a VAE.
 		:param int n_visible: Number of visible nodes.
 		:param int n_hidden: Number of hidden nodes.
@@ -110,8 +114,10 @@ class RBM():
 		""" Train the RBM over the provided batch of data.
 		X is a tensor with shape (batch_size, n_visible)
 		"""
-		for datum in X:
-			self.contrastive_divergence(datum[:self.n_visible])
+		#TODO 
+		pass
+		# for datum in X:
+			# self.contrastive_divergence(datum[:self.n_visible])
 			#self.contrastive_divergence(datum.view(1, datum.size()[0])) 
 
 
