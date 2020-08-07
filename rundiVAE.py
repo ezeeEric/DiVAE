@@ -1,68 +1,88 @@
 # -*- coding: utf-8 -*-
 """
-Run diVAE
+Main runscript
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
-import torch
+
 import sys
-
-import numpy as np
-import matplotlib.pyplot as plt
-import gif
 import pickle
-from data.loadMNIST import loadMNIST
-
-from modelTuner import trainDiVAE,testDiVAE,evaluateDiVAE
-from modelTuner import train,test,evaluate
-from diVAE import DiVAE
-from helpers import plot_MNIST_output, gif_output
-
-from copy import copy
-import logging
+from DiVAE import logging
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
 
-NUM_EVTS = 1000
-BATCH_SIZE = 100 
-EPOCHS = 10
-LEARNING_RATE = 1e-3
-LATENT_DIMS = 2
-isVAE=True
-
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
 torch.manual_seed(1)
+import gif
 
-train_loader,test_loader=loadMNIST(batch_size=BATCH_SIZE,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
+from modelTuner import ModelTuner
+from diVAE import AE,VAE,DiVAE
+from helpers import plot_MNIST_output, gif_output
 
-model = DiVAE(isVAE=isVAE, latent_dimensions=LATENT_DIMS)
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-model.print_model_info()
+def run(tuner=None, config=None):
+    tuner.load_data()
 
-create_gif=True
-gif_frames=[]
+    model=None
+    if config.type=="AE":
+        model = AE(latent_dimensions=config.LATENT_DIMS)
+    elif config.type=="VAE":
+        model = VAE(latent_dimensions=config.LATENT_DIMS)
+    elif config.type=="DiVAE":
+        model = DiVAE(latent_dimensions=config.LATENT_DIMS)
+    else:
+        logger.error("Unknown Model Type")
+        raise NotImplementedError
 
-logger.debug("Start Epoch Loop")
-if isVAE:
-    for epoch in range(1, EPOCHS+1):
-        train_loss = train(model, train_loader, optimizer, epoch)
-        test_loss  = test(model, test_loader)
-        if create_gif:
-            x_true, x_recon = evaluate(model, test_loader, batch_size=BATCH_SIZE, latent_dimensions=LATENT_DIMS)
-            gif_frames.append(gif_output(x_true, x_recon,epoch=epoch, max_epochs=EPOCHS, train_loss=train_loss,test_loss=test_loss))
-else:
-    for epoch in range(1, EPOCHS+1):
-        train_loss = trainDiVAE(model, train_loader, optimizer, epoch)
-        test_loss  = testDiVAE(model, test_loader)
-        if create_gif:
-            x_true, x_recon = evaluateDiVAE(model, test_loader, batch_size=BATCH_SIZE, latent_dimensions=LATENT_DIMS)
-            gif_frames.append(gif_output(x_true, x_recon,epoch=epoch, max_epochs=EPOCHS, train_loss=train_loss,test_loss=test_loss))
-logger.debug("Finished Epoch Loop")
+    optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
+    model.print_model_info()
 
-configString="_".join(str(i) for i in [NUM_EVTS,BATCH_SIZE,EPOCHS,LEARNING_RATE,LATENT_DIMS])
+    tuner.register_model(model)
+    tuner.register_optimiser(optimiser)
 
-gif.save(gif_frames,"./output/200804_VAEruns_{0}.gif".format(configString),duration=1000)
+    gif_frames=[]
+    logger.debug("Start Epoch Loop")
+    for epoch in range(1, config.EPOCHS+1):
+        train_loss = tuner.train(epoch)
+        test_loss  = tuner.test()
 
-#possible to return many other parameters, x, x' just for plotting
-x_true, x_recon = evaluate(model, test_loader, batch_size=BATCH_SIZE, latent_dimensions=LATENT_DIMS)
+        if config.create_gif:
+            x_true, x_recon = tuner.evaluate()
+            gif_frames.append(gif_output(x_true, x_recon,epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
+    
+    if config.create_gif:
+        configString="_".join(str(i) for i in [config.type,config.NUM_EVTS,config.BATCH_SIZE,config.EPOCHS,config.LEARNING_RATE,config.LATENT_DIMS])
+        gif.save(gif_frames,"./output/200807_runs_{0}.gif".format(configString),duration=500)
+    
+    if config.create_plot:
+        #possible to return many other parameters, x, x' just for plotting
+        #evaluate should be more randomised!
+        x_true, x_recon = tuner.evaluate()
+        plot_MNIST_output(x_true, x_recon)
 
-plot_MNIST_output(x_true, x_recon)
+if __name__=="__main__":
+    logging.getLogger().setLevel(logging.INFO)
+    logger.info("Willkommen")
+    from argparse import ArgumentParser        
+    argParser = ArgumentParser(add_help=False)
+    argParser.add_argument( '-d', '--debug', help='Activate Debug Logging', action='store_true')
+    argParser.add_argument( '-t', '--type', help='Switch between models: AE, VAE, DiVAE', default="AE")
+    config=argParser.parse_args()
+    #TODO make steerable
+    config.NUM_EVTS = 1000
+    config.BATCH_SIZE = 100 
+    config.EPOCHS = 10
+    config.LEARNING_RATE = 1e-3
+    config.LATENT_DIMS = 2
+    config.create_gif=False
+    config.create_plot=False
+
+    if config.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.debug("DEBUG MODE Activated")
+    
+    tuner=ModelTuner(config)
+    
+    run(tuner,config)
+

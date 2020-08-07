@@ -41,7 +41,7 @@ gif_frames=[]
 
 logger.debug("Start Epoch Loop")
 
-for epoch in range(1, EPOCHS+1):
+for epoch in range(1, EPOCHS+1):xw
     train_loss = train(model, train_loader, optimizer, epoch)
     test_loss  = test(model, test_loader)
     if create_gif:

@@ -43,6 +43,7 @@ class AEBase(nn.Module):
 
     def print_model_info(self):
         for par in self.__dict__.items():
+            print(par[0])
             logger.debug(par)
 
 #AE implementation, base class for VAE and DiVAE
@@ -79,7 +80,7 @@ class AE(AEBase):
     def forward(self, x):
         zeta = self.encoder.encode(x.view(-1, 784))
         x_recon = self.decoder.decode(zeta)
-        return x_recon
+        return x_recon, zeta
     
     def loss(self, x_true, x_recon):
         return self._loss_fct(x_recon, x_true.view(-1, 784), reduction='sum')
@@ -130,21 +131,19 @@ class VAE(AEBase):
         x_prime = self.encoder.encode(x.view(-1, 784))
         mu = self._reparamLayers['mu'](x_prime)
         logvar = self._reparamLayers['var'](x_prime)
-        z = self.reparameterize(mu, logvar)
-        x_recon = self.decoder.decode(z)
-        return x_recon, mu, logvar    
+        zeta = self.reparameterize(mu, logvar)
+        x_recon = self.decoder.decode(zeta)
+        return x_recon, mu, logvar, zeta
 
-class DiVAE(AE):
+class DiVAE(AEBase):
     def __init__(self, **kwargs):
         super(DiVAE, self).__init__(**kwargs)
         self.type="DiVAE"
 
-        self._latent_dimensions=latent_dimensions
         self._encoder_nodes=[(784,128),]
-        self._reparamNodes=(128,latent_dimensions)  
-        self._decoder_nodes=[(latent_dimensions,128),]
+        self._reparamNodes=(128,self._latent_dimensions)  
+        self._decoder_nodes=[(self._latent_dimensions,128),]
         self._outputNodes=(128,784)     
-
 
         self.encoder=self._create_encoder()
         self.decoder=self._create_decoder()
@@ -158,25 +157,25 @@ class DiVAE(AE):
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
-        return Decoder(
-            node_sequence=self._decoder_nodes,
-            activation_fct=nn.ReLU(),
-            output_nodes=self._outputNodes,
-            output_activation_fct=nn.Sigmoid(),
-            )
+        return Decoder(node_sequence=self._decoder_nodes,activation_fct=nn.ReLU(),output_activation_fct=nn.Sigmoid())
 
     def _create_prior(self):
         logger.debug("_create_prior")
         return RBM(n_visible=4,n_hidden=4)
    
-    def lossDiVAE(self, x, x_recon, posterior_distribution,posterior_samples):
+    def loss(self, x, x_recon, posterior_distribution,posterior_samples):
         logger.debug("lossDiVAE")
+
+        import sys
+        sys.exit()
         #TODO
         hierarchical_posterior=posterior_distribution
         prior=self.prior
-        auto_loss=0
+        auto_loss = torch.nn.functional.binary_cross_entropy(x.view(-1, 784), x.view(-1, 784), reduction='sum')
         kl_loss=self.kl_divergence(hierarchical_posterior,prior)
         return auto_loss - kl_loss
+#copy from other code
+# {        
             #encoder.hierarchical_posterior
             #decoder.reconstruct
             #createOutput - #TODO missing distribution creation
@@ -204,18 +203,18 @@ class DiVAE(AE):
             # KL loss term assuming Gaussian-distributed latent variables
             # this can be calculated analytically... vs the pytorch implementation...
             # kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
-
-        
-        
+            
         #encoder.hierarchical_posterior
         #decoder.reconstruct
         #createOutput
         #calculate KLD and loss
-    
+# }
     def kl_divergence(self, posterior , prior):
-        torchKLD=dist.kl.kl_divergence(posterior,prior)
-        
-        print(torchKLD)
+        #TODO
+        # torchKLD=dist.kl.kl_divergence(posterior,prior)
+        logger.error("KLD not implemented")
+        # print(torchKLD)
+        torchKLD=0
         return torchKLD
         # #TODO
         # print("Calling Dummy implementation of kl divergence")
@@ -230,15 +229,6 @@ class DiVAE(AE):
         logger.debug("generate_samples")
         return self.sampleZ(mu, logvar)
 
-# pytorch forward call
-# from VAE
-#     def forward(self, x):
-#         logger.debug("forward")
-# #       encoder
-# #       sample
-# #       decode
-#         pass
-    
     def hierarchical_posterior(self,x):
         logger.debug("hierarchical_posterior")
         #dummy
@@ -252,9 +242,7 @@ class DiVAE(AE):
         #this now (200806) gives back "smoother" and samples from smoother. not
         #hierarchical yet.
         posterior_distribution, posterior_samples = self.encoder.hierarchical_posterior(x.view(-1, 784))
-        print(posterior_samples[0])
         x_prime = self.decoder.decode_posterior_sample(posterior_samples[0])
-        
         return x_prime, posterior_distribution, posterior_samples
 
 if __name__=="__main__":

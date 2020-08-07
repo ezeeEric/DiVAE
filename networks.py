@@ -42,7 +42,7 @@ class Network(nn.Module):
             else:
                 z=self._activation_fct(layer(z))
         return x_prime
-        
+
 class Encoder(Network):
     def __init__(self,smoothing_distribution=SpikeAndExponentialSmoother(beta=4),**kwargs):
         super(Encoder, self).__init__(**kwargs)
@@ -110,8 +110,6 @@ class Decoder(Network):
         x_prime=None
         for idx,layer in enumerate(self._layers):
             if idx==nr_layers-1:
-#TODO I.3 is this the way to handle last output? Check if the application of
-#Distutil stuff necessarye
                 x_prime=self._output_activation_fct(layer(z))
             else:
                 z=self._activation_fct(layer(z))
@@ -121,12 +119,15 @@ class Decoder(Network):
         logger.debug("Decoder::decode")  
         print(zeta.size())
         print(self._layers)
-        for layer in self._layers:
-            zeta=self._activation_fct(layer(zeta))
-    #TODO I.3 is this the way to handle last output? Check if the application of
-    #Distutil stuff necessary
-        last_layer=self._output_layer(zeta)
-        x_prime = self._output_activation_fct(last_layer)                 
+        nr_layers=len(self._layers)
+
+        for idx,layer in enumerate(self._layers):
+            if idx==nr_layers-1:
+#TODO I.3 is this the way to handle last output? Check if the application of
+#Distutil stuff necessarye
+                x_prime=self._output_activation_fct(layer(zeta))
+            else:
+                zeta=self._activation_fct(layer(zeta))
         return x_prime
 
 #TODO I believe that is wrong - the prior is a distribution.

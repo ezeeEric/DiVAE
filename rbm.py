@@ -123,6 +123,8 @@ class RBM(Distribution):
 # @register_kl	
 # def kl_divergence(p,q):
 # 	pass
+	def __repr__(self):
+		return "DIY RBM"
 
 if __name__=="__main__":
     print("Testing RBM Setup")

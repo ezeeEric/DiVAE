@@ -1,120 +1,103 @@
 import torch
 import numpy as np
 
-"""Methods for training and testing."""
+from data.loadMNIST import loadMNIST
 
-def trainDiVAE(model, train_loader, optimizer, epoch):
-    print("start train()")
-    model.train()
-    total_train_loss = 0
-    for batch_idx, (x_true, label) in enumerate(train_loader):
-        optimizer.zero_grad()
-        x_true = torch.autograd.Variable(x_true)
-        x_recon, posterior_distribution, posterior_samples = model(x_true)
-        train_loss = model.lossDiVAE(x_true, x_recon, posterior_distribution, posterior_samples)
-        import sys
-        sys.exit()
-        train_loss.backward()
-        total_train_loss += train_loss.item()
-        optimizer.step()
-        
-        # Output logging
-        if batch_idx % 10 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(x_true), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), train_loss.data.item() / len(x_true)))
-    print("finish train()")
-    return total_train_loss/len(train_loader.dataset)
+from DiVAE import logging
+logger = logging.getLogger(__name__)
 
-def testDiVAE(model, test_loader):
-    print("call test()")
-    model.eval()
-    test_loss = 0
-    with torch.no_grad():
-        for batch_idx, (x_true, label) in enumerate(test_loader):
-            x_recon, mu, logvar = model(x_true)
-            test_loss += model.loss(x_true, x_recon, mu, logvar)
-        
-    test_loss /= len(test_loader.dataset)
-    print(test_loss)
-    print("finished test()")
-    return test_loss
+class ModelTuner(object):
+    def __init__(self, config=None):
+        self._config=config
+        self._model=None
+        self._optimiser=None
 
-def evaluateDiVAE(model, test_loader, batch_size=128, latent_dimensions=32):
-    print("call evaluate()")
-    batch_mu = np.zeros((batch_size, latent_dimensions))
-    batch_logvar = np.zeros((batch_size, latent_dimensions))
+        self.train_loader=None
+        self.test_loader=None
 
-    with torch.no_grad():
-        for batch_idx, (x_true, label) in enumerate(test_loader):
-            x_recon, batch_mu, batch_logvar = model(x_true)
+    def load_data(self):
+        logger.debug("Loading Data")
 
-    print("call finish()")
-    return x_true, x_recon
+        self.train_loader,self.test_loader=loadMNIST(
+            batch_size=self._config.BATCH_SIZE,
+            num_evts_train=self._config.NUM_EVTS,
+            num_evts_test=self._config.NUM_EVTS)#TODO make this different
+        logger.debug("{0}: {2} events, {1} batches".format(self.train_loader,len(self.train_loader),len(self.train_loader.dataset)))
+        logger.debug("{0}: {2} events, {1} batches".format(self.test_loader,len(self.test_loader),len(self.test_loader.dataset)))
+        return
+    
+    def register_model(self,model):
+        logger.debug("Register Model")
+        self._model=model
+        return
 
-def train(model, train_loader, optimizer, epoch):
-    print("start train()")
-    model.train()
-    total_train_loss = 0
-    for batch_idx, (x_true, label) in enumerate(train_loader):
-        optimizer.zero_grad()
-        x_true = torch.autograd.Variable(x_true)
-        if model.type=='AE':
-            x_recon = model(x_true)
-            train_loss = model.loss(x_true,x_recon)
-        elif model.type=='VAE':
-            x_recon, mu, logvar = model(x_true)
-            train_loss = model.loss(x_true, x_recon, mu, logvar)
-        elif model.type=='DiVAE':
-            x_recon, mu, logvar = model(x_true)
-            train_loss = model.loss(x_true, x_recon, mu, logvar)     
-        train_loss.backward()
-        total_train_loss += train_loss.item()
-        optimizer.step()
-        
-        # Output logging
-        if batch_idx % 10 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(x_true), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), train_loss.data.item() / len(x_true)))
-    print("finish train()")
-    return total_train_loss/len(train_loader.dataset)
+    def register_optimiser(self,optimiser):
+        logger.debug("Register Model")
+        self._optimiser=optimiser
+        return
 
-def test(model, test_loader):
-    print("call test()")
-    model.eval()
-    test_loss = 0
-    with torch.no_grad():
-        for batch_idx, (x_true, label) in enumerate(test_loader):
-            if model.type=='AE':
-                x_recon = model(x_true)
-                test_loss = model.loss(x_true,x_recon)
-            elif model.type=='VAE':
-                x_recon, mu, logvar = model(x_true)
-                test_loss = model.loss(x_true, x_recon, mu, logvar)
-            elif model.type=='DiVAE':
-                x_recon, mu, logvar = model(x_true)
-                test_loss = model.loss(x_true, x_recon, mu, logvar) 
-        
-    test_loss /= len(test_loader.dataset)
-    print(test_loss)
-    print("finished test()")
-    return test_loss
+    def train(self, epoch):
+        logger.debug("train")
+        self._model.train()
+        total_train_loss = 0
+        for batch_idx, (x_true, label) in enumerate(self.train_loader):
+            self._optimiser.zero_grad()
+            x_true = torch.autograd.Variable(x_true)
+            if self._model.type=='AE':
+                x_recon,zeta = self._model(x_true)
+                train_loss = self._model.loss(x_true,x_recon)
+            elif self._model.type=='VAE':
+                x_recon, mu, logvar, zeta = self._model(x_true)
+                train_loss = self._model.loss(x_true, x_recon, mu, logvar)
+            elif self._model.type=='DiVAE':
+                #TODO continue here!
+                x_recon, posterior_distribution, posterior_samples = self._model(x_true)
+                train_loss = self._model.loss(x_true, x_recon, posterior_distribution, posterior_samples)
+                
+            train_loss.backward()
+            total_train_loss += train_loss.item()
+            self._optimiser.step()
+            
+            # Output logging
+            if batch_idx % 10 == 0:
+                logger.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, batch_idx*len(x_true), len(self.train_loader.dataset),
+                    100.*batch_idx/len(self.train_loader), train_loss.data.item()/len(x_true)))
+        logger.debug("finish train()")
+        return total_train_loss/len(self.train_loader.dataset)
 
-def evaluate(model, test_loader, batch_size=128, latent_dimensions=32):
-    print("call evaluate()")
-    batch_mu = np.zeros((batch_size, latent_dimensions))
-    batch_logvar = np.zeros((batch_size, latent_dimensions))
+    def test(self):
+        logger.debug("start test()")
+        self._model.eval()
+        test_loss = 0
+        with torch.no_grad():
+            for batch_idx, (x_true, label) in enumerate(self.test_loader):
+                if self._model.type=='AE':
+                    x_recon, _ = self._model(x_true)
+                    test_loss = self._model.loss(x_true,x_recon)
+                elif self._model.type=='VAE':
+                    x_recon, mu, logvar, _ = self._model(x_true)
+                    test_loss = self._model.loss(x_true, x_recon, mu, logvar)
+                elif self._model.type=='DiVAE':
+                    x_recon, mu, logvar, _ = self._model(x_true)
+                    test_loss = self._model.loss(x_true, x_recon, mu, logvar) 
+            
+        test_loss /= len(self.test_loader.dataset)
+        logger.info("Test Loss: {0}".format(test_loss))
+        logger.debug("finished test()")
+        return test_loss
 
-    with torch.no_grad():
-        for batch_idx, (x_true, label) in enumerate(test_loader):
-            if model.type=='AE':
-                x_recon = model(x_true)
-            elif model.type=='VAE':
-                x_recon, mu, logvar = model(x_true)
-            elif model.type=='DiVAE':
-                x_recon, mu, logvar = model(x_true)
+    def evaluate(self):
+        logger.debug("start evaluate()")
+        self._model.eval()
+        with torch.no_grad():
+            for batch_idx, (x_true, label) in enumerate(self.test_loader):
+                if model.type=='AE':
+                    x_recon, _ = model(x_true)
+                elif model.type=='VAE':
+                    x_recon, mu, logvar, _ = model(x_true)
+                elif model.type=='DiVAE':
+                    x_recon, mu, logvar, _ = model(x_true)
 
-    print("call finish()")
-    return x_true, x_recon
-
+        logger.debug("finish evaluate()")
+        return x_true, x_recon
