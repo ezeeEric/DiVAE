@@ -70,6 +70,19 @@ class SpikeAndExponentialSmoother(Smoother):
         x=torch.where(rho >= 1 - q, conditional_log, zero_mask)
         return x
 
+    def entropy(self):
+        """ FROM DWAVE
+        Computes the entropy of the bernoulli distribution using:
+            x - x * z + log(1 + exp(-x)),  where x is logits, and z=sigmoid(x).
+        Returns: 
+            ent: entropy
+        """
+        print("--- ","call FactorialBernoulliUtil::entropy()")
+        # mu = tf.nn.sigmoid(self.logit_mu)
+        # ent = sigmoid_cross_entropy_with_logits(logits=self.logit_mu, labels=mu)
+        ent=0
+        return ent
+
 def visualiseSmoother(rho,q,samples):
     import matplotlib.pyplot as plt
     #TODO make this pretty - 3 plots showing rho,q,samples

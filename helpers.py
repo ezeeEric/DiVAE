@@ -7,13 +7,55 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-
+import pandas as pd
 import gif
+from DiVAE import logging
+logger = logging.getLogger(__name__)
+    
+#@title Helper Functions
+def plot_latent_space(zeta, label, output='', dimensions=2):
+    logger.info("Plotting Latent Space")
+    fig = plt.figure()
+    if dimensions==0:
+        i=0
+        j=1
+        # Create plot
+        plt.title('Latent Space Representation for MNIST')
+        lz0=zeta[:,i]
+        lz1=zeta[:,j]
+        ll=label
+        df=pd.DataFrame(list(zip(lz0,lz1,ll)),columns=['z0','z1','label'])
+        for l in range(10):
+            maskeddf=df.loc[df.label==l]
+            plt.scatter(maskeddf['z0'], maskeddf['z1'], alpha=0.5, s=10, label=l, cmap="inferno")
+        plt.xlabel(r"$\zeta_{0}$ ".format(i))
+        plt.ylabel(r"$\zeta_{0}$ ".format(j))
+        plt.legend(loc='upper right', bbox_to_anchor=(1.135,1.))
+    else:
+        plt.title('{0}-dimensional Latent Space Representation for MNIST'.format(dimensions))
+        plt.axis('off')
+        idx=1
+        for i in range(0,dimensions):
+            for j in range(0,dimensions):
+                # Create plot
+                ax = fig.add_subplot(dimensions,dimensions, idx)
+                lz0=zeta[:,i]
+                lz1=zeta[:,j]
+                ll=label
+                df=pd.DataFrame(list(zip(lz0,lz1,ll)),columns=['z0','z1','label'])
+                for l in range(10):
+                    maskeddf=df.loc[df.label==l]
+                    ax.scatter(maskeddf['z0'], maskeddf['z1'], alpha=0.5, s=10, label=l, cmap="inferno")
+                ax.set_xlabel(r"$\zeta_{0}$".format(i))
+                ax.set_ylabel(r"$\zeta_{0}$ ".format(j))
+                if idx==dimensions:
+                    ax.legend(loc='upper right', bbox_to_anchor=(1.3,1.))
+                idx+=1
+    fig = plt.gcf()
+    fig.savefig(output+".pdf")
 
-def plot_MNIST_output(x_true, x_recon, n_numbers=5, outdir="./output/testVAE.png"):
-    #trained with list-like code
+def plot_MNIST_output(x_true, x_recon, n_numbers=5, output="./output/testVAE.png"):
     n_samples=5
-
     plt.figure(figsize=(10, 4.5))
     for i in range(n_samples):
 
@@ -32,7 +74,7 @@ def plot_MNIST_output(x_true, x_recon, n_numbers=5, outdir="./output/testVAE.png
         ax.get_yaxis().set_visible(False)
     fig = plt.gcf()
   #  plt.show()
-    fig.savefig(outdir)
+    fig.savefig(output)
 
 #@title Helper Functions
 def plot_autoencoder_outputs(model, n, dims):

@@ -46,6 +46,16 @@ class RBM(Distribution):
 
 		# Unless there is some sparsity, initialize these all to 0
 		self._hidden_bias = nn.Parameter(torch.zeros((n_hidden, )))
+	
+	def get_samples(self,n_samples):
+		logger.error("generate_samples")
+		#TODO is this correct? we sample from a uniform distribution, the
+		#sampled probabilities are then fe to the hidden layer of the RBM, to
+		#produce the bvisible nodes it has learned.
+		random_probabilities=torch.rand((n_samples,n_visible))
+		# sample from visible
+		visible=random_probabilities 
+		return visible
 
 	def energy(self, v, h):
 		# Pass a configuration of visible and hidden units to get its energy
