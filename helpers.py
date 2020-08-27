@@ -54,13 +54,11 @@ def plot_latent_space(zeta, label, output='', dimensions=2):
     fig = plt.gcf()
     fig.savefig(output+".pdf")
 
-def plot_MNIST_output(x_true, x_recon, n_numbers=5, output="./output/testVAE.png"):
-    n_samples=5
+def plot_MNIST_output(x_true, x_recon, n_samples=5, output="./output/testVAE.png"):
     plt.figure(figsize=(10, 4.5))
     for i in range(n_samples):
-
         # plot original image
-        ax = plt.subplot(2, 5, i + 1)
+        ax = plt.subplot(2, n_samples, i + 1)
         plt.imshow(x_true[i].reshape((28, 28)))
         plt.gray()
         ax.get_xaxis().set_visible(False)

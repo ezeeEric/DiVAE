@@ -22,7 +22,7 @@ from diVAE import AE,VAE,DiVAE
 from helpers import plot_MNIST_output, gif_output, plot_latent_space 
 
 def run(tuner=None, config=None):
-    tuner.load_data()
+    tuner.load_data(binarise=config.binarise_dataset)
 
     enc_act_fct=torch.nn.ReLU() if config.ENC_ACT_FCT=="RELU" else None
     model=None
@@ -100,6 +100,8 @@ if __name__=="__main__":
     config.save_model=True
     config.load_model=not config.save_model
     config.sample_from_prior=False
+    config.binarise_dataset="threshold" #None,"bernoulli"
+
     if config.debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("DEBUG MODE Activated")
