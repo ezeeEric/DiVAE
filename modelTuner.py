@@ -42,7 +42,7 @@ class ModelTuner(object):
 			batch_size=self._config.BATCH_SIZE,
 			num_evts_train=self._config.NUM_EVTS_TRAIN,
 			num_evts_test=self._config.NUM_EVTS_TEST, 
-			binarise=True)
+			binarise="threshold")
 		logger.debug("{0}: {2} events, {1} batches".format(self.train_loader,len(self.train_loader),len(self.train_loader.dataset)))
 		logger.debug("{0}: {2} events, {1} batches".format(self.test_loader,len(self.test_loader),len(self.test_loader.dataset)))
 		return

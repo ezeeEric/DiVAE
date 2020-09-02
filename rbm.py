@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 #Gibbs Sampler, manual implementation
 class Contrastive_Divergence(object):
-	def __init__(self, n_visible, n_hidden, learning_rate,momentum_coefficient,n_gibbs_sampling_steps,weight_decay_factor,**kwargs):
+	def __init__(self, n_visible, n_hidden, learning_rate,momentum_coefficient,n_gibbs_sampling_steps,weight_cost,**kwargs):
 		
 		# Hyperparameters for CDn training
 		#TODO duplicated between RBM and CD classes - find better solution
 		self.learning_rate = learning_rate
 		self.momentum_coefficient = momentum_coefficient
 		self.n_gibbs_sampling_steps = n_gibbs_sampling_steps
-		self.weight_decay_factor = weight_decay_factor 
+		self.weight_cost = weight_cost 
 		
 		self.n_visible=n_visible #from rbm
 		self.n_hidden=n_hidden #from rbm
@@ -51,6 +51,14 @@ class Contrastive_Divergence(object):
 	# 		return self.rbm.__dict__[name]
 	# 	else: 
 	# 		raise AttributeError
+	def get_visible_bias(self):
+		return self._visible_bias
+	
+	def get_hidden_bias(self):
+		return self._hidden_bias
+	
+	def get_weights(self):
+		return self._weights
 
 	def sample_from_hidden(self, probabilities_visible):
 		output_hidden = torch.matmul(probabilities_visible, self._weights) + self._hidden_bias
@@ -95,6 +103,12 @@ class Contrastive_Divergence(object):
 		self.weights_update *= self.momentum_coefficient
 		self.weights_update += (associations_pos - associations_neg)
 		
+		#TODO is this correct? L2 regulariation.
+		#https://stats.stackexchange.com/questions/29130/difference-between-neural-net-weight-decay-and-learning-rate
+		#learning rate should be multiplied to this weight decay update
+		#training turns out much more successful!
+		self.weights_update -= self._weights * self.weight_cost  # L2 weight decay
+
 		## simplified version of the same learning rule that uses the states of individual units
 		self.visible_bias_update *= self.momentum_coefficient
 		self.visible_bias_update += torch.sum(input_data - probabilities_visible_neg, dim=0)
@@ -108,14 +122,11 @@ class Contrastive_Divergence(object):
 		self._visible_bias += self.visible_bias_update * self.learning_rate #/ batch_size
 		self._hidden_bias += self.hidden_bias_update * self.learning_rate #/ batch_size
 
-		self._weights -= self._weights * self.weight_decay_factor  # L2 weight decay
-
 		# Compute reconstruction error
 		#loss = torch.sum((input_data - probabilities_visible_neg)**2)
 		loss_fct = torch.nn.MSELoss(reduction='none')
 		loss = loss_fct(input_data, probabilities_visible_neg).sum()
 		return loss
-
 
 class RBM(Distribution):
 	def __init__(self, n_visible, n_hidden, learning_rate=1e-3, n_gibbs_sampling_steps = 5, **kwargs):
@@ -134,7 +145,7 @@ class RBM(Distribution):
 		self.learning_rate = learning_rate
 		self.momentum_coefficient = 0.5
 		self.n_gibbs_sampling_steps = n_gibbs_sampling_steps
-		self.weight_decay_factor = 1e-4        
+		self.weight_cost = 1e-4        
 
 		# The Sampler (CD) is constructed from this instance of RBM.
 		# CD _getattr_ function is modified such that updates to this instance
@@ -145,7 +156,7 @@ class RBM(Distribution):
 			learning_rate=self.learning_rate,
 			momentum_coefficient=self.momentum_coefficient,
 			n_gibbs_sampling_steps=self.n_gibbs_sampling_steps,
-			weight_decay_factor=self.weight_decay_factor  
+			weight_cost=self.weight_cost  
 		)
 	
 	def get_samples(self, samples, random=False):
@@ -166,53 +177,38 @@ class RBM(Distribution):
 			loss+=self.sampler.contrastive_divergence(img)
 		return loss
 
+	def get_logZ_value(self):
+		logger.debug("ERROR get_logZ_value")
+		return 0
+	
 	def __repr__(self):
 		return "RBM"
-#from dwave	
-	def energy(self, samples):
+
+	def energy(self, post_samples):
 		"""Energy Computation for RBM
-		vis*b_vis+hid*b_hid+vis*w*hid (?)
+		vis*b_vis+hid*b_hid+vis*w*hid
+		Takes posterior samples as input
 		"""
-		e_vis=
-		e_hid=
-		e_mix=
+		#v=post_samples
+		#TODO is this randomised enough when used in VAE? Practical guide
+		#recommends sampling... (Sec 3.4)
+		e_vis=torch.matmul(post_samples,self.sampler.get_visible_bias())
+		#h
+		h=self.sampler.sample_from_hidden(post_samples)
+		e_hid=torch.matmul(h,self.sampler.get_hidden_bias())
+		e_mix=torch.sum(torch.matmul(post_samples,self.sampler.get_weights())*h,axis=1)
 		energy=-e_vis-e_hid-e_mix
 		return energy
-		
-	def cross_entropy(self):
-		"""cross entropy term for the overlapping distributions presented in DVAE++"""
-		raise NotImplementedError
+
+	def cross_entropy(self,post_samples):
+		#TODO currently (200827) returns exactly the energy, as logZ=0
+		"""For the case in Discrete VAE paper, this is simply the log prob (verify!)"""
+		return -self.log_prob(post_samples)
 
 	def log_prob(self, samples):
 		"""log(exp(-E(z))/Z) = -E(z) - log(Z)"""
-		#return -energy(samples)-log(Z)
-		raise NotImplementedError
-
-	def weight_decay(self):
-		# """
-		# Compute weight_decay * ||self.w||^2. Putting L2 norm on the pairwise weights makes the RBM problem a bit easier
-		# to sample from sometimes.
-		# Returns:
-		#     l2 norm loss.
-		# """
-		# return self.weight_decay * tf.nn.l2_loss(self.w)
-		raise NotImplementedError
-
-	def estimate_log_z(self):
-		#         """
-		# Estimate log_z using AIS implemented in QuPA
-		# Args:
-		#     sess: tensorflow session
-			
-		# Returns: 
-		#     log_z: the estimate of log partition function 
-		# """
-		# log_z = sess.run(self.log_z_update)
-		# Print('Estimated log partition function with QuPA: %0.4f' % log_z)
-
-		# return log_z
-		raise NotImplementedError
-
+		logger.debug("log_prob")
+		return -self.energy(samples)-self.get_logZ_value()
 
 if __name__=="__main__":
 	logger.info("Testing RBM Setup")
@@ -234,12 +230,9 @@ if __name__=="__main__":
 			num_evts_test=N_EVENTS_TEST,
 			binarise="threshold")
 	
-
 	rbm = RBM(n_visible=VISIBLE_UNITS, n_hidden=HIDDEN_UNITS, n_gibbs_sampling_steps=N_GIBBS_SAMPLING_STEPS)
 
-	# cd=Contrastive_Divergence(rbm=rbm, n_gibbs_sampling_steps=10)
 	if do_train:
-		
 		for epoch in range(EPOCHS):
 			loss = 0    
 			for batch_idx, (x_true, label) in enumerate(train_loader):
@@ -249,24 +242,34 @@ if __name__=="__main__":
 			logger.info('Epoch {0}. Loss={1:.2f}'.format(epoch,loss))
 		import os
 		logger.info("Saving Model")
-		f=open("./output/rbm_test_200827_{0}.pt".format(config_string),'wb')
+		f=open("./output/rbm_test_200827_wdecay_{0}.pt".format(config_string),'wb')
 		torch.save(rbm.sampler,f)
 		f.close()
 	else:
-		f=open("./output/rbm_200827_{0}.pt".format(config_string),'rb')
+		f=open("./output/rbm_test_200827_wdecay_{0}.pt".format(config_string),'rb')
 		rbm.sampler=torch.load(f)
 		f.close()
 	
 	# # ########## EXTRACT FEATURES ##########
 	logger.info("Sampling from RBM")
 	for batch_idx, (x_true, label) in enumerate(test_loader):
+		print(x_true.size())
+		print(label)
 		y=rbm.get_samples(x_true.view(-1,VISIBLE_UNITS))
+		energy=rbm.energy(x_true.view(-1,VISIBLE_UNITS))
+		print(energy)
+		cross_entropy=rbm.cross_entropy(x_true.view(-1,VISIBLE_UNITS))
+		print(cross_entropy)
+		# use a random picture for sanity checks
+		# samples=torch.rand(x_true.view(-1,VISIBLE_UNITS).size())
 		# yrnd=rbm.get_samples(x_true.view(-1,VISIBLE_UNITS), random=True)
+		# energy=rbm.energy(samples)
+		# print(energy)
 		break
 	print(y.size())
 	from helpers import plot_MNIST_output
 
-	plot_MNIST_output(x_true,y, n_samples=5, output="./output/rbm_test_200827_{0}.png".format(config_string))
+	plot_MNIST_output(x_true,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))
 	# plot_MNIST_output(x_true,yrnd, n_samples=5, output="./output/rbm_test_200827_rnd_{0}.png".format(config_string))
 
 	# train_features = np.zeros((len(train_dataset), HIDDEN_UNITS))

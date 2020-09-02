@@ -31,9 +31,9 @@ def run(tuner=None, config=None):
     elif config.type=="VAE":
         model = VAE(latent_dimensions=config.LATENT_DIMS,encoder_activation_fct=enc_act_fct)
     elif config.type=="DiVAE":
-        model = DiVAE(latent_dimensions=config.LATENT_DIMS)
+        model = DiVAE(latent_dimensions=config.LATENT_DIMS, n_hidden_units=config.N_HIDDEN_UNITS)
     else:
-        logger.error("Unknown Model Type")
+        logger.debug("ERROR Unknown Model Type")
         raise NotImplementedError
 
     optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
@@ -88,12 +88,14 @@ if __name__=="__main__":
     config=argParser.parse_args()
 
     #TODO make steerable
-    config.NUM_EVTS_TRAIN = 1000
+    config.NUM_EVTS_TRAIN = 10000
     config.NUM_EVTS_TEST = 200
-    config.BATCH_SIZE = 1000
-    config.EPOCHS = 1
-    config.LEARNING_RATE = 1e-3
-    config.LATENT_DIMS = 2
+    config.BATCH_SIZE = 100
+    config.EPOCHS = 5
+    config.LEARNING_RATE = 0.003
+    config.LATENT_DIMS = 32 #TODO equals N_VISIBLE in RBM. Cross check dwave
+    config.N_HIDDEN_UNITS = 256
+
     config.ENC_ACT_FCT="RELU"
     config.create_gif=False
     config.create_plots=False
