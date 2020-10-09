@@ -7,6 +7,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import pandas as pd
 import gif
 from DiVAE import logging
@@ -53,6 +54,100 @@ def plot_latent_space(zeta, label, output='', dimensions=2):
                 idx+=1
     fig = plt.gcf()
     fig.savefig(output+".pdf")
+
+def plot_image(image, layer, vmin=None, vmax=None):
+    fig = plt.figure(figsize=(20,20))
+
+    cbar = plt.colorbar(fraction=0.0455)
+    cbar.set_label(r'Energy (MeV)', y=0.83)
+    cbar.ax.tick_params()
+   
+    xticks = range(sizes[layer*2 + 1])
+    yticks = range(sizes[layer*2])
+    if layer == 0:
+        xticks = xticks[::10]
+    plt.xticks(xticks)
+    plt.yticks(yticks)
+    plt.xlabel(r'$\eta$ Cell ID')
+    plt.ylabel(r'$\phi$ Cell ID')
+
+    plt.tight_layout()
+    return im
+
+def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/testCalo.png"):
+    plt.figure(figsize=(10, 4.5))
+    axes_rec=[]
+    axes_true=[]
+    images=[]
+    for i in range(n_samples):
+        # plot original image
+        ax1 = plt.subplot(2, n_samples, i + 1)
+        im = plt.imshow(x_true[i],
+        # aspect=float(96)/3,
+        norm=LogNorm(None,None)
+        )
+
+        if i==0:    
+            plt.ylabel(r'$\phi$ Cell ID')
+            ax1.get_xaxis().set_visible(False)
+
+        else:
+            ax1.get_xaxis().set_visible(False)
+            ax1.get_yaxis().set_visible(False)
+        reco_image=x_recon[i].reshape(x_true[i].shape)
+        #TODO this is arbitrary...
+        reco_image[reco_image<0.0001]=0
+        
+        ax2 = plt.subplot(2, n_samples, i + 1 + n_samples)
+        plt.imshow(reco_image,
+            norm=LogNorm(None,None),
+        )
+        if i==0:    
+            plt.ylabel(r'$\phi$ Cell ID')
+        else:
+             ax2.get_yaxis().set_visible(False)
+        plt.xlabel(r'$\eta$ Cell ID')
+        axes_true.append(ax1)
+        axes_rec.append(ax2)
+
+    # cbar = plt.colorbar(fraction=0.0455)
+    # cbar.set_label(r'Energy (MeV)', y=0.83)
+    # cbar.ax.tick_params()
+   
+    # xticks = range(sizes[layer*2 + 1])
+    # yticks = range(sizes[layer*2])
+    # if layer == 0:
+    #     xticks = xticks[::10]
+    # plt.xticks(xticks)
+    # plt.yticks(yticks)
+
+    plt.tight_layout()
+    fig = plt.gcf()
+  #  plt.show()
+    fig.savefig(output)
+    import sys
+    sys.exit()
+    #     im = plt.imshow(image,
+    #            aspect=float(sizes[layer*2 + 1])/sizes[layer*2],
+    #            interpolation='nearest',
+    #            norm=LogNorm(vmin, vmax)
+    # )
+
+#         plt.imshow(x_true[i].reshape((28, 28)))
+#         # plt.gray()
+#         # ax.get_xaxis().set_visible(False)
+#         # ax.get_yaxis().set_visible(False)
+
+#         ax = plt.subplot(2, n_samples, i + 1 + n_samples)
+#         decImg=x_recon[i].reshape((28, 28))
+#         plt.imshow(decImg)
+#         plt.gray()
+#         ax.get_xaxis().set_visible(False)
+#         ax.get_yaxis().set_visible(False)
+#     fig = plt.gcf()
+#   #  plt.show()
+#     fig.savefig(output)
+
 
 def plot_MNIST_output(x_true, x_recon, n_samples=5, output="./output/testVAE.png"):
     plt.figure(figsize=(10, 4.5))

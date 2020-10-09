@@ -15,9 +15,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 #Gibbs Sampler, manual implementation
-class Contrastive_Divergence(object):
+class Contrastive_Divergence(nn.Module):
 	def __init__(self, n_visible, n_hidden, learning_rate,momentum_coefficient,n_gibbs_sampling_steps,weight_cost,**kwargs):
-		
+		super(Contrastive_Divergence, self).__init__(**kwargs)
+
 		# Hyperparameters for CDn training
 		#TODO duplicated between RBM and CD classes - find better solution
 		self.learning_rate = learning_rate
@@ -37,28 +38,11 @@ class Contrastive_Divergence(object):
 		# weights between visible and hidden nodes. 784x128 (that is 28x28 input
 		#size, 128 arbitrary choice)
 		#arbitrarily scaled by 0.01 
-		self._weights = torch.randn(n_visible, n_hidden) * 0.01
+		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
   		#all biases initialised to 0.5
-		self._visible_bias = torch.ones(n_visible) * 0.5
-		#applying a 0 bias to the visible node
-		self._hidden_bias = torch.zeros(n_hidden)
-	
-	# #handmade inheritance
-	# def __getattr__(self,name):
-	# 	if name in self.__dict__:
-	# 		return self.__dict__[name]
-	# 	elif name in self.rbm.__dict__:
-	# 		return self.rbm.__dict__[name]
-	# 	else: 
-	# 		raise AttributeError
-	def get_visible_bias(self):
-		return self._visible_bias
-	
-	def get_hidden_bias(self):
-		return self._hidden_bias
-	
-	def get_weights(self):
-		return self._weights
+		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5)
+		#applying a 0 bias to the hidden units
+		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden))
 
 	def sample_from_hidden(self, probabilities_visible):
 		output_hidden = torch.matmul(probabilities_visible, self._weights) + self._hidden_bias
@@ -128,9 +112,9 @@ class Contrastive_Divergence(object):
 		loss = loss_fct(input_data, probabilities_visible_neg).sum()
 		return loss
 
-class RBM(Distribution):
+class RBM(nn.Module):
 	def __init__(self, n_visible, n_hidden, learning_rate=1e-3, n_gibbs_sampling_steps = 5, **kwargs):
-		super(Distribution, self).__init__(**kwargs)
+		super(RBM, self).__init__(**kwargs)
 
 		r""" A class for an RBM that is co-trained with the rest of a VAE.
 		:param int n_visible: Number of visible nodes.
@@ -159,8 +143,17 @@ class RBM(Distribution):
 			weight_cost=self.weight_cost  
 		)
 	
-	def get_samples(self, samples, random=False):
-		logger.info("generate_samples")
+	def get_visible_bias(self):
+		return self.sampler._visible_bias
+	
+	def get_hidden_bias(self):
+		return self.sampler._hidden_bias
+	
+	def get_weights(self):
+		return self.sampler._weights
+
+	def get_samples(self, samples=None, random=False):
+		logger.debug("generate_samples")
 		if random:
 			samples=torch.rand(samples.size())
 		# feed data to hidden layer and sample response
@@ -168,8 +161,21 @@ class RBM(Distribution):
 		hidden=self.sampler.sample_from_hidden(samples)
 		visible=self.sampler.sample_from_visible(hidden)
 		return visible
+	
+	def get_samples_kld(self, approx_post_samples=None):
+		logger.debug("generate_samples")
+		# samples=torch.rand([self.n_visible,self.n_hidden])
+		samples=approx_post_samples.detach()
+		# feed data to hidden layer and sample response
+		# we feed binarised data sampled from MNIST
+		hidden=self.sampler.sample_from_hidden(samples)
+		visible=self.sampler.sample_from_visible(hidden)
+		# print(hidden.size())
+		# print(visible.size())
+		rbm_samples=torch.cat([visible,hidden],dim=1)
+		return rbm_samples
 
-	def train(self, data):
+	def train_sampler(self, data):
 		""" Use sampler to train rbm. Data is the current batch."""
 		loss=0
 		for x in data:
@@ -192,11 +198,13 @@ class RBM(Distribution):
 		#v=post_samples
 		#TODO is this randomised enough when used in VAE? Practical guide
 		#recommends sampling... (Sec 3.4)
-		e_vis=torch.matmul(post_samples,self.sampler.get_visible_bias())
+		print(post_samples.size())
+		print(self.get_visible_bias().size())
+		e_vis=torch.matmul(post_samples,self.get_visible_bias())
 		#h
 		h=self.sampler.sample_from_hidden(post_samples)
-		e_hid=torch.matmul(h,self.sampler.get_hidden_bias())
-		e_mix=torch.sum(torch.matmul(post_samples,self.sampler.get_weights())*h,axis=1)
+		e_hid=torch.matmul(h,self.get_hidden_bias())
+		e_mix=torch.sum(torch.matmul(post_samples,self.get_weights())*h,axis=1)
 		energy=-e_vis-e_hid-e_mix
 		return energy
 
@@ -236,7 +244,7 @@ if __name__=="__main__":
 		for epoch in range(EPOCHS):
 			loss = 0    
 			for batch_idx, (x_true, label) in enumerate(train_loader):
-				loss_per_batch = rbm.train(x_true.view(-1,VISIBLE_UNITS))
+				loss_per_batch = rbm.train_sampler(x_true.view(-1,VISIBLE_UNITS))
 				loss += loss_per_batch
 			loss /= len(train_loader.dataset)
 			logger.info('Epoch {0}. Loss={1:.2f}'.format(epoch,loss))

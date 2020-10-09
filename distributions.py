@@ -17,6 +17,24 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+def sigmoid_cross_entropy_with_logits(logits, labels):
+        logger.debug("WARNING sigmoid_cross_entropy_with_logits preliminary")
+        # this is the equivalent to the DWave code's
+        # sigmoid_cross_entropy_with_logits(): return logits * labels +
+        # tf.nn.softplus(-logits)
+        #z- logits (=output)
+        #x- labels (=input data?)
+        # TODO this implentation follows sigmoid_cross_entropy_with_logits
+        # EXACTLY like DWave implementation
+        #TODO check https://discuss.pytorch.org/t/equivalent-of-tensorflows-sigmoid-cross-entropy-with-logits-in-pytorch/1985/13
+        #https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits
+        #max(x, 0) - x * z + log(1 + exp(-abs(x)))
+        #TODO check if this changes something in the training
+        sp=torch.nn.Softplus()
+        # return torch.max(x_recon,torch.zeros(x_recon.size()))-x_recon*x_true-sp(torch.abs(x_recon))
+        return logits - logits * labels + sp(-logits)
+
+
 class Bernoulli(Distribution):
     def __init__(self, logit=None,  beta=1,  **kwargs):
         super(Bernoulli, self).__init__(**kwargs)
@@ -27,11 +45,54 @@ class Bernoulli(Distribution):
         self.logits=logit
         self.beta = beta
 
-    def reparameterise(self, zeta, z):
-        raise NotImplementedError
+    def reparameterise(self):
+        #draw samples from bernoulli distribution with probability p=1-q
+        #where q is logits and rho acts as sample 
+        #returns 0/1
+        q = torch.sigmoid(self.logits) # equals 1-probability
+        rho = torch.rand(q.size())
+        bernoulli_sample = torch.where(rho<q, torch.ones(q.size()), zeros(q.size()))
+        return bernoulli_sample
+    
+    def entropy(self):
+        """
+        Computes the entropy of the bernoulli distribution using:
+            x - x * z + log(1 + exp(-x)),  where x is logits, and z=sigmoid(x).
+        Returns: 
+            ent: entropy
+        """
+        x = torch.sigmoid(self.logits)
+        entropy = sigmoid_cross_entropy_with_logits(logits=self.logit_mu, labels=x)
+        return entropy
 
-    def icdf(self, rho, q):
-        raise NotImplementedError
+    def log_prob_per_var(self, samples):
+        """
+        Compute the log probability of samples under distribution of this object.
+            - (x - x * z + log(1 + exp(-x))),  where x is logits, and z is samples.
+        Args:
+            samples: matrix of size (num_samples * num_vars)
+
+        Returns: 
+            log_prob: a matrix of log_prob (num_samples * num_vars).
+        """
+        log_prob = - sigmoid_cross_entropy_with_logits(logits=self.logits, labels=samples)
+        return log_prob
+
+    def log_prob(self, samples):
+        """
+        Call log_prob_per_var() and then compute the sum of log_prob of all the variables.
+        Args:
+            samples: matrix of size (num_samples * num_vars)
+
+        Returns: 
+            log_p: A vector of log_prob for each sample.
+        """
+        log_p = self.log_prob_per_var(samples)
+        log_p = torch.sum(log_p, 1)
+        print("TEST log_prob!")
+        import sys
+        sys.exit()
+        return log_p
 
     def __repr__(self):
         return "\n".join([str(item) for item in self.__dict__.items()])

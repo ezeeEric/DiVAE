@@ -17,32 +17,75 @@ import torch
 torch.manual_seed(1)
 import gif
 
+
+from configaro import Configaro
 from modelTuner import ModelTuner
-from diVAE import AE,VAE,DiVAE
-from helpers import plot_MNIST_output, gif_output, plot_latent_space 
+from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
+from helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images
+from data.loadMNIST import loadMNIST
+from data.loadCaloGAN import loadCalorimeterData
+
+def load_data(config=None):
+    logger.debug("Loading Data")
+
+    train_loader,test_loader=None,None
+    if config.dataType.lower()=="mnist":
+        train_loader,test_loader=loadMNIST(
+            batch_size=config.BATCH_SIZE,
+            num_evts_train=config.NUM_EVTS_TRAIN,
+            num_evts_test=config.NUM_EVTS_TEST, 
+            binarise=config.binarise_dataset)
+
+    elif config.dataType.lower()=="calo":
+        inFiles={
+            'gamma':    '/Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5',
+            'eplus':    '/Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5',        
+            'piplus':   '/Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5'         
+        }
+        train_loader,test_loader=loadCalorimeterData(
+            inFiles=inFiles,
+            ptype=config.ptype,
+            layer=config.caloLayer.lower(),
+            batch_size=config.BATCH_SIZE,
+            num_evts_train=config.NUM_EVTS_TRAIN,
+            num_evts_test=config.NUM_EVTS_TEST, 
+            )
+    
+    logger.debug("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
+    logger.debug("{0}: {2} events, {1} batches".format(test_loader,len(test_loader),len(test_loader.dataset)))
+    return train_loader,test_loader
 
 def run(tuner=None, config=None):
-    tuner.load_data(binarise=config.binarise_dataset)
+    
+    #load data, internally registers train and test dataloaders
+    tuner.register_dataLoaders(*load_data(config=config))
+    input_dimension=tuner.get_input_dimension()
 
-    enc_act_fct=torch.nn.ReLU() if config.ENC_ACT_FCT=="RELU" else None
+    #set model properties
     model=None
+    enc_act_fct=torch.nn.ReLU() if config.ENC_ACT_FCT=="RELU" else None    
+    configString="_".join(str(i) for i in [config.type,config.dataType,config.NUM_EVTS_TRAIN,
+                                        config.NUM_EVTS_TEST,config.BATCH_SIZE,
+                                        config.EPOCHS,config.LEARNING_RATE,
+                                        config.num_latent_hierarchy_levels,
+                                        config.num_latent_units,
+                                        config.ENC_ACT_FCT])
+
     if config.type=="AE":
-        model = AE(latent_dimensions=config.LATENT_DIMS,encoder_activation_fct=enc_act_fct)
+        model = AutoEncoder(input_dimension=input_dimension,config=config,encoder_activation_fct=enc_act_fct)
     elif config.type=="VAE":
-        model = VAE(latent_dimensions=config.LATENT_DIMS,encoder_activation_fct=enc_act_fct)
+        model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,encoder_activation_fct=enc_act_fct)
+    elif config.type=="HiVAE":
+        model = HiVAE(input_dimension=input_dimension,encoder_activation_fct=enc_act_fct,config=config)
     elif config.type=="DiVAE":
-        model = DiVAE(latent_dimensions=config.LATENT_DIMS, n_hidden_units=config.N_HIDDEN_UNITS)
+        model = DiVAE(config=config, n_hidden_units=config.N_HIDDEN_UNITS)
     else:
         logger.debug("ERROR Unknown Model Type")
         raise NotImplementedError
 
-    optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
     model.print_model_info()
-    configString="_".join(str(i) for i in [config.type,config.NUM_EVTS_TRAIN,
-                                        config.NUM_EVTS_TEST,config.BATCH_SIZE,
-                                        config.EPOCHS,config.LEARNING_RATE,
-                                        config.LATENT_DIMS,
-                                        model.encoder.get_activation_fct()])
+
+    optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 
     tuner.register_model(model)
     tuner.register_optimiser(optimiser)
@@ -51,8 +94,7 @@ def run(tuner=None, config=None):
         gif_frames=[]
         logger.debug("Start Epoch Loop")
         for epoch in range(1, config.EPOCHS+1):   
-            # lastEpoch=True if epoch==config.EPOCHS else False
-            train_loss = tuner.train(epoch)                
+            train_loss = tuner.train(epoch)       
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
 
             if config.create_gif:
@@ -71,47 +113,30 @@ def run(tuner=None, config=None):
         tuner.load_model(set_eval=True)
         
     if config.create_plots:
-        test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-        plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)
-        plot_MNIST_output(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
+        if config.dataType=='calo':
+            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+            plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
+        else:
+            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+            plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)
+            plot_MNIST_output(x_true, x_recon, output="{0}/201007_reco_{1}.png".format(config.output,configString))
 
 if __name__=="__main__":
     logging.getLogger().setLevel(logging.INFO)
     logger.info("Willkommen")
-    from argparse import ArgumentParser        
-    argParser = ArgumentParser(add_help=False)
-    argParser.add_argument( '-d', '--debug', help='Activate Debug Logging', action='store_true')
-    argParser.add_argument( '-t', '--type', help='Switch between models: AE, VAE, DiVAE', default="AE")
-    argParser.add_argument( '-o', '--output', help='Save Model here', default="./output/divae/")
-    argParser.add_argument( '-i', '--infile', help='Load Model from this serialised file', default="./output/model_VAE_-1_500_100_10_0.001_2_ReLU.pt")
 
-    config=argParser.parse_args()
-
-    #TODO make steerable
-    config.NUM_EVTS_TRAIN = 10000
-    config.NUM_EVTS_TEST = 200
-    config.BATCH_SIZE = 100
-    config.EPOCHS = 5
-    config.LEARNING_RATE = 0.003
-    config.LATENT_DIMS = 32 #TODO equals N_VISIBLE in RBM. Cross check dwave
-    config.N_HIDDEN_UNITS = 256
-
-    config.ENC_ACT_FCT="RELU"
-    config.create_gif=False
-    config.create_plots=False
-    config.save_model=True
-    config.load_model=not config.save_model
-    config.sample_from_prior=False
-    config.binarise_dataset="threshold" #None,"bernoulli"
-
+    config=Configaro()
+    
     if config.debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("DEBUG MODE Activated")
-    
+
     tuner=ModelTuner(config)
+    
     if not os.path.exists(config.output):
         os.mkdir(config.output)
     tuner.outpath=config.output
     tuner.infile=config.infile
+    
     run(tuner,config)
 
