@@ -63,27 +63,34 @@ def run(tuner=None, config=None):
 
     #set model properties
     model=None
-    enc_act_fct=torch.nn.ReLU() if config.ENC_ACT_FCT=="RELU" else None    
+    print(config.activation_fct.lower())
+    activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
     configString="_".join(str(i) for i in [config.type,config.dataType,config.NUM_EVTS_TRAIN,
                                         config.NUM_EVTS_TEST,config.BATCH_SIZE,
                                         config.EPOCHS,config.LEARNING_RATE,
                                         config.num_latent_hierarchy_levels,
                                         config.num_latent_units,
-                                        config.ENC_ACT_FCT])
+                                        config.activation_fct])
 
     if config.type=="AE":
-        model = AutoEncoder(input_dimension=input_dimension,config=config,encoder_activation_fct=enc_act_fct)
+        model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
+        
     elif config.type=="VAE":
-        model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,encoder_activation_fct=enc_act_fct)
+        model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
+
     elif config.type=="HiVAE":
-        model = HiVAE(input_dimension=input_dimension,encoder_activation_fct=enc_act_fct,config=config)
+        model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct,config=config)
+
     elif config.type=="DiVAE":
         model = DiVAE(config=config, n_hidden_units=config.N_HIDDEN_UNITS)
+
     else:
         logger.debug("ERROR Unknown Model Type")
         raise NotImplementedError
-
+    
+    model.create_networks()
     model.print_model_info()
+    exit()
 
     optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 

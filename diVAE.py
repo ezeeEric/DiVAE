@@ -26,7 +26,7 @@ torch.manual_seed(1)
 
 # Base Class for all AutoEncoder models
 class AutoEncoderBase(nn.Module):
-    def __init__(self, input_dimension=None, config=None, **kwargs):
+    def __init__(self, input_dimension=None, activation_fct=None, config=None, **kwargs):
         super(AutoEncoderBase,self).__init__(**kwargs)
         
         assert input_dimension is not None and input_dimension>0, "Input dimension not defined, needed for model structure"
@@ -37,6 +37,7 @@ class AutoEncoderBase(nn.Module):
         self._config=config
         self._latent_dimensions=config.num_latent_units
         self._input_dimension=input_dimension
+        self._activation_fct=activation_fct
 
     def type(self):
         return self._type
@@ -61,10 +62,11 @@ class AutoEncoderBase(nn.Module):
 # Autoencoder implementation
 class AutoEncoder(AutoEncoderBase):
 
-    def __init__(self, encoder_activation_fct=nn.ReLU(), **kwargs):
+    def __init__(self, **kwargs):
         super(AutoEncoder,self).__init__(**kwargs)
         self._type="AE"
 
+        #define network structure
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
@@ -80,19 +82,22 @@ class AutoEncoder(AutoEncoderBase):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
             self._decoder_nodes.append(nodepair)
 
-        self.encoder=self._create_encoder(act_fct=encoder_activation_fct)
-        self.decoder=self._create_decoder()
-        
         #only works if x_true, x_recon in [0,1]
         self._loss_fct= nn.functional.binary_cross_entropy
 
-    def _create_encoder(self,act_fct=None):
+    def create_networks(self):
+        logger.debug("Creating Network Structures")
+        self.encoder=self._create_encoder()
+        self.decoder=self._create_decoder()
+        return
+
+    def _create_encoder(self):
         logger.debug("_create_encoder")
-        return BasicEncoder(node_sequence=self._encoder_nodes, activation_fct=nn.ReLU())
+        return BasicEncoder(node_sequence=self._encoder_nodes, activation_fct=self._activation_fct)
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
-        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=nn.ReLU(), output_activation_fct=nn.Sigmoid())
+        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Sigmoid())
 
     def forward(self, x):
         zeta = self.encoder.encode(x.view(-1,self._input_dimension))
@@ -102,42 +107,53 @@ class AutoEncoder(AutoEncoderBase):
     def loss(self, x_true, x_recon):
         return self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
 
-#VAE implementation
-class VariationalAutoEncoder(AutoEncoderBase):
-    def __init__(self, encoder_activation_fct=nn.ReLU(), **kwargs):
+#Adds VAE specific reparameterisation, loss and forward call to AutoEncoder framework
+class VariationalAutoEncoder(AutoEncoder):
+    def __init__(self, **kwargs):
         super(VariationalAutoEncoder, self).__init__(**kwargs)
         
         self._type="VAE"
-        self._encoder_nodes=[(self._input_dimension,72)]
 
-        self._reparamNodes=(72,self._latent_dimensions)   
-        self._decoder_nodes=[(self._latent_dimensions,72),(72,self._input_dimension)]
-
-        self._reparamLayers=nn.ModuleDict(
-            {'mu':nn.Linear(self._reparamNodes[0],self._reparamNodes[1]),
-             'var':nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
-             })
-
-        self.encoder=self._create_encoder(act_fct=encoder_activation_fct)
-        self.decoder=self._create_decoder()
-
-    def _create_encoder(self,act_fct=None):
-        logger.debug("_create_encoder")
-        # return Network(node_sequence=self._decoder_nodes, activation_fct=nn.ReLU())
-        return BasicEncoder(node_sequence=self._encoder_nodes, activation_fct=nn.ReLU())
-
-    def _create_decoder(self):
-        logger.debug("_create_decoder")
-        return SimpleDecoder(node_sequence=self._decoder_nodes, activation_fct=nn.ReLU(), output_activation_fct=nn.Sigmoid())
+        #define network structure
+        self._encoder_nodes=[]
+        self._decoder_nodes=[]
         
+        enc_node_list=[self._input_dimension]+self._config.encoder_hidden_nodes
+
+        for num_nodes in range(0,len(enc_node_list)-1):
+            nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
+            self._encoder_nodes.append(nodepair)
+        
+        self._reparam_nodes=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
+        
+        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._input_dimension]
+
+        for num_nodes in range(0,len(dec_node_list)-1):
+            nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
+            self._decoder_nodes.append(nodepair)
+
+    def create_networks(self):
+        logger.debug("Creating Network Structures")
+        self.encoder=self._create_encoder()
+        
+        self._reparam_layers=nn.ModuleDict(
+            {'mu':  nn.Linear(self._reparam_nodes[0],self._reparam_nodes[1]),
+             'var': nn.Linear(self._reparam_nodes[0],self._reparam_nodes[1])
+             })
+        
+        self.decoder=self._create_decoder()
+        return
+
     def reparameterize(self, mu, logvar):
-        """ Sample from the normal distributions corres and return var * samples + mu
+        """ 
+        Sample epsilon from the normal distributions. Return mu+epsilon*sqrt(var),
+        corresponding to random sample from Gaussian with mean mu and variance var.
         """
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
         
     def loss(self, x, x_recon, mu, logvar):
-        logger.debug("loss")
+        logger.debug("VAE Loss")
         # Autoencoding term
         auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, self._input_dimension), reduction='sum')
         
@@ -146,9 +162,9 @@ class VariationalAutoEncoder(AutoEncoderBase):
         return auto_loss - kl_loss
                             
     def forward(self, x):
-        x_prime = self.encoder.encode(x.view(-1, self._input_dimension))
-        mu = self._reparamLayers['mu'](x_prime)
-        logvar = self._reparamLayers['var'](x_prime)
+        z = self.encoder.encode(x.view(-1, self._input_dimension))
+        mu = self._reparam_layers['mu'](z)
+        logvar = self._reparam_layers['var'](z)
         zeta = self.reparameterize(mu, logvar)
         x_recon = self.decoder.decode(zeta)
         return x_recon, mu, logvar, zeta
@@ -156,39 +172,44 @@ class VariationalAutoEncoder(AutoEncoderBase):
 #VAE with a hierarchical posterior modelled by encoder
 #samples still drawn from gaussian
 class HiVAE(AutoEncoderBase):
-    def __init__(self, encoder_activation_fct=nn.ReLU(), config=None, **kwargs):
+    def __init__(self, **kwargs):
         super(HiVAE, self).__init__(**kwargs)
         
         self._type="HiVAE"
 
-        self.config=config
-        self.num_latent_hierarchy_levels=self.config.num_latent_hierarchy_levels
-
         self._reparamNodes=(200,self._latent_dimensions)   
-        self._decoder_nodes=[(int(self._latent_dimensions*self.num_latent_hierarchy_levels),200),(200,784)]
+        self._decoder_nodes=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels),200),(200,784)]
 
         self.reparameteriser=self._create_reparameteriser()
-        self.encoder=self._create_encoder(act_fct=encoder_activation_fct)
+
+        self.encoder=self._create_encoder()
         self.decoder=self._create_decoder()
+    
+    def create_networks(self):
+        logger.debug("Creating Network Structures")
+        self.encoder=self._create_encoder()
+        self.reparameteriser=self._create_reparameteriser()
+        self.decoder=self._create_decoder()
+        return
 
     def _create_encoder(self,act_fct=None):
-        logger.debug("ERROR _create_encoder dummy implementation")
-        encoder=HierarchicalEncoder(num_latent_units=self.config.num_latent_units,
-        num_latent_hierarchy_levels=self.config.num_latent_hierarchy_levels,
-        use_gaussian=True)
+        encoder=HierarchicalEncoder(
+            num_latent_units=self._config.num_latent_units,
+            num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels,
+            use_gaussian=True)
         return encoder
 
     def _create_reparameteriser(self,act_fct=None):
         logger.debug("ERROR _create_encoder dummy implementation")
         hierarchical_repara_layers=nn.ModuleDict()
-        for lvl in range(self.num_latent_hierarchy_levels):
+        for lvl in range(self._config.num_latent_hierarchy_levels):
             hierarchical_repara_layers['mu_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
             hierarchical_repara_layers['var_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
         return hierarchical_repara_layers
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
-        return SimpleDecoder(node_sequence=self._decoder_nodes, activation_fct=nn.ReLU(), output_activation_fct=nn.Sigmoid())
+        return SimpleDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Sigmoid())
         
     def reparameterize(self, mu, logvar):
         """ Sample from the normal distributions corres and return var * samples + mu
@@ -235,7 +256,7 @@ class HiVAE(AutoEncoderBase):
         return x_recon, mu_list, logvar_list, zeta_list
 
 class DiVAE(AutoEncoderBase):
-    def __init__(self, encoder_activation_fct=nn.ReLU(), n_hidden_units=256, **kwargs):
+    def __init__(self, n_hidden_units=256, **kwargs):
         super(DiVAE, self).__init__(**kwargs)
         self._type="DiVAE"
 
@@ -260,7 +281,7 @@ class DiVAE(AutoEncoderBase):
         #the hierarchy. Also number of input nodes to the SimpleDecoder, first layer
         self.num_latent_units=100
 
-        self.encoder_activation_fct=encoder_activation_fct
+        self.activation_fct=activation_fct
         #each hierarchy has NN with num_det_layers_enc layers
         #number of deterministic units in each encoding layer. These layers map
         #input to the latent layer. 
