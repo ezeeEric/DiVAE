@@ -57,7 +57,7 @@ class BasicEncoder(Network):
 
 #Implements decode()
 class BasicDecoder(Network):
-    def __init__(self,output_activation_fct=nn.Sigmoid(),**kwargs):
+    def __init__(self,output_activation_fct=None,**kwargs):
         super(BasicDecoder, self).__init__(**kwargs)
         self._output_activation_fct=output_activation_fct
 
@@ -171,11 +171,10 @@ class SimpleDecoder(Network):
                 zeta=self._activation_fct(layer(zeta))
         return x_prime
 
-#TODO make this inheriting from base class
-class HierarchicalEncoder(nn.Module):
+class HierarchicalEncoder(BasicEncoder):
     def __init__(self, 
         activation_fct=nn.Tanh(),
-        num_input_units=784,
+        input_dimension=784,
         num_latent_hierarchy_levels=4,
         num_latent_units=100,
         num_det_units=200,
@@ -188,9 +187,7 @@ class HierarchicalEncoder(nn.Module):
         #batch normalisation
         #weight decay
 
-        self.smoothing_distributions=None #smoothing_distribution
-
-        self.num_input_units=num_input_units
+        self.num_input_units=input_dimension
 
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
@@ -217,16 +214,20 @@ class HierarchicalEncoder(nn.Module):
         #switch for HiVAE model
         self.use_gaussian=use_gaussian
 
-        #for each hierarchy level create a network. Input units will increase
+        #for each hierarchy level create a network. Input unit count will increase
         #per level.
         for lvl in  range(self.num_latent_hierarchy_levels):
             network=self._create_hierarchy_network(level=lvl, skip_latent_layer=use_gaussian)
             self._networks.append(network)
 
     def _create_hierarchy_network(self,level=0, skip_latent_layer=False):       
+        #skip_latent_layer: instead of having a single latent layer, use
+        #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy level
+        # this is done outside this class...  
         #TODO this should be revised with better structure for input layer config  
         layers=[self.num_input_units+level*self.num_latent_units]+[self.num_det_units]*self.num_det_layers+[self.num_latent_units]
-        if skip_latent_layer:
+        #in case we want to sample gaussian variables
+        if skip_latent_layer: 
             layers=[self.num_input_units+level*self.num_latent_units]+[self.num_det_units]*self.num_det_layers
 
         moduleLayers=nn.ModuleList([])
@@ -243,65 +244,24 @@ class HierarchicalEncoder(nn.Module):
         sequential=nn.Sequential(*moduleLayers)
         return sequential
 
-    def encode(self, x):
-        logger.debug("encode")
-        for layer in self._layers:
-            if self._activation_fct:
-                x=self._activation_fct(layer(x))
-            else:
-                x=layer(x)
-        return x
-    
-    def hierarchical_posterior(self, data_input, is_training=True):
-        logger.debug("ERROR Encoder::hierarchical_posterior")
-        hierarchical_posterior_dist_list = []
-        hierarchical_posterior_samples = []
-        #Loop all levels in hierarchy
-        for i in range(self.num_latent_hierarchy_levels):
-            #the input x concatenated with z0,z1,z2,...
-            hierarchical_input=torch.cat((data_input,*hierarchical_posterior_samples),1)
-            #the network of the current hierarchy level
-            current_network=self._networks[i]
-            #raw output (logit) of the current NN
-            encoder_logit=current_network(hierarchical_input)
-            #pick the smoothing distribution to be used
-            #use spike and exponential as presented by Rolfe
-            posterior_distribution=SpikeAndExponentialSmoother(encoder_logit) if is_training else None
-            #do the sampling step on the raw output above
-            hierarchical_samples=posterior_distribution.reparameterise()
-            hierarchical_posterior_samples.append(hierarchical_samples)
-            hierarchical_posterior_dist_list.append(posterior_distribution)
-
-        return hierarchical_posterior_dist_list, hierarchical_posterior_samples
-    
-    def get_activation_fct(self):        
-        return
-
-class Decoder(Network):
+class Decoder(BasicDecoder):
     def __init__(self,**kwargs):
         super(Decoder, self).__init__(**kwargs) 
 
-        #TODO make this steerable: num_latent_units=num_latent_units_enc*num_latent_layers
-        self.num_latent_units=400
-        self.num_det_units=200
-        self.num_det_layers=2
-        self.num_input_units=784
-        self.activation_fct=nn.Tanh()
-        
         self._network=self._create_network()
 
     def _create_network(self):
-        layers=[self.num_latent_units]+[self.num_det_units]*self.num_det_layers+[self.num_input_units]
+        layers=self._node_sequence
         moduleLayers=nn.ModuleList([])
         
-        for l in range(len(layers)-1):
-            n_in_units=layers[l]
-            n_out_units=layers[l+1]
+        for l in range(len(layers)):
+            n_in_units=layers[l][0]
+            n_out_units=layers[l][1]
 
             moduleLayers.append(nn.Linear(n_in_units,n_out_units))
             #apply the activation function for all layers except the last
             #(latent) layer 
-            act_fct= nn.Identity() if l==len(layers)-2 else self.activation_fct
+            act_fct= self._output_activation_fct if l==len(layers)-1 else self._activation_fct
             moduleLayers.append(act_fct)
 
         sequential=nn.Sequential(*moduleLayers)
@@ -310,10 +270,6 @@ class Decoder(Network):
     def decode(self, posterior_sample):
         logger.debug("Decoder::decode")
         return self._network(posterior_sample)
-        
-    
-    def get_activation_fct(self):        
-        return
 
 if __name__=="__main__":
     logger.debug("Testing Networks")

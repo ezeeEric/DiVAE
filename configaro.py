@@ -170,13 +170,9 @@ class Configaro(object):
                     floatVal=None
                     try:
                         floatVal=float(val)
-                    except:
-                        pass
-                    if floatVal:
                         self.__dict__[key]=int(floatVal) if floatVal.is_integer() else floatVal
-                    else:
+                    except:
                         self.__dict__[key]=val
-
         logger.info("Successfully parsed input  files {0}".format(cfgFiles))
         return
 

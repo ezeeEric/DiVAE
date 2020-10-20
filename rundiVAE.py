@@ -79,10 +79,10 @@ def run(tuner=None, config=None):
         model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
     elif config.type=="HiVAE":
-        model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct,config=config)
+        model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
 
     elif config.type=="DiVAE":
-        model = DiVAE(config=config, n_hidden_units=config.N_HIDDEN_UNITS)
+        model = DiVAE(config=config)
 
     else:
         logger.debug("ERROR Unknown Model Type")
@@ -105,14 +105,18 @@ def run(tuner=None, config=None):
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
 
             if config.create_gif:
-                gif_frames.append(gif_output(x_true, x_recon,epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
+                #TODO improve
+                if config.dataType=='calo':
+                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString),do_gif=True))
+                else:
+                    gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
             
             if model.type=="DiVAE" and config.sample_from_prior:
                 random_samples=model.generate_samples()
                 #TODO make a plot of the output
 
         if config.create_gif:
-            gif.save(gif_frames,"./output/200807_runs_{0}.gif".format(configString),duration=500)
+            gif.save(gif_frames,"{0}/runs _{1}.gif".format(config.output,configString),duration=200)
         
         if config.save_model:
             tuner.save_model(configString)
@@ -125,7 +129,7 @@ def run(tuner=None, config=None):
             plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
         else:
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-            plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)
+            # plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)
             plot_MNIST_output(x_true, x_recon, output="{0}/201007_reco_{1}.png".format(config.output,configString))
 
 if __name__=="__main__":

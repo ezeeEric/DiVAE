@@ -170,21 +170,22 @@ class VariationalAutoEncoder(AutoEncoder):
         return x_recon, mu, logvar, zeta
 
 #VAE with a hierarchical posterior modelled by encoder
-#samples still drawn from gaussian
-class HiVAE(AutoEncoderBase):
+#samples drawn from gaussian
+class HiVAE(AutoEncoder):
     def __init__(self, **kwargs):
         super(HiVAE, self).__init__(**kwargs)
         
         self._type="HiVAE"
 
-        self._reparamNodes=(200,self._latent_dimensions)   
-        self._decoder_nodes=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels),200),(200,784)]
+        self._reparamNodes=(self._config.num_det_units,self._latent_dimensions)  
 
-        self.reparameteriser=self._create_reparameteriser()
+        self._decoder_nodes=[]
+        dec_node_list=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels))]+self._config.decoder_hidden_nodes+[self._input_dimension]
 
-        self.encoder=self._create_encoder()
-        self.decoder=self._create_decoder()
-    
+        for num_nodes in range(0,len(dec_node_list)-1):
+            nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
+            self._decoder_nodes.append(nodepair)
+
     def create_networks(self):
         logger.debug("Creating Network Structures")
         self.encoder=self._create_encoder()
@@ -193,12 +194,22 @@ class HiVAE(AutoEncoderBase):
         return
 
     def _create_encoder(self,act_fct=None):
-        encoder=HierarchicalEncoder(
-            num_latent_units=self._config.num_latent_units,
+        logger.debug("_create_encoder")
+        return HierarchicalEncoder(
+            input_dimension=self._input_dimension,
             num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels,
+            num_latent_units=self._latent_dimensions,
+            num_det_units=self._config.num_det_units,
+            num_det_layers=self._config.num_det_layers,
             use_gaussian=True)
-        return encoder
 
+    # def _create_decoder(self):
+    #     logger.debug("_create_decoder")
+    #     return Decoder(node_sequence=self._decoder_nodes, 
+    #     activation_fct=self._activation_fct, 
+    #     output_activation_fct=nn.Sigmoid())
+
+    #TODO should this be part of encoder?
     def _create_reparameteriser(self,act_fct=None):
         logger.debug("ERROR _create_encoder dummy implementation")
         hierarchical_repara_layers=nn.ModuleDict()
@@ -207,10 +218,6 @@ class HiVAE(AutoEncoderBase):
             hierarchical_repara_layers['var_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
         return hierarchical_repara_layers
 
-    def _create_decoder(self):
-        logger.debug("_create_decoder")
-        return SimpleDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Sigmoid())
-        
     def reparameterize(self, mu, logvar):
         """ Sample from the normal distributions corres and return var * samples + mu
         """
@@ -220,7 +227,7 @@ class HiVAE(AutoEncoderBase):
     def loss(self, x, x_recon, mu_list, logvar_list):
         logger.debug("loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, 784), reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, self._input_dimension), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         mu=torch.cat(mu_list,axis=1)
@@ -229,7 +236,7 @@ class HiVAE(AutoEncoderBase):
         return auto_loss - kl_loss
                             
     def forward(self, x):
-        data=x.view(-1, 784)
+        data=x.view(-1, self._input_dimension)
         # x_enc_logits=[]
         zeta_list=[]
         mu_list=[]
@@ -256,7 +263,7 @@ class HiVAE(AutoEncoderBase):
         return x_recon, mu_list, logvar_list, zeta_list
 
 class DiVAE(AutoEncoderBase):
-    def __init__(self, n_hidden_units=256, **kwargs):
+    def __init__(self, **kwargs):
         super(DiVAE, self).__init__(**kwargs)
         self._type="DiVAE"
 
@@ -264,7 +271,7 @@ class DiVAE(AutoEncoderBase):
         self._decoder_nodes=[(self._latent_dimensions,128),]
         self._outputNodes=(128,784)     
 
-        self._n_hidden_units=n_hidden_units
+        self._n_hidden_units=s
 
         #TODO change names globally
         #configs from DWave
@@ -274,7 +281,7 @@ class DiVAE(AutoEncoderBase):
         #ENCODER SPECIFICS
         
         #number of hierarchy levels in encoder. This is the number of latent
-        #layers. At each hiearchy level an output layer is formed.
+        #layers. At each hierarchy level an output layer is formed.
         self.num_latent_hierarchy_levels=4
 
         #number of latent units in the prior - output units for each level of
@@ -572,11 +579,12 @@ class DiVAE(AutoEncoderBase):
         return output, output_activations, output_distribution, \
             posterior_distributions, posterior_samples
 
+
 if __name__=="__main__":
     logger.debug("Testing Model Setup") 
     # model=VAE()
     # model=DiVAE()
-    model=HiVAE(latent_dimensions=100)
+    model=HiVAE()
     print(model.encoder)
     logger.debug("Success")
     pass

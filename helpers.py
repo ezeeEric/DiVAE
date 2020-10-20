@@ -74,7 +74,8 @@ def plot_image(image, layer, vmin=None, vmax=None):
     plt.tight_layout()
     return im
 
-def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/testCalo.png"):
+@gif.frame
+def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
     plt.figure(figsize=(10, 4.5))
     axes_rec=[]
     axes_true=[]
@@ -94,9 +95,13 @@ def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/tes
         else:
             ax1.get_xaxis().set_visible(False)
             ax1.get_yaxis().set_visible(False)
+        
         reco_image=x_recon[i].reshape(x_true[i].shape)
         #TODO this is arbitrary...
-        reco_image[reco_image<0.0001]=0
+        minVal=reco_image.min(1,keepdim=True)[0]*5
+        minVal=reco_image.min(1,keepdim=True)[0]
+
+        reco_image[reco_image<minVal]=0
         
         ax2 = plt.subplot(2, n_samples, i + 1 + n_samples)
         plt.imshow(reco_image,
@@ -121,12 +126,13 @@ def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/tes
     # plt.xticks(xticks)
     # plt.yticks(yticks)
 
-    plt.tight_layout()
-    fig = plt.gcf()
-  #  plt.show()
-    fig.savefig(output)
-    import sys
-    sys.exit()
+    if not do_gif:
+        plt.tight_layout()
+        fig = plt.gcf()
+    #  plt.show()
+        fig.savefig(output)
+        import sys
+        sys.exit()
     #     im = plt.imshow(image,
     #            aspect=float(sizes[layer*2 + 1])/sizes[layer*2],
     #            interpolation='nearest',
@@ -244,15 +250,15 @@ def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_
 
         # plot original image
         ax = plt.subplot(2, 5, i + 1)
-        plt.imshow(x_true[i].reshape((28, 28)))
-        plt.gray()
+        plt.imshow(x_true[i])
+        # plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
         ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-        decImg=x_recon[i].reshape((28, 28))
+        decImg=x_recon[i].reshape(x_true[i].shape)
         plt.imshow(decImg)
-        plt.gray()
+        # plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         if i==0:
