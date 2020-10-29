@@ -174,7 +174,7 @@ class VariationalAutoEncoder(AutoEncoder):
 class HiVAE(AutoEncoder):
     def __init__(self, **kwargs):
         super(HiVAE, self).__init__(**kwargs)
-        
+   
         self._type="HiVAE"
 
         self._reparamNodes=(self._config.num_det_units,self._latent_dimensions)  
@@ -201,7 +201,7 @@ class HiVAE(AutoEncoder):
             num_latent_units=self._latent_dimensions,
             num_det_units=self._config.num_det_units,
             num_det_layers=self._config.num_det_layers,
-            use_gaussian=True)
+            skip_latent_layer=True)
 
     # def _create_decoder(self):
     #     logger.debug("_create_decoder")
@@ -267,100 +267,117 @@ class DiVAE(AutoEncoderBase):
         super(DiVAE, self).__init__(**kwargs)
         self._type="DiVAE"
 
-        self._reparamNodes=(128,self._latent_dimensions)  
-        self._decoder_nodes=[(self._latent_dimensions,128),]
-        self._outputNodes=(128,784)     
+        # self._decoder_nodes=[(self._latent_dimensions,128),]
+        #TODO can this be done through inheritance?
+        self._decoder_nodes=[]
+        dec_node_list=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels))]+self._config.decoder_hidden_nodes+[self._input_dimension]
 
-        self._n_hidden_units=s
+        for num_nodes in range(0,len(dec_node_list)-1):
+            nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
+            self._decoder_nodes.append(nodepair)
 
         #TODO change names globally
         #configs from DWave
         #TODO one wd factor for both SimpleDecoder and encoder
-        self.weight_decay_factor=1e-4
+        self.weight_decay_factor=self._config.weight_decay_factor
         
         #ENCODER SPECIFICS
-        
+    
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hierarchy level an output layer is formed.
-        self.num_latent_hierarchy_levels=4
+        self.num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels
 
         #number of latent units in the prior - output units for each level of
         #the hierarchy. Also number of input nodes to the SimpleDecoder, first layer
-        self.num_latent_units=100
+        self.num_latent_units=self._config.num_latent_units
 
-        self.activation_fct=activation_fct
         #each hierarchy has NN with num_det_layers_enc layers
         #number of deterministic units in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_det_units=200
+        self.num_det_units=self._config.num_det_units
         
+        #TODO this could be solved more elegantly. FOr example replace
+        #"skip_latent layer" with something actually useful 
+        assert self.num_latent_units==self.num_det_units, "Number of units in last det encoder layer must be the same as num latent unit"
+
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_det_layers=2 
+        self.num_det_layers=self._config.num_det_layers
 
-        # for all layers except latent (output)
-        self.activation_fct=nn.Tanh()
-
-        self.encoder=self._create_encoder(act_fct=self.activation_fct)
-        self.decoder=self._create_decoder()
+    def create_networks(self):
+        logger.debug("Creating Network Structures")
+        self.encoder=self._create_encoder()
         self.prior=self._create_prior()
-
+        self.decoder=self._create_decoder()
+        return
     
-    def _create_encoder(self,act_fct=None):
+    def _create_encoder(self):
         logger.debug("ERROR _create_encoder dummy implementation")
-        encoder=HierarchicalEncoder()
-        return encoder
+        return HierarchicalEncoder(
+            input_dimension=self._input_dimension,
+            num_latent_hierarchy_levels=self.num_latent_hierarchy_levels,
+            num_latent_units=self.num_latent_units,
+            num_det_units=self.num_det_units,
+            num_det_layers=self.num_det_layers,
+            skip_latent_layer=True)
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
-        return Decoder()
+        #Identity output_activation_fct, as this sigmoid is called manually in forward()
+        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Identity())
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_units_per_layer=self.num_latent_hierarchy_levels*self.num_latent_units//2
+        num_rbm_units_per_layer=self._config.num_latent_hierarchy_levels*self._latent_dimensions//2
         return RBM(n_visible=num_rbm_units_per_layer,n_hidden=num_rbm_units_per_layer)
    
     def weight_decay_loss(self):
         #TODO
         logger.debug("ERROR weight_decay_loss NOT IMPLEMENTED")
         return 0
+    
+    def train_rbm(self):
+        self.prior.train_sampler()
+
+        return
 
     def loss(self, in_data, output, output_activations, output_distribution, posterior_distribution,posterior_samples):
         logger.debug("loss")
+
+        #1) total_kl = self.prior.kl_dist_from(posterior, post_samples,
+        #   is_training)
+        #KLD
+        # checked on 201023 - various TODOs and question marks....        
+        kl_loss=self.kl_divergence(posterior_distribution,posterior_samples)
+        # exit()
+        #2)         # expected log prob p(x| z)
+        # cost = - output_dist.log_prob_per_var(input)
+        # cost = tf.reduce_sum(cost, axis=1)
+        
         #TODO this alright? sign, softplus, DWAVE vs torch source implementation
         #this returns a matrix 100x784 (samples times var)
-        ae_loss_matrix=-output_distribution.log_prob_per_var(in_data.view(-1, 784))
+        #           output distribution is Bernoulli at the end of VAE. Input
+        #           distribution is data.
+        ae_loss_matrix=-output_distribution.log_prob_per_var(in_data.view(-1, self._input_dimension))
         #loss is the sum of all variables (pixels) per sample (event in batch)
         ae_loss=torch.sum(ae_loss_matrix,1)
-        #KLD        
-        kl_loss=self.kl_divergence(posterior_distribution,posterior_samples)
+
+        #3) weight decay loss
+        # enc_wd_loss = self.encoder.get_weight_decay()
+        # dec_wd_loss = self.decoder.get_weight_decay()
+        # prior_wd_loss = self.prior.get_weight_decay() if isinstance(self.prior, RBM) else 0
+        # wd_loss = enc_wd_loss + dec_wd_loss + prior_wd_loss
+
+        #4) neg elbo warm-up idea kl-term
+        # kl_coeff = self.kl_coeff_annealing(is_training)
+        # neg_elbo_per_sample = kl_coeff * total_kl + cost
+        # neg_elbo = tf.reduce_mean(neg_elbo_per_sample, name='neg_elbo')
+
         # print(ae_loss)
         neg_elbo_per_sample=ae_loss+kl_loss
-        # import sys
-        # sys.exit()
-        # if self.training:
-        #     #kld per sample
-        #     # total_kl = self.prior.kl_dist_from(posterior, post_samples, is_training)
-        #     kl_loss=self.kl_divergence(hierarchical_posterior,posterior_samples)
-        #     # # weight decay loss
-        #     # enc_wd_loss = self.encoder.get_weight_decay()
-        #     # dec_wd_loss = self.decoder.get_weight_decay()
-        #     # prior_wd_loss = self.prior.get_weight_decay() if isinstance(self.prior, RBM) else 0
-        #     weight_decay_loss=self.weight_decay_loss()
-        #     neg_elbo_per_sample =  ae_loss+kl_loss 
-        # else:
-        #     #kld per sample
-        #     # total_kl = self.prior.kl_dist_from(posterior, post_samples, is_training)
-        #     #TODO during evaluation - why is KLD necessary?
-        #     kl_loss=self.kl_divergence(hierarchical_posterior,posterior_samples)
-        #     # # weight decay loss
-        #     # enc_wd_loss = self.encoder.get_weight_decay()
-        #     # dec_wd_loss = self.decoder.get_weight_decay()
-        #     # prior_wd_loss = self.prior.get_weight_decay() if isinstance(self.prior, RBM) else 0
-        #     neg_elbo_per_sample =  ae_loss+kl_loss 
-        #     #since we are not training
-        #     weight_decay_loss=0 
+
         #the mean of the elbo over all samples is taken as measure for loss
         neg_elbo=torch.mean(neg_elbo_per_sample)    
+
         #include the weight decay regularisation in the loss to penalise complexity
         loss=neg_elbo#+weight_decay_loss
         # return loss
@@ -368,7 +385,7 @@ class DiVAE(AutoEncoderBase):
             raise ValueError("Loss is NAN - KL Divergence diverged")       
         return loss
 
-    def kl_div_prior_gradient(self, approx_post_logits, approx_post_binary_samples):
+    def kl_div_prior_gradient(self, posterior_logits, posterior_binary_samples):
         #DVAE Eq12 - gradient of prior
         #that is, the gradient of the KL between approx posterior and priot wrt
         #phi, parameters of the RBM
@@ -379,22 +396,24 @@ class DiVAE(AutoEncoderBase):
         All previous layers must be sampled, or the J term is incorrect; the h term can accommodate probabilities
         For the rbm_samples, one side can be Rao-Blackwellized
         Args:
-            approx_post_logits:         list of approx. post. logits.
-            approx_post_binary_samples: list of approx. post. samples with last layer marginalized.
+            posterior_logits:         list of approx. post. logits.
+            posterior_binary_samples: list of approx. post. samples with last layer marginalized.
             rbm_samples:                rbm samples
 
         Returns:
             kld_per_sample:             the KL tensor containing proper gradients for prior
         """
         #logits to probabilities
-        approx_post_probs=torch.sigmoid(approx_post_logits)
-        positive_probs=approx_post_probs.detach()
+        posterior_probs=torch.sigmoid(posterior_logits)
+        positive_probs=posterior_probs.detach()
         
         #samples from posterior are labelled positive
-        positive_samples=torch.cat(approx_post_binary_samples,1).detach()
+        positive_samples=posterior_binary_samples.detach()
+
         n_split=positive_samples.size()[1]//2
-        positive_samples_left,positive_samples_right=torch.split(positive_probs,split_size_or_sections=int(n_split),dim=1)
-        
+        positive_samples_left,positive_samples_right=torch.split(positive_samples,split_size_or_sections=int(n_split),dim=1)
+     
+       #-z_left^t J z_right
         pos_first_term=torch.matmul(positive_samples_left,self.prior.get_weights())*positive_samples_right
        
         rbm_bias_left=self.prior.get_visible_bias()
@@ -402,23 +421,35 @@ class DiVAE(AutoEncoderBase):
         rbm_bias=torch.cat([rbm_bias_left,rbm_bias_right])#self._h
         
         #this gives [42,400] size
+        #- z^t h
+        #TODO this uses positive probs. Should it not use positive samples?
+        # FIXME an indication are the negative ones where samples are used! On
+        #other hand this is the only place this this used
         pos_sec_term=positive_probs*rbm_bias
+        # pos_sec_term=positive_samples*rbm_bias
+
+       # Energy = -z_left^t J z_right - z^t h
         pos_kld_per_sample=-(torch.sum(pos_first_term,axis=1)+torch.sum(pos_sec_term,axis=1))
         #samples from rbm are labelled negative
 
         #rbm_samples Tensor("zeros:0", shape=(200, 200), dtype=float32)
+        #TODO What are these samples here?
         rbm_samples=self.prior.get_samples_kld(approx_post_samples=positive_samples_left)
         negative_samples=rbm_samples.detach()
+
         n_split=negative_samples.size()[1]//2
         negative_samples_left,negative_samples_right=torch.split(negative_samples,split_size_or_sections=int(n_split),dim=1)
         neg_first_term=torch.matmul(negative_samples_left,self.prior.get_weights())*negative_samples_right
+        
+        #FIXME see above, the positive case looks different. Why?
         neg_sec_term=negative_samples*rbm_bias
         neg_kld_per_sample=(torch.sum(neg_first_term,axis=1)+torch.sum(neg_sec_term,axis=1))
         
         kld_per_sample=pos_kld_per_sample+neg_kld_per_sample
+
         return kld_per_sample
 
-    def kl_div_posterior_gradient(self, approx_post_logits, approx_post_binary_samples):
+    def kl_div_posterior_gradient(self, posterior_logits, posterior_binary_samples):
         #DVAE Eq11 - gradient of AE model
         #that is, the gradient of the KL between approx posterior and priot wrt
         #theta, parameters of the AE model
@@ -428,99 +459,105 @@ class DiVAE(AutoEncoderBase):
         Approximating posterior is q(z = 1) = sigmoid(logistic_input).  Equivalently, E_q(z) = -logistic_input * z, with
         p(z) = e^-E_q / Z_q
         Args:
-            approx_post_logits:         list of approx. post. logits.
-            approx_post_binary_samples: list of approx. post. samples with last layer marginalized.
+            posterior_logits: posterior_logits        list of approx. post. logits.
+            approx_post_binary_samples: posterior_binary_samples list of approx. post. samples with last layer marginalized.
 
         Returns:
             kld_per_sample:             the KL tensor containing proper gradients for aapprox. post.
         """
         
         logger.debug("kl_div_posterior_gradient")
-        #TODO add cutoff
-        # approx_post_upper_bound = 0.999
-        # approx_post_probs = tf.minimum(approx_post_upper_bound, tf.sigmoid(approx_post_logits))
-
+        posterior_upper_bound = 0.999*torch.ones_like(posterior_logits)
         #logits to probabilities
-        approx_post_probs=torch.sigmoid(approx_post_logits)
+        posterior_probs=torch.min(posterior_upper_bound, torch.sigmoid(posterior_logits))
+         
+        n_split=int(posterior_binary_samples.size()[1]//2)
+        #binarised samples from posterior to RBM layers
+        rbm_samples_left,rbm_samples_right=torch.split(posterior_binary_samples,split_size_or_sections=n_split,dim=1)
 
-        #samples from posterior to RBM layers
-        #TODO better automatisation for this split?
-        #TODO YES! see below torch.split
-        samples_rbm_units_left=[]
-        samples_rbm_units_right=[]
-        for i in range(1,len(approx_post_binary_samples)+1):
-            if i<=len(approx_post_binary_samples)/2:
-                samples_rbm_units_left.append(approx_post_binary_samples[i-1])
-            else:
-                samples_rbm_units_right.append(approx_post_binary_samples[i-1])
-
-        samples_rbm_units_left=torch.cat(samples_rbm_units_left,1)
-        samples_rbm_units_right=torch.cat(samples_rbm_units_right,1)
-
-        # print(samples_rbm_units_left.size())
-        # torch.Size([42, 200])
         #the following prepares the variables in the calculation in tehir format
         rbm_bias_left=self.prior.get_visible_bias()
         rbm_bias_right=self.prior.get_hidden_bias()
 
         rbm_bias=torch.cat([rbm_bias_left,rbm_bias_right])#self._h
-
-        #torch.Size([200, 201]) n_vis=200(left),n_hid=201 (right)
         rbm_weight=self.prior.get_weights()#self._J
-        #torch.Size([201, 200]) n_vis=200(left),n_hid=201 (right)
+
         #this is transposed, so we multiply what we call "right hand" ("hidden layer")
         #samples with right rbm units
-        rbm_weight_t=torch.transpose(rbm_weight,0,1)#self._J
-        rbm_activation_right=torch.matmul(samples_rbm_units_right,rbm_weight_t)
-        rbm_activation_left=torch.matmul(samples_rbm_units_left,rbm_weight)
+        # rbm_weight_t=torch.transpose(rbm_weight,0,1)#self._J
+        
+        rbm_activation_right=torch.matmul(rbm_samples_right,rbm_weight.t())
+        rbm_activation_left=torch.matmul(rbm_samples_left,rbm_weight)
+
         #corresponds to samples_times_J
         rbm_activation=torch.cat([rbm_activation_right,rbm_activation_left],1)
-
-        hierarchy_scaling= (1.0 - torch.cat(approx_post_binary_samples,1)) / (1.0 - approx_post_probs)
-        n_split=hierarchy_scaling.size()[1]//2
-        hierarchy_scaling_left,hierarchy_scaling_right=torch.split(hierarchy_scaling,split_size_or_sections=int(n_split),dim=1)
-        #TODO why does this happen?
+        
+        #TODO what is this scaling factor?
+        hierarchy_scaling= (1.0 - posterior_binary_samples) / (1.0 - posterior_probs)
+        hierarchy_scaling_left,hierarchy_scaling_right=torch.split(hierarchy_scaling, split_size_or_sections=int(n_split),dim=1)
+        
+        #TODO why does this happen? This seems to scale only the left side of
+        #the RBM. Th right side is replaced with ones.
         hierarchy_scaling_with_ones=torch.cat([hierarchy_scaling_left,torch.ones(hierarchy_scaling_right.size())],axis=1)
-
-        undifferentiated_component=approx_post_logits-rbm_bias-rbm_activation*hierarchy_scaling_with_ones
-        undifferentiated_component=undifferentiated_component.detach()
+        # print(posterior_logits)
+        # print(posterior_logits.shape)
+        # print(rbm_bias)
+        # print(rbm_bias.shape)
+        # print(rbm_activation)
+        # print(rbm_activation.shape)
+        # print(hierarchy_scaling_with_ones)
+        # print(hierarchy_scaling_with_ones.shape)
+        # exit() 
+        with torch.no_grad():
+            undifferentiated_component=posterior_logits-rbm_bias-rbm_activation*hierarchy_scaling_with_ones
+            undifferentiated_component=undifferentiated_component.detach()
         
-        kld_per_sample = torch.sum(undifferentiated_component * approx_post_probs, dim=1)
-        
+        kld_per_sample = torch.sum(undifferentiated_component * posterior_probs, dim=1)
+        # print(kld_per_sample)
+        # exit()
         return kld_per_sample
 
-    def kl_divergence(self, posterior , posterior_samples):
+    def kl_divergence(self, posterior_distribution , posterior_samples):
         logger.debug("kl_divergence")
-        #posterior: distribution with logits from each hierarchy level/layer
-        #posterior_samples: reparameterised output of posterior
-        if len(posterior)>1 and self.training: #this posterior has multiple latent layers
-            logger.debug("kld for training posterior with more than one latent layer")
-            
+        #posterior_distribution: distribution with logits from each hierarchy level/layer
+        #posterior_samples: reparameterised output of posterior_distribution
+        if len(posterior_distribution)>1 and self.training:
+
             logit_list=[]
-            samples_last_layer_marginalized=[]
-            for i in range(len(posterior)):
-                #TODO clip values
-                approx_posterior_logit=posterior[i].logits
-                logit_list.append(approx_posterior_logit)
+            samples_marginalised=[]
+            for lvl in range(len(posterior_distribution)):
+
+                current_post_dist=posterior_distribution[lvl]
+                current_post_samples=posterior_samples[lvl]
+
+                logits=torch.clamp(current_post_dist.logits,min=-88,max=88)
+                logit_list.append(logits)
             
-                if i==len(posterior_samples)-1:
-                    approx_posterior_logit_marginalised=torch.sigmoid(approx_posterior_logit)
+                if lvl==len(posterior_distribution)-1:
+                    samples_marginalised.append(torch.sigmoid(logits))
                 else:
-                    posterior_sample=posterior_samples[i]
-                    #TODO the 0.5 here is a guess. The original code checks if
-                    #the posterior samples are greater than 0. It seems my
-                    #samples are all positive. Training bias? Mean x?
-                    approx_posterior_logit_marginalised=torch.where(posterior_sample>0.5,torch.ones(posterior_sample.size()),torch.zeros(posterior_sample.size()))
-                samples_last_layer_marginalized.append(approx_posterior_logit_marginalised)
+                    zero_mask=torch.zeros(current_post_samples.size())
+                    one_mask=torch.ones(current_post_samples.size())
+                    # posterior_distribution_sample>0.5,
+                    #TODO  what's happening here? some kind of binarisation for
+                    #the RBM? Is 0 correct or should my data be standardised
+                    #before that?
+                    #FIXME I have doubts that this is correct...
+                    #DVAE Eq11 - gradient of AE model. Does this explain it?
+                    post_sample_marginalised=torch.where(current_post_samples>0.0,one_mask,zero_mask)
+                    samples_marginalised.append(post_sample_marginalised)
+
             logits_concat=torch.cat(logit_list,1)
-            #TODO changed treatment wrt to DWave
-            # samples_last_layer_marginalized_concat=torch.cat(samples_last_layer_marginalized,1)
-            samples_last_layer_marginalized_concat=samples_last_layer_marginalized
-            # print(samples_last_layer_marginalized_concat.size())
-            kl_div_posterior=self.kl_div_posterior_gradient(approx_post_logits=logits_concat,approx_post_binary_samples=samples_last_layer_marginalized_concat)#DVAE Eq11 - gradient of AE model
-            # print(kl_div_posterior)            
-            kl_div_prior=self.kl_div_prior_gradient(approx_post_logits=logits_concat,approx_post_binary_samples=samples_last_layer_marginalized_concat)  #DVAE Eq12 - gradient of prior   
-            kld=kl_div_prior+kl_div_posterior 
+            samples_marginalised_concat=torch.cat(samples_marginalised,1)
+
+            kl_div_posterior_distribution=self.kl_div_posterior_gradient(
+                posterior_logits=logits_concat,
+                posterior_binary_samples=samples_marginalised_concat)
+                
+            kl_div_prior=self.kl_div_prior_gradient(
+                posterior_logits=logits_concat,
+                posterior_binary_samples=samples_marginalised_concat)  #DVAE Eq12 - gradient of prior   
+            kld=kl_div_prior+kl_div_posterior_distribution 
             return kld
         else: # either this posterior only has one latent layer or we are not looking at training
             # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
@@ -564,18 +601,15 @@ class DiVAE(AutoEncoderBase):
 
     def forward(self, in_data):
         logger.debug("forward")
-        #TODO this should yield posterior distribution and samples
-        #this now (200806) gives back "smoother" and samples from smoother. Not
-        #hierarchical yet.
-        posterior_distributions, posterior_samples = self.encoder.hierarchical_posterior(in_data.view(-1, 784))
+        posterior_distributions, posterior_samples = self.encoder.hierarchical_posterior(in_data.view(-1, self._input_dimension))
         posterior_samples_concat=torch.cat(posterior_samples,1)
-        
-        #take samples z and reconstruct output with decoder
-        output_activations = self.decoder.decode(posterior_samples_concat)
+        #take samples zeta and reconstruct output with decoder
         #TODO add bias to output_activations
-        # print(output_activations)
-        output_distribution = Bernoulli(output_activations)
-        output=torch.sigmoid(output_activations)
+        # self.train_bias = -np.log(1. / np.clip(self.config_train['mean_x'], 0.001, 0.999) - 1.).astype(np.float32)
+        # output_activations[0] = output_activations[0]+self.train_bias
+        output_activations = self.decoder.decode(posterior_samples_concat)
+        output_distribution = Bernoulli(logit=output_activations)
+        output=torch.sigmoid(output_distribution.logits)
         return output, output_activations, output_distribution, \
             posterior_distributions, posterior_samples
 

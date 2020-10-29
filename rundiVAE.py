@@ -63,7 +63,6 @@ def run(tuner=None, config=None):
 
     #set model properties
     model=None
-    print(config.activation_fct.lower())
     activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
     configString="_".join(str(i) for i in [config.type,config.dataType,config.NUM_EVTS_TRAIN,
                                         config.NUM_EVTS_TEST,config.BATCH_SIZE,
@@ -71,7 +70,7 @@ def run(tuner=None, config=None):
                                         config.num_latent_hierarchy_levels,
                                         config.num_latent_units,
                                         config.activation_fct])
-
+    #TODO wrap all these in a container class
     if config.type=="AE":
         model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
         
@@ -82,7 +81,8 @@ def run(tuner=None, config=None):
         model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
 
     elif config.type=="DiVAE":
-        model = DiVAE(config=config)
+        activation_fct=torch.nn.Tanh() 
+        model = DiVAE(input_dimension=input_dimension, config=config, activation_fct=activation_fct)
 
     else:
         logger.debug("ERROR Unknown Model Type")
@@ -90,8 +90,6 @@ def run(tuner=None, config=None):
     
     model.create_networks()
     model.print_model_info()
-    exit()
-
     optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 
     tuner.register_model(model)

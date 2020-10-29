@@ -37,7 +37,6 @@ class ModelTuner(object):
     	#size. Needed for model construction.
 		return self.train_loader.dataset[0][0].view(-1).size()[0]
 
-
 	def load_model(self,set_eval=True):
 		logger.info("Loading Model")
 		#attention: model must be defined already
@@ -84,7 +83,11 @@ class ModelTuner(object):
 			elif self._config.type=='DiVAE':
 				x_recon, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(x_true)
+				#TODO 201022 continue here
 				train_loss = self._model.loss(x_true, x_recon, output_activations, output_distribution, posterior_distribution, posterior_samples)
+				# if batch_idx%1==0:
+				# 	self._model.train_rbm()
+				# exit()
 			else:
 				logger.debug("ERROR Unknown Model Type")
 				raise NotImplementedError
@@ -139,7 +142,7 @@ class ModelTuner(object):
 				elif self._config.type=='DiVAE':
 					x_recon, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(x_true)
-					#TODO continue here
+
 					test_loss += self._model.loss(x_true, x_recon, output_activations, output_distribution, posterior_distribution, posterior_samples)
 				
 		test_loss /= len(self.test_loader.dataset)

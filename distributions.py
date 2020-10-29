@@ -101,16 +101,20 @@ class SpikeAndExponentialSmoother(Bernoulli):
     """ 
     Spike-and-exponential smoother from the original DVAE paper of Rolfe.
     """
-    def __init__(self, beta=3, **kwargs):
-        super(SpikeAndExponentialSmoother, self).__init__(beta, **kwargs)
+    def __init__(self,**kwargs):
+        super(SpikeAndExponentialSmoother, self).__init__(**kwargs)
 
     def reparameterise(self):
         #this is the approximate posterior probability
         q = torch.sigmoid(self.logits)
-        #this is a uniformly sampled random number
+        #clip the probabilities 
+        q = torch.clamp(q,min=1e-7,max=1.-1e-7)
+        #this is a tensor of uniformly sampled random number in [0,1)
         rho=torch.rand(q.size())
         zero_mask = zeros(q.size())
         ones=torch.ones(q.size())
+        #calculate ICDF of SpikeAndExponential
+        #TODO cross check this
         interior_log = ((rho+q-ones)/q)*(np.exp(self.beta)-1)+ones
         conditional_log = (1./self.beta)*torch.log(interior_log)
         zeta=torch.where(rho >= 1 - q, conditional_log, zero_mask)

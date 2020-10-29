@@ -72,7 +72,7 @@ class BasicDecoder(Network):
         return x
 
 class SimpleEncoder(Network):
-    def __init__(self,smoothing_distribution=SpikeAndExponentialSmoother(beta=4),num_latent_hierarchy_levels=4,**kwargs):
+    def __init__(self,smoothing_distribution=None,num_latent_hierarchy_levels=4,**kwargs):
         super(SimpleEncoder, self).__init__(**kwargs)
         self.smoothing_distribution=smoothing_distribution
 
@@ -117,13 +117,6 @@ class SimpleEncoder(Network):
         #TODO switched off hierarchy for now.
         # import pickle
         for i in range(self.num_latent_hierarchy_levels):
-            # network_input = tf.concat(axis=-1, values=[input] + post_samples)  # concat x, z0, z1, ...
-            # network = self.nets[i]
-            # param = network.build_network(network_input, is_training)                      # create network
-            # In the evaluation, we will use Bernoulli instead of continuous relaxations.
-           # if not is_training and self.dist_util in {MixtureNormal, Spike_and_Exp, MixtureGeneric}:
-          #      posterior_dist = FactorialBernoulliUtil([param[0]])
-          #  else:
             qprime=self.encode(x)
             # pickle.dump(qprime,open( "datasample.pkl", "wb" ))
             sigmoid=torch.nn.Sigmoid()
@@ -179,7 +172,7 @@ class HierarchicalEncoder(BasicEncoder):
         num_latent_units=100,
         num_det_units=200,
         num_det_layers=2,
-        use_gaussian=False, 
+        skip_latent_layer=False, 
         **kwargs):
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
@@ -211,13 +204,18 @@ class HierarchicalEncoder(BasicEncoder):
         #list of all networks in the hierarchy of the encoder
         self._networks=nn.ModuleList([])
         
-        #switch for HiVAE model
-        self.use_gaussian=use_gaussian
+        #skip_latent_layer: instead of having a single latent layer, use
+        #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy
+        #level. This gives num_latent_hierarchy_levels latent variables, which
+        #are then combined outside this class into one layer.
+        self.skip_latent_layer=skip_latent_layer
 
+        self.smoothing_distribution=SpikeAndExponentialSmoother
+        
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
         for lvl in  range(self.num_latent_hierarchy_levels):
-            network=self._create_hierarchy_network(level=lvl, skip_latent_layer=use_gaussian)
+            network=self._create_hierarchy_network(level=lvl, skip_latent_layer=skip_latent_layer)
             self._networks.append(network)
 
     def _create_hierarchy_network(self,level=0, skip_latent_layer=False):       
@@ -243,6 +241,42 @@ class HierarchicalEncoder(BasicEncoder):
 
         sequential=nn.Sequential(*moduleLayers)
         return sequential
+
+    def hierarchical_posterior(self, in_data=None, is_training=True):
+        """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
+            to num_latent_hierarchy_levels and each element in the list is a DistUtil object containing posterior distribution 
+            for the group of latent units in each hierarchy level. 
+
+        Args:
+            input: a tensor containing input tensor.
+            is_training: A boolean indicating whether we are building a training graph or evaluation graph.
+
+        Returns:
+            posterior: a list of DistUtil objects containing posterior parameters.
+            post_samples: A list of samples from all the levels in the hierarchy, i.e. q(z_k| z_{0<i<k}, x).
+        """
+        logger.debug("ERROR Encoder::hierarchical_posterior")
+        
+        posterior = []
+        post_samples = []
+        #loop hierarchy levels. apply previously defined network to input.
+        #input is concatenation of data and latent variables per layer.
+        for lvl in range(self.num_latent_hierarchy_levels):
+            #network of hierarchy level lvl 
+            current_net=self._networks[lvl]
+            #input to this level current_net
+            current_input=torch.cat([in_data]+post_samples,dim=-1)
+            #feed network and retrieve logit
+            logit=current_net(current_input)
+            #build the posterior distribution for this hierarchy
+            #TODO make beta steerable
+            #TODO this needs a switch: training smoothing, evaluation bernoulli
+            posterior_dist = self.smoothing_distribution(logit=logit,beta=4)
+            #construct the zeta values (reparameterised logits, posterior samples)
+            samples=posterior_dist.reparameterise()
+            posterior.append(posterior_dist)
+            post_samples.append(samples)
+        return posterior, post_samples
 
 class Decoder(BasicDecoder):
     def __init__(self,**kwargs):

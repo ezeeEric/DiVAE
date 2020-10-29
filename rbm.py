@@ -37,12 +37,14 @@ class Contrastive_Divergence(nn.Module):
 		# random weights and biases for all layers
 		# weights between visible and hidden nodes. 784x128 (that is 28x28 input
 		#size, 128 arbitrary choice)
+		# requires_grad=False : we calculate the weight update ourselves, not
+		# through backpropagation - or so I believe.
 		#arbitrarily scaled by 0.01 
-		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01)
+		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=False)
   		#all biases initialised to 0.5
-		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5)
+		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=False)
 		#applying a 0 bias to the hidden units
-		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden))
+		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=False)
 
 	def sample_from_hidden(self, probabilities_visible):
 		output_hidden = torch.matmul(probabilities_visible, self._weights) + self._hidden_bias
@@ -187,8 +189,9 @@ class RBM(nn.Module):
 		logger.debug("ERROR get_logZ_value")
 		return 0
 	
-	def __repr__(self):
-		return "RBM"
+	# def __repr__(self):
+	# 	parameter_string="\n".join([str(par) for par in self.__dict__.items()])
+	# 	return parameter_string
 
 	def energy(self, post_samples):
 		"""Energy Computation for RBM
