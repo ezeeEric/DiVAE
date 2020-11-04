@@ -60,6 +60,7 @@ def run(tuner=None, config=None):
     #load data, internally registers train and test dataloaders
     tuner.register_dataLoaders(*load_data(config=config))
     input_dimension=tuner.get_input_dimension()
+    train_ds_mean=tuner.get_train_dataset_mean()
 
     #set model properties
     model=None
@@ -69,7 +70,8 @@ def run(tuner=None, config=None):
                                         config.EPOCHS,config.LEARNING_RATE,
                                         config.num_latent_hierarchy_levels,
                                         config.num_latent_units,
-                                        config.activation_fct])
+                                        config.activation_fct,
+                                        config.tag])
     #TODO wrap all these in a container class
     if config.type=="AE":
         model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
@@ -83,17 +85,29 @@ def run(tuner=None, config=None):
     elif config.type=="DiVAE":
         activation_fct=torch.nn.Tanh() 
         model = DiVAE(input_dimension=input_dimension, config=config, activation_fct=activation_fct)
-
     else:
         logger.debug("ERROR Unknown Model Type")
         raise NotImplementedError
     
     model.create_networks()
+    model.set_dataset_mean(train_ds_mean,input_dimension)
+    #TODO avoid this
+    if config.type=="DiVAE": model.set_train_bias()
+
     model.print_model_info()
+    
     optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 
     tuner.register_model(model)
     tuner.register_optimiser(optimiser)
+    
+    #TODO move this around
+    if config.test_generate_samples:
+        tuner.load_model(set_eval=True)
+        from generate_samples import generate_samples
+        generate_samples(tuner._model)
+        return
+
 
     if not config.load_model:
         gif_frames=[]
@@ -118,6 +132,8 @@ def run(tuner=None, config=None):
         
         if config.save_model:
             tuner.save_model(configString)
+            tuner.save_rbm(configString)
+
     else:
         tuner.load_model(set_eval=True)
         

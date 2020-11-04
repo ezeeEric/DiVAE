@@ -3,18 +3,14 @@
 Discrete Variational Autoencoder Class Structures
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
-
-Based on work from Olivia di Matteo.
 """
-#TODO can go after debug
-import math
 
 import torch
 import torch.nn as nn
 import torch.distributions as dist
 import numpy as np
 
-from networks import Decoder,HierarchicalEncoder,SimpleEncoder,SimpleDecoder,BasicEncoder,BasicDecoder
+from networks import HierarchicalEncoder,BasicEncoder,BasicDecoder
 from rbm import RBM
 from distributions import Bernoulli
 
@@ -38,6 +34,7 @@ class AutoEncoderBase(nn.Module):
         self._latent_dimensions=config.num_latent_units
         self._input_dimension=input_dimension
         self._activation_fct=activation_fct
+        self._dataset_mean=None
 
     def type(self):
         return self._type
@@ -57,7 +54,15 @@ class AutoEncoderBase(nn.Module):
 
     def print_model_info(self):
         for par in self.__dict__.items():
-            logger.info(par)
+            if isinstance(par,torch.Tensor):
+                logger.info(par.shape)
+            else:
+                logger.info(par)
+
+    
+    def set_dataset_mean(self,mean,input_dimension):
+        self._dataset_mean=mean.view(-1,input_dimension)
+        return
 
 # Autoencoder implementation
 class AutoEncoder(AutoEncoderBase):
@@ -203,12 +208,6 @@ class HiVAE(AutoEncoder):
             num_det_layers=self._config.num_det_layers,
             skip_latent_layer=True)
 
-    # def _create_decoder(self):
-    #     logger.debug("_create_decoder")
-    #     return Decoder(node_sequence=self._decoder_nodes, 
-    #     activation_fct=self._activation_fct, 
-    #     output_activation_fct=nn.Sigmoid())
-
     #TODO should this be part of encoder?
     def _create_reparameteriser(self,act_fct=None):
         logger.debug("ERROR _create_encoder dummy implementation")
@@ -298,16 +297,29 @@ class DiVAE(AutoEncoderBase):
         
         #TODO this could be solved more elegantly. FOr example replace
         #"skip_latent layer" with something actually useful 
-        assert self.num_latent_units==self.num_det_units, "Number of units in last det encoder layer must be the same as num latent unit"
+        # assert self.num_latent_units==self.num_det_units, "Number of units in last det encoder layer must be the same as num latent unit"
 
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
         self.num_det_layers=self._config.num_det_layers
+
+        self._train_bias=None
+
+    def set_train_bias(self):
+        # self.train_bias = -np.log(1. / np.clip(self.config_train['mean_x'], 0.001, 0.999) - 1.).astype(np.float32)
+        clipped_mean=torch.clamp(self._dataset_mean,0.001,0.999).detach()
+        self._train_bias=-torch.log(1/clipped_mean-1)
+        # self._train_bias.detach()
+        return
 
     def create_networks(self):
         logger.debug("Creating Network Structures")
         self.encoder=self._create_encoder()
         self.prior=self._create_prior()
         self.decoder=self._create_decoder()
+        # print(self.encoder)
+        # print(self.decoder)
+        # print(self.prior)
+        # exit()
         return
     
     def _create_encoder(self):
@@ -318,7 +330,7 @@ class DiVAE(AutoEncoderBase):
             num_latent_units=self.num_latent_units,
             num_det_units=self.num_det_units,
             num_det_layers=self.num_det_layers,
-            skip_latent_layer=True)
+            skip_latent_layer=False)
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
@@ -337,7 +349,6 @@ class DiVAE(AutoEncoderBase):
     
     def train_rbm(self):
         self.prior.train_sampler()
-
         return
 
     def loss(self, in_data, output, output_activations, output_distribution, posterior_distribution,posterior_samples):
@@ -379,10 +390,7 @@ class DiVAE(AutoEncoderBase):
         neg_elbo=torch.mean(neg_elbo_per_sample)    
 
         #include the weight decay regularisation in the loss to penalise complexity
-        loss=neg_elbo#+weight_decay_loss
-        # return loss
-        if math.isnan(loss):
-            raise ValueError("Loss is NAN - KL Divergence diverged")       
+        loss=neg_elbo#+weight_decay_loss  
         return loss
 
     def kl_div_prior_gradient(self, posterior_logits, posterior_binary_samples):
@@ -437,6 +445,7 @@ class DiVAE(AutoEncoderBase):
         rbm_samples=self.prior.get_samples_kld(approx_post_samples=positive_samples_left)
         negative_samples=rbm_samples.detach()
 
+        # print(self.prior.get_weights())
         n_split=negative_samples.size()[1]//2
         negative_samples_left,negative_samples_right=torch.split(negative_samples,split_size_or_sections=int(n_split),dim=1)
         neg_first_term=torch.matmul(negative_samples_left,self.prior.get_weights())*negative_samples_right
@@ -581,33 +590,44 @@ class DiVAE(AutoEncoderBase):
             return 0
 
     def generate_samples(self, n_samples=100):
-        logger.debug("ERROR generate_samples")
         """ It will randomly sample from the model using ancestral sampling. It first generates samples from p(z_0).
         Then, it generates samples from the hierarchical distributions p(z_j|z_{i < j}). Finally, it forms p(x | z_i).  
         
          Args:
              num_samples: an integer value representing the number of samples that will be generated by the model.
         """
-        logger.debug("ERROR generate_samples")
-        prior_samples = self.prior.get_samples(n_samples)
+        		
+		#how many times should ancestral sampling be run
+		#n_samples
+        prior_samples=[]
+        for i in range(0,n_samples):
+            prior_sample = self.prior.get_samples(num_latent_units=self.num_latent_units,
+            n_gibbs_sampling_steps=10, 
+            sampling_mode="ancestral")
+            prior_sample = torch.cat(prior_sample)
+            prior_samples.append(prior_sample)
+        prior_samples=torch.stack(prior_samples)
         # prior_samples = tf.slice(prior_samples, [0, 0], [num_samples, -1])
-        
-        output_samples = self.decoder.decode_posterior_sample(prior_samples)
+        output_activations = self.decoder.decode(prior_samples)
+        output_activations = output_activations+self._train_bias
+        output_distribution = Bernoulli(logit=output_activations)
+        output=torch.sigmoid(output_distribution.logits)
         # output_activations[0] = output_activations[0] + self.train_bias
         # output_dist = FactorialBernoulliUtil(output_activations)
         # output_samples = tf.nn.sigmoid(output_dist.logit_mu)
         # print("--- ","end VAE::generate_samples()")
-        return output_samples             
+        return output            
 
     def forward(self, in_data):
         logger.debug("forward")
-        posterior_distributions, posterior_samples = self.encoder.hierarchical_posterior(in_data.view(-1, self._input_dimension))
+        #TODO study if this does good things
+        in_data_centered=in_data.view(-1, self._input_dimension)-self._dataset_mean
+        posterior_distributions, posterior_samples = self.encoder.hierarchical_posterior(in_data_centered)
         posterior_samples_concat=torch.cat(posterior_samples,1)
         #take samples zeta and reconstruct output with decoder
-        #TODO add bias to output_activations
-        # self.train_bias = -np.log(1. / np.clip(self.config_train['mean_x'], 0.001, 0.999) - 1.).astype(np.float32)
-        # output_activations[0] = output_activations[0]+self.train_bias
         output_activations = self.decoder.decode(posterior_samples_concat)
+        #TODO why is this so crucial? Maybe to do with cut off in other todo?
+        output_activations =output_activations+self._train_bias
         output_distribution = Bernoulli(logit=output_activations)
         output=torch.sigmoid(output_distribution.logits)
         return output, output_activations, output_distribution, \

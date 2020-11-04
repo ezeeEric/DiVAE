@@ -39,13 +39,20 @@ class Contrastive_Divergence(nn.Module):
 		#size, 128 arbitrary choice)
 		# requires_grad=False : we calculate the weight update ourselves, not
 		# through backpropagation - or so I believe.
+		require_grad=True
 		#arbitrarily scaled by 0.01 
-		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=False)
-  		#all biases initialised to 0.5
-		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=False)
-		#applying a 0 bias to the hidden units
-		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=False)
+		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=require_grad)
+  		# #all biases initialised to 0.5
+		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=require_grad)
+		# #applying a 0 bias to the hidden units
+		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=require_grad)
 
+		# self._weights = torch.randn(n_visible, n_hidden) * 0.01
+  		# #all biases initialised to 0.5
+		# self._visible_bias = torch.ones(n_visible) * 0.5
+		# #applying a 0 bias to the hidden units
+		# self._hidden_bias = torch.zeros(n_hidden)
+		
 	def sample_from_hidden(self, probabilities_visible):
 		output_hidden = torch.matmul(probabilities_visible, self._weights) + self._hidden_bias
 		probabilities_hidden = torch.sigmoid(output_hidden)
@@ -65,6 +72,58 @@ class Contrastive_Divergence(nn.Module):
 			#When using CDn, only the final update of the hidden units should use the probability.
 			output_hidden = (probabilities_hidden >= torch.rand(self.n_hidden)).float()
 		return probabilities_visible,probabilities_hidden
+
+	def contrastive_divergence_fixed_hid_vis(self, in_data):
+		# logit_list=[k.logits.detach() for k in in_data]
+		rbm_units_concat=torch.cat(in_data,dim=1).detach()
+		
+		n_split=rbm_units_concat.size()[1]//2
+		positive_samples_left,positive_samples_right=torch.split(rbm_units_concat,split_size_or_sections=int(n_split),dim=1)
+		# print(positive_samples_left)
+		# print(positive_samples_right)
+		# # exit()
+		output_visible_pos=positive_samples_left
+		
+		# probabilities_hid_pos=torch.sigmoid(positive_samples_left)
+		# probabilities_hidden_pos = self.sample_from_hidden(input_data)
+		# output_hidden_pos = (probabilities_hidden_pos >= torch.rand(self.n_hidden)).float()
+		output_hidden_pos = positive_samples_right
+		#TODO use sigmoid() and bernoulli here
+		associations_pos = torch.matmul(output_visible_pos.t(), output_hidden_pos)
+
+		probabilities_visible_neg,probabilities_hidden_neg=self.gibbs_sampling(output_hidden_pos)
+		# this is <pipj>_recon
+		associations_neg = torch.matmul(probabilities_visible_neg.t(), probabilities_hidden_neg)
+
+		## Update parameters
+		# first iteration, this stays 0
+		self.weights_update *= self.momentum_coefficient
+		self.weights_update += (associations_pos - associations_neg)
+		
+		#TODO is this correct? L2 regulariation.
+		#https://stats.stackexchange.com/questions/29130/difference-between-neural-net-weight-decay-and-learning-rate
+		#learning rate should be multiplied to this weight decay update
+		#training turns out much more successful!
+		self.weights_update -= self._weights * self.weight_cost  # L2 weight decay
+
+		## simplified version of the same learning rule that uses the states of individual units
+		self.visible_bias_update *= self.momentum_coefficient
+		self.visible_bias_update += torch.sum(output_visible_pos - probabilities_visible_neg, dim=0)
+
+		self.hidden_bias_update *= self.momentum_coefficient
+		self.hidden_bias_update += torch.sum(output_hidden_pos - probabilities_hidden_neg, dim=0)
+
+		# batch_size = input_data.size(0)
+
+		self._weights += self.weights_update * self.learning_rate #/ batch_size
+		self._visible_bias += self.visible_bias_update * self.learning_rate #/ batch_size
+		self._hidden_bias += self.hidden_bias_update * self.learning_rate #/ batch_size
+
+		# Compute reconstruction error
+		#loss = torch.sum((input_data - probabilities_visible_neg)**2)
+		loss_fct = torch.nn.MSELoss(reduction='none')
+		loss = loss_fct(output_visible_pos, probabilities_visible_neg).sum()
+		return loss
 
 	def contrastive_divergence(self, input_data):
 
@@ -115,7 +174,7 @@ class Contrastive_Divergence(nn.Module):
 		return loss
 
 class RBM(nn.Module):
-	def __init__(self, n_visible, n_hidden, learning_rate=1e-3, n_gibbs_sampling_steps = 5, **kwargs):
+	def __init__(self, n_visible, n_hidden, learning_rate=1e-3, n_gibbs_sampling_steps = 1, **kwargs):
 		super(RBM, self).__init__(**kwargs)
 
 		r""" A class for an RBM that is co-trained with the rest of a VAE.
@@ -153,21 +212,114 @@ class RBM(nn.Module):
 	
 	def get_weights(self):
 		return self.sampler._weights
+		
+	def get_samples_flat_gibbs(self, num_latent_units=100):
+		#simple gibbs sampling steps with randomly initialised values
+		final_sample=[]
+		#z0 from uniform random
+		z0=-166*torch.rand([num_latent_units])+88
+		z1=-166*torch.rand([num_latent_units])+88
+		z2=-166*torch.rand([num_latent_units])+88
+		z3=-166*torch.rand([num_latent_units])+88
+		# init_samples_left=torch.cat([z0,z1])
+		# init_samples_right=torch.cat([z2,z3])
+		
+		# left=init_samples_left
+		# right=init_samples_right
+		# for gibbs_step in range(0,2000):
+		# 	right=self.sampler.sample_from_hidden(left)
+		# 	left=self.sampler.sample_from_visible(right)
 
-	def get_samples(self, samples=None, random=False):
+		# z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_units))
+		# z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_units))
+		# final_sample=[z0_fin,z1_fin,z2_fin,z3_fin]
+		final_sample=[z0,z1,z2,z3]
+
+		return final_sample
+
+	def get_samples(self, num_latent_units=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
 		logger.debug("generate_samples")
-		if random:
-			samples=torch.rand(samples.size())
-		# feed data to hidden layer and sample response
-		# we feed binarised data sampled from MNIST
-		hidden=self.sampler.sample_from_hidden(samples)
-		visible=self.sampler.sample_from_visible(hidden)
-		return visible
+		#this is supposed to be like the ancestral sampling described in DWave
+		#package. Unsure if it's the right procedure.
+		assert sampling_mode=="gibbs_ancestral" \
+			or sampling_mode=="gibbs_flat" \
+			or sampling_mode=="random", "Unknown sampling mode"
+
+		#TODO the range of this is taken from the clamping of the posterior
+		#samples to -88,88. Where is this coming from? Check the values
+		z0=-166*torch.rand([num_latent_units])+88
+		z1=-166*torch.rand([num_latent_units])+88
+		z2=-166*torch.rand([num_latent_units])+88
+		z3=-166*torch.rand([num_latent_units])+88
+		
+		#flat, uniform sampled z0, no dependence. Straight to decoder. Does not
+		#look pretty.
+		if sampling_mode=="random":
+			return [z0,z1,z2,z3]
+		
+		init_samples_left=torch.cat([z0,z1])
+		init_samples_right=torch.cat([z2,z3])
+		
+		left=init_samples_left
+		right=init_samples_right
+		for gibbs_step in range(0,n_gibbs_sampling_steps):
+			right=self.sampler.sample_from_hidden(left)
+			left=self.sampler.sample_from_visible(right)
+
+		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_units))
+		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_units))
+		
+		if sampling_mode=="gibbs_flat":
+			return [z0_fin,z1_fin,z2_fin,z3_fin]
+		
+		final_sample=[]
+		final_sample.append(z0_fin)
+	
+		#z1 from uniform random
+		init_samples_left=torch.cat([z0_fin,z1])
+		init_samples_right=torch.cat([z2,z3])
+		
+		left=init_samples_left
+		right=init_samples_right
+		for gibbs_step in range(0,n_gibbs_sampling_steps):
+			right=self.sampler.sample_from_hidden(left)
+			left=self.sampler.sample_from_visible(right)
+		
+		_,z1_fin=torch.split(left,split_size_or_sections=int(num_latent_units))
+		final_sample.append(z1_fin)
+
+		init_samples_left=torch.cat([z0_fin,z1_fin])
+		init_samples_right=torch.cat([z2,z3])
+
+		left=init_samples_left
+		right=init_samples_right
+		for gibbs_step in range(0,n_gibbs_sampling_steps):
+			right=self.sampler.sample_from_hidden(left)
+			left=self.sampler.sample_from_visible(right)
+
+		z2_fin,_=torch.split(right,split_size_or_sections=int(num_latent_units))
+		final_sample.append(z2_fin)
+
+		init_samples_left=torch.cat([z0_fin,z1_fin])
+		init_samples_right=torch.cat([z2_fin,z3])
+
+		left=init_samples_left
+		right=init_samples_right
+		for gibbs_step in range(0,n_gibbs_sampling_steps):
+			right=self.sampler.sample_from_hidden(left)
+			left=self.sampler.sample_from_visible(right)
+
+		_,z3_fin=torch.split(right,split_size_or_sections=int(num_latent_units))
+		final_sample.append(z3_fin)
+
+		return final_sample
 	
 	def get_samples_kld(self, approx_post_samples=None):
 		logger.debug("generate_samples")
 		# samples=torch.rand([self.n_visible,self.n_hidden])
 		samples=approx_post_samples.detach()
+		# print(samples.shape)
+		# exit()
 		# feed data to hidden layer and sample response
 		# we feed binarised data sampled from MNIST
 		hidden=self.sampler.sample_from_hidden(samples)
@@ -177,17 +329,27 @@ class RBM(nn.Module):
 		rbm_samples=torch.cat([visible,hidden],dim=1)
 		return rbm_samples
 
-	def train_sampler(self, data):
+	def train_sampler(self, in_data):
 		""" Use sampler to train rbm. Data is the current batch."""
 		loss=0
-		for x in data:
-			img=x.view(1, x.size()[0])
+		for img in in_data:
 			loss+=self.sampler.contrastive_divergence(img)
 		return loss
-
+	
+	def full_training(self, in_data, epoch):
+		""" Use sampler to train rbm. Data is the current batch."""
+		loss = 0    
+		loss=self.sampler.contrastive_divergence_fixed_hid_vis(in_data)
+		# bdata=in_data.view(-1,input_dim)
+		# loss = self.train_sampler(in_data=bdata)
+		# loss /= len(in_data.dataset)
+		logger.info('Epoch {0}. Loss={1:.2f}'.format(epoch,loss))
+		return
+			
 	def get_logZ_value(self):
 		logger.debug("ERROR get_logZ_value")
-		return 0
+		#TODO Figure 10 Rolfe
+		return 33.65
 	
 	# def __repr__(self):
 	# 	parameter_string="\n".join([str(par) for par in self.__dict__.items()])
@@ -198,16 +360,16 @@ class RBM(nn.Module):
 		vis*b_vis+hid*b_hid+vis*w*hid
 		Takes posterior samples as input
 		"""
-		#v=post_samples
-		#TODO is this randomised enough when used in VAE? Practical guide
-		#recommends sampling... (Sec 3.4)
-		print(post_samples.size())
-		print(self.get_visible_bias().size())
-		e_vis=torch.matmul(post_samples,self.get_visible_bias())
-		#h
-		h=self.sampler.sample_from_hidden(post_samples)
+		post_samples_concat=torch.cat(post_samples,dim=1)
+		n_split=post_samples_concat.size()[1]//2
+		post_samples_left,post_samples_right=torch.split(post_samples_concat,split_size_or_sections=int(n_split),dim=1)
+
+		v=post_samples_left
+		h=post_samples_right
+
+		e_vis=torch.matmul(v,self.get_visible_bias())
 		e_hid=torch.matmul(h,self.get_hidden_bias())
-		e_mix=torch.sum(torch.matmul(post_samples,self.get_weights())*h,axis=1)
+		e_mix=torch.sum(torch.matmul(v,self.get_weights())*h,axis=1)
 		energy=-e_vis-e_hid-e_mix
 		return energy
 
@@ -257,20 +419,21 @@ if __name__=="__main__":
 		torch.save(rbm.sampler,f)
 		f.close()
 	else:
-		f=open("./output/rbm_test_200827_wdecay_{0}.pt".format(config_string),'rb')
-		rbm.sampler=torch.load(f)
+		# f=open("./output/rbm_test_200827_wdecay_{0}.pt".format(config_string),'rb')
+		f=open("./output/divae_mnist/rbm_DiVAE_mnist_500_-1_100_1_0.001_4_100_RELU_default_201104.pt",'rb')
+		rbm=torch.load(f)
+# ))
+		print(rbm)
 		f.close()
 	
 	# # ########## EXTRACT FEATURES ##########
 	logger.info("Sampling from RBM")
 	for batch_idx, (x_true, label) in enumerate(test_loader):
-		print(x_true.size())
-		print(label)
 		y=rbm.get_samples(x_true.view(-1,VISIBLE_UNITS))
-		energy=rbm.energy(x_true.view(-1,VISIBLE_UNITS))
-		print(energy)
-		cross_entropy=rbm.cross_entropy(x_true.view(-1,VISIBLE_UNITS))
-		print(cross_entropy)
+		# energy=rbm.energy(x_true.view(-1,VISIBLE_UNITS))
+		# print(energy)
+		# cross_entropy=rbm.cross_entropy(x_true.view(-1,VISIBLE_UNITS))
+		# print(cross_entropy)
 		# use a random picture for sanity checks
 		# samples=torch.rand(x_true.view(-1,VISIBLE_UNITS).size())
 		# yrnd=rbm.get_samples(x_true.view(-1,VISIBLE_UNITS), random=True)
@@ -280,7 +443,7 @@ if __name__=="__main__":
 	print(y.size())
 	from helpers import plot_MNIST_output
 
-	plot_MNIST_output(x_true,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))
+	# plot_MNIST_output(x_true,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))
 	# plot_MNIST_output(x_true,yrnd, n_samples=5, output="./output/rbm_test_200827_rnd_{0}.png".format(config_string))
 
 	# train_features = np.zeros((len(train_dataset), HIDDEN_UNITS))

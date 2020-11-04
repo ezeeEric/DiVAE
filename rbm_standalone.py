@@ -193,11 +193,11 @@ class RBM(Distribution):
 		#v=post_samples
 		#TODO is this randomised enough when used in VAE? Practical guide
 		#recommends sampling... (Sec 3.4)
-		e_vis=torch.matmul(post_samples,self.sampler.get_visible_bias())
+		e_vis=torch.matmul(post_samples,self.get_visible_bias())
 		#h
 		h=self.sampler.sample_from_hidden(post_samples)
-		e_hid=torch.matmul(h,self.sampler.get_hidden_bias())
-		e_mix=torch.sum(torch.matmul(post_samples,self.sampler.get_weights())*h,axis=1)
+		e_hid=torch.matmul(h,self.get_hidden_bias())
+		e_mix=torch.sum(torch.matmul(post_samples,self.get_weights())*h,axis=1)
 		energy=-e_vis-e_hid-e_mix
 		return energy
 
@@ -218,10 +218,10 @@ if __name__=="__main__":
 	VISIBLE_UNITS = 784  # 28 x 28 images
 	HIDDEN_UNITS = 128
 	N_GIBBS_SAMPLING_STEPS = 10
-	EPOCHS = 6
-	N_EVENTS_TRAIN=-1
+	EPOCHS = 1
+	N_EVENTS_TRAIN=100
 	N_EVENTS_TEST=-1
-	do_train=False
+	do_train=True
 	config_string="_".join(map(str,[N_EVENTS_TRAIN,EPOCHS,N_GIBBS_SAMPLING_STEPS]))
 
 	from data.loadMNIST import loadMNIST

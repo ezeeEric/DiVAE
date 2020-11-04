@@ -25,6 +25,14 @@ class ModelTuner(object):
 		torch.save(self._model.state_dict(),f)
 		f.close()
 		return
+	
+	def save_rbm(self,config_string='test'):
+		logger.info("Saving RBM")
+		f=open(os.path.join(self.outpath,"rbm_{0}.pt".format(config_string)),'wb')
+		print(self._model.prior)
+		torch.save(self._model.prior,f)
+		f.close()
+		return
 
 	def register_dataLoaders(self,train_loader,test_loader):
 		self.train_loader=train_loader
@@ -36,6 +44,13 @@ class ModelTuner(object):
     	#this gets the first member of the dataset, flattens it and return its
     	#size. Needed for model construction.
 		return self.train_loader.dataset[0][0].view(-1).size()[0]
+	
+	def get_train_dataset_mean(self):
+		assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
+		imgList=[]
+		for data, _ in self.train_loader.dataset:
+			imgList.append(data)
+		return torch.mean(torch.stack(imgList),dim=0)
 
 	def load_model(self,set_eval=True):
 		logger.info("Loading Model")
@@ -83,8 +98,10 @@ class ModelTuner(object):
 			elif self._config.type=='DiVAE':
 				x_recon, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(x_true)
-				#TODO 201022 continue here
 				train_loss = self._model.loss(x_true, x_recon, output_activations, output_distribution, posterior_distribution, posterior_samples)
+				# print(self._model.prior.energy(posterior_samples)[0])
+				# if batch_idx%2==0:
+				# 	self._model.prior.full_training(in_data=posterior_samples,epoch=epoch)
 				# if batch_idx%1==0:
 				# 	self._model.train_rbm()
 				# exit()
@@ -142,8 +159,7 @@ class ModelTuner(object):
 				elif self._config.type=='DiVAE':
 					x_recon, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(x_true)
-
-					test_loss += self._model.loss(x_true, x_recon, output_activations, output_distribution, posterior_distribution, posterior_samples)
+					# test_loss += self._model.loss(x_true, x_recon, output_activations, output_distribution, posterior_distribution, posterior_samples)
 				
 		test_loss /= len(self.test_loader.dataset)
 		logger.info("Test Loss: {0}".format(test_loss))
