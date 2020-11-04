@@ -268,3 +268,32 @@ def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_
 #     fig = plt.gcf()
 #   #  plt.show()
 #     fig.savefig(outdir)
+
+def plot_rbm_output(x_true, n_samples=100, output="./output/testVAE.png"):
+    n_cols=5
+    n_rows=int(n_samples/n_cols)
+    fig,ax = plt.subplots(figsize=(n_cols,n_rows),nrows=n_rows, ncols=n_cols)
+    ax_idx=0
+    print(x_true)
+    for i in range(n_samples):
+    # for i in range(n_rows):
+    #     for j in range(n_cols): 
+        if ax_idx%n_cols==0:
+            ax_idx+=1
+        current_ax=plt.subplot(n_rows, n_cols , i+1)
+        plt.imshow(x_true[i].reshape((28, 28)))
+        plt.gray()
+        current_ax.get_xaxis().set_visible(False)
+        current_ax .get_yaxis().set_visible(False)
+    fig = plt.gcf()
+    # fig.tight_layout()
+    fig.savefig(output, bbox_inches='tight')
+#         ax = plt.subplot(, n_samples, i + 1)
+#         plt.imshow(x_true[i].reshape((28, 28)))
+#         plt.gray()
+#         ax.get_xaxis().set_visible(False)
+#         ax.get_yaxis().set_visible(False)
+#     fig = plt.gcf()
+#   #  plt.show()
+#     fig.savefig(output)
+# plot_rbm_output(1)
