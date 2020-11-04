@@ -29,7 +29,7 @@ def convertStringList(strList):
             floatVal=int(floatVal) if floatVal.is_integer() else floatVal
             newList.append(floatVal)
         else:
-            newList.append(val)
+            newList.append(it)
     return newList
 
 class Configaro(object):
