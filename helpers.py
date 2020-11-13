@@ -264,17 +264,11 @@ def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_
         if i==0:
             ax.text(x=0,y=35,s="Epoch {0}/{1}. Train Loss {2:.2f}. Test Loss {3:.2f}.".format(epoch,max_epochs,train_loss,test_loss))
 
-
-#     fig = plt.gcf()
-#   #  plt.show()
-#     fig.savefig(outdir)
-
 def plot_rbm_output(x_true, n_samples=100, output="./output/testVAE.png"):
     n_cols=5
     n_rows=int(n_samples/n_cols)
     fig,ax = plt.subplots(figsize=(n_cols,n_rows),nrows=n_rows, ncols=n_cols)
     ax_idx=0
-    print(x_true)
     for i in range(n_samples):
     # for i in range(n_rows):
     #     for j in range(n_cols): 

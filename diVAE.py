@@ -157,6 +157,17 @@ class VariationalAutoEncoder(AutoEncoder):
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
         
+    def generate_samples(self):
+        """ 
+        Similar to fwd. only skip encoding part...
+        """
+        mu = self._reparam_layers['mu'](z)
+        logvar = self._reparam_layers['var'](z)
+        eps = torch.randn_like(mu)
+        zeta = self.reparameterize(mu, logvar)
+        x_recon = self.decoder.decode(zeta)
+        return x_recon, mu, logvar, zeta
+
     def loss(self, x, x_recon, mu, logvar):
         logger.debug("VAE Loss")
         # Autoencoding term
@@ -441,8 +452,12 @@ class DiVAE(AutoEncoderBase):
         #samples from rbm are labelled negative
 
         #rbm_samples Tensor("zeros:0", shape=(200, 200), dtype=float32)
+        #this returns the full RBM set: left and right units concatenated
+
         #TODO What are these samples here?
-        rbm_samples=self.prior.get_samples_kld(approx_post_samples=positive_samples_left)
+        #TODO what's the impact of doing gibbs sampling here? does this make
+        #sense?
+        rbm_samples=self.prior.get_samples_kld(approx_post_samples=positive_samples_left,n_gibbs_sampling_steps=1)
         negative_samples=rbm_samples.detach()
 
         # print(self.prior.get_weights())
@@ -589,6 +604,30 @@ class DiVAE(AutoEncoderBase):
             # return cross_entropy - entropy_reduced
             return 0
 
+    def generate_samples_per_gibbs(self, init_left_samples=None, init_right_samples=None, steps=20):
+        output_per_step=[]
+        n_samples=5
+        for step in range(0,steps):
+            prior_samples=[]
+            for i in range(0,n_samples):
+                prior_sample = self.prior.get_samples_per_gibbs(
+                    init_left_samples=init_left_samples.detach(),
+                    init_right_samples=init_right_samples.detach(),
+                    n_gibbs_sampling_steps=100
+                )
+                prior_sample = torch.cat(prior_sample)
+                prior_samples.append(prior_sample)
+
+            prior_samples=torch.stack(prior_samples)
+            # prior_samples = tf.slice(prior_samples, [0, 0], [num_samples, -1])
+            output_activations = self.decoder.decode(prior_samples)
+            output_activations = output_activations+self._train_bias
+            output_distribution = Bernoulli(logit=output_activations)
+            output=torch.sigmoid(output_distribution.logits)
+            output_per_step.append(output)
+        return output_per_step
+
+
     def generate_samples(self, n_samples=100):
         """ It will randomly sample from the model using ancestral sampling. It first generates samples from p(z_0).
         Then, it generates samples from the hierarchical distributions p(z_j|z_{i < j}). Finally, it forms p(x | z_i).  
@@ -601,9 +640,10 @@ class DiVAE(AutoEncoderBase):
 		#n_samples
         prior_samples=[]
         for i in range(0,n_samples):
-            prior_sample = self.prior.get_samples(num_latent_units=self.num_latent_units,
-            n_gibbs_sampling_steps=10, 
-            sampling_mode="ancestral")
+            prior_sample = self.prior.get_samples(
+                num_latent_units=self.num_latent_units,
+                n_gibbs_sampling_steps=100, 
+                sampling_mode="gibbs_ancestral")
             prior_sample = torch.cat(prior_sample)
             prior_samples.append(prior_sample)
         prior_samples=torch.stack(prior_samples)

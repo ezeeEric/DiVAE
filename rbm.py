@@ -212,31 +212,20 @@ class RBM(nn.Module):
 	
 	def get_weights(self):
 		return self.sampler._weights
+	
+	def get_samples_per_gibbs(self, init_left_samples=None, init_right_samples=None, n_gibbs_sampling_steps=10):
+		num_latent_units=100
+		left=init_left_samples
+		right=init_right_samples
+		for gibbs_step in range(0,n_gibbs_sampling_steps):
+			right=self.sampler.sample_from_hidden(left)
+			left=self.sampler.sample_from_visible(right)
+
+		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_units))
+		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_units))
 		
-	def get_samples_flat_gibbs(self, num_latent_units=100):
-		#simple gibbs sampling steps with randomly initialised values
-		final_sample=[]
-		#z0 from uniform random
-		z0=-166*torch.rand([num_latent_units])+88
-		z1=-166*torch.rand([num_latent_units])+88
-		z2=-166*torch.rand([num_latent_units])+88
-		z3=-166*torch.rand([num_latent_units])+88
-		# init_samples_left=torch.cat([z0,z1])
-		# init_samples_right=torch.cat([z2,z3])
-		
-		# left=init_samples_left
-		# right=init_samples_right
-		# for gibbs_step in range(0,2000):
-		# 	right=self.sampler.sample_from_hidden(left)
-		# 	left=self.sampler.sample_from_visible(right)
-
-		# z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_units))
-		# z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_units))
-		# final_sample=[z0_fin,z1_fin,z2_fin,z3_fin]
-		final_sample=[z0,z1,z2,z3]
-
-		return final_sample
-
+		return [z0_fin,z1_fin,z2_fin,z3_fin]
+	
 	def get_samples(self, num_latent_units=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
 		logger.debug("generate_samples")
 		#this is supposed to be like the ancestral sampling described in DWave
@@ -247,6 +236,7 @@ class RBM(nn.Module):
 
 		#TODO the range of this is taken from the clamping of the posterior
 		#samples to -88,88. Where is this coming from? Check the values
+		#TODO check if this is actually the right sampling procedure...
 		z0=-166*torch.rand([num_latent_units])+88
 		z1=-166*torch.rand([num_latent_units])+88
 		z2=-166*torch.rand([num_latent_units])+88
@@ -311,26 +301,24 @@ class RBM(nn.Module):
 
 		_,z3_fin=torch.split(right,split_size_or_sections=int(num_latent_units))
 		final_sample.append(z3_fin)
-
+		
 		return final_sample
 	
-	def get_samples_kld(self, approx_post_samples=None):
+	def get_samples_kld(self, approx_post_samples=None, n_gibbs_sampling_steps=10):
 		logger.debug("generate_samples")
-		# samples=torch.rand([self.n_visible,self.n_hidden])
-		samples=approx_post_samples.detach()
-		# print(samples.shape)
-		# exit()
 		# feed data to hidden layer and sample response
 		# we feed binarised data sampled from MNIST
-		hidden=self.sampler.sample_from_hidden(samples)
-		visible=self.sampler.sample_from_visible(hidden)
-		# print(hidden.size())
-		# print(visible.size())
+		visible=approx_post_samples.detach()
+		hidden=None
+		for gibbs_step in range(0,n_gibbs_sampling_steps):
+			hidden=self.sampler.sample_from_hidden(visible)
+			visible=self.sampler.sample_from_visible(hidden)
+
 		rbm_samples=torch.cat([visible,hidden],dim=1)
 		return rbm_samples
 
 	def train_sampler(self, in_data):
-		""" Use sampler to train rbm. Data is the current batch."""
+		""" Use sampler to train rbm. dData is the current batch."""
 		loss=0
 		for img in in_data:
 			loss+=self.sampler.contrastive_divergence(img)
