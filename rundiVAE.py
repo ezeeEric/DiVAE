@@ -21,6 +21,7 @@ import gif
 from configaro import Configaro
 from modelTuner import ModelTuner
 from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
+from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images
 from data.loadMNIST import loadMNIST
 from data.loadCaloGAN import loadCalorimeterData
@@ -34,7 +35,8 @@ def load_data(config=None):
             batch_size=config.BATCH_SIZE,
             num_evts_train=config.NUM_EVTS_TRAIN,
             num_evts_test=config.NUM_EVTS_TEST, 
-            binarise=config.binarise_dataset)
+            binarise=config.binarise_dataset,
+            fromPkl=config.load_data_from_pkl)
 
     elif config.dataType.lower()=="calo":
         inFiles={
@@ -62,6 +64,16 @@ def run(tuner=None, config=None):
     input_dimension=tuner.get_input_dimension()
     train_ds_mean=tuner.get_train_dataset_mean()
 
+#To speed up chain. Postprocessing involves loop over data for normalisation.
+#Load that data already prepped.
+    import pickle
+    dataFile=open("/Users/drdre/inputz/MNIST/preprocessed/full.pkl","rb")
+    train_loader=pickle.load(dataFile)
+    test_loader =pickle.load(dataFile)
+    dataFile.close()
+    return train_loader, test_loader
+
+
     #set model properties
     model=None
     activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
@@ -78,6 +90,9 @@ def run(tuner=None, config=None):
         
     elif config.type=="VAE":
         model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
+    
+    elif config.type=="cVAE":
+        model = ConditionalVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
     elif config.type=="HiVAE":
         model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
@@ -91,7 +106,7 @@ def run(tuner=None, config=None):
     
     model.create_networks()
     model.set_dataset_mean(train_ds_mean,input_dimension)
-    #TODO avoid this
+    #TODO avoid this if statement
     if config.type=="DiVAE": model.set_train_bias()
 
     model.print_model_info()
@@ -104,10 +119,15 @@ def run(tuner=None, config=None):
     #TODO move this around
     if config.test_generate_samples:
         tuner.load_model(set_eval=True)
-        from generate_samples import generate_samples
-        generate_samples(tuner._model)
+        from generate_samples import generate_samples,generate_iterative_samples
+        # generate_samples(tuner._model)
+        generate_iterative_samples(tuner._model)
+        #TODO split this up in plotting and generation routine and have one
+        #common function for all generative models. 
+        if config.type=="VAE": 
+            from generate_samples import generate_samples,generate_iterative_samples
+            generate_samples_vae(tuner._model)
         return
-
 
     if not config.load_model:
         gif_frames=[]
@@ -132,7 +152,8 @@ def run(tuner=None, config=None):
         
         if config.save_model:
             tuner.save_model(configString)
-            tuner.save_rbm(configString)
+            if model.type=="DiVAE": 
+                tuner.save_rbm(configString)
 
     else:
         tuner.load_model(set_eval=True)
