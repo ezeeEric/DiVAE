@@ -90,6 +90,14 @@ class ModelTuner(object):
 			elif self._config.type=='VAE':
 				x_recon, mu, logvar, zeta = self._model(x_true)
 				train_loss = self._model.loss(x_true, x_recon, mu, logvar)	
+			
+			elif self._config.type=='cVAE':
+				x_recon, mu, logvar, zeta = self._model(x_true,label)
+				train_loss = self._model.loss(x_true, x_recon, mu, logvar)	
+			
+			elif self._config.type=='sVAE':
+				x_recon, mu, logvar, zeta = self._model(x_true,label)
+				train_loss = self._model.loss(x_true, x_recon, mu, logvar)	
 
 			elif self._config.type=='HiVAE':
 				x_recon, mu_list, logvar_list, zeta_list = self._model(x_true)
@@ -99,12 +107,6 @@ class ModelTuner(object):
 				x_recon, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(x_true)
 				train_loss = self._model.loss(x_true, x_recon, output_activations, output_distribution, posterior_distribution, posterior_samples)
-				# print(self._model.prior.energy(posterior_samples)[0])
-				# if batch_idx%2==0:
-				# 	self._model.prior.full_training(in_data=posterior_samples,epoch=epoch)
-				# if batch_idx%1==0:
-				# 	self._model.train_rbm()
-				# exit()
 			else:
 				logger.debug("ERROR Unknown Model Type")
 				raise NotImplementedError
@@ -148,6 +150,14 @@ class ModelTuner(object):
 					#for plotting
 					zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
 					label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
+				
+				elif self._config.type=='cVAE':
+					x_recon, mu, logvar, zeta = self._model(x_true,label)
+					test_loss += self._model.loss(x_true, x_recon, mu, logvar)	
+				
+				elif self._config.type=='sVAE':
+					x_recon, mu, logvar, zeta = self._model(x_true,label)
+					test_loss += self._model.loss(x_true, x_recon, mu, logvar)	
 				
 				elif self._config.type=='HiVAE':
 					x_recon, mu_list, logvar_list, zeta_hierarchy_list = self._model(x_true)

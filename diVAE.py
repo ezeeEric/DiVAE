@@ -156,17 +156,23 @@ class VariationalAutoEncoder(AutoEncoder):
         """
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
-        
-    def generate_samples(self):
+    
+    #TODO Is this the correct sampling procedure?
+    # Draw a rnd var z~N[0,1] and feed it through the decoder alone? 
+    def generate_samples(self,n_samples=100):
         """ 
         Similar to fwd. only skip encoding part...
         """
-        mu = self._reparam_layers['mu'](z)
-        logvar = self._reparam_layers['var'](z)
-        eps = torch.randn_like(mu)
-        zeta = self.reparameterize(mu, logvar)
-        x_recon = self.decoder.decode(zeta)
-        return x_recon, mu, logvar, zeta
+        rnd_input=torch.randn((n_samples,self._reparam_nodes[1]))
+        zeta=rnd_input 
+        # rnd_input=torch.where((rnd_input>0.5),torch.ones(rnd_input.size()),torch.zeros(rnd_input.size()))
+        # print(rnd_input) 
+        # output, mu, logvar, zeta=self.forward(rnd_input)
+        # mu = self._reparam_layers['mu'](rnd_input)
+        # logvar = self._reparam_layers['var'](rnd_input)
+        # zeta = self.reparameterize(mu, logvar)
+        output = self.decoder.decode(zeta)
+        return output
 
     def loss(self, x, x_recon, mu, logvar):
         logger.debug("VAE Loss")

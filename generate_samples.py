@@ -20,24 +20,31 @@ def generate_iterative_samples(model):
     # print(output)
     out_tensor=torch.cat(output)
     out_tensor=out_tensor.detach()
-    from helpers import plot_rbm_output
-    plot_rbm_output(out_tensor, n_samples=50, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110_successive.png")
+    from helpers import plot_generative_output
+    plot_generative_output(out_tensor, n_samples=50, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110_successive.png")
     return
 
 def generate_samples(model):
     output=model.generate_samples(n_samples=100)
     output=output.detach()
-    from helpers import plot_rbm_output
-    plot_rbm_output(output, n_samples=100, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110.png")
+    from helpers import plot_generative_output
+    plot_generative_output(output, n_samples=100, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110.png")
     return
 
 def generate_samples_vae(model):
-    output=model.generate_samples(n_samples=100)
-    output=output.detach()
-    from helpers import plot_rbm_output
-    plot_rbm_output(output, n_samples=100, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110.png")
+    outputs=model.generate_samples(n_samples=50)
+    outputs=outputs.detach()
+    from helpers import plot_generative_output
+    plot_generative_output(outputs, n_samples=50, output="./output/vae_mnist/gen_samples/sampling_2011113.png")
     return
 
+def generate_samples_cvae(model, outstring=""):
+    nrs=[i for i in range(0,10)]
+    outputs=model.generate_samples(n_samples_per_nr=5,nrs=nrs)
+    outputs=outputs.detach()
+    from helpers import plot_generative_output
+    plot_generative_output(outputs, n_samples=50, output="./output/cvae_mnist/sampling_{0}.png".format(outstring))
+    return
 
 if __name__=="__main__":
     logger.info("Testing RBM Setup")

@@ -17,11 +17,11 @@ import torch
 torch.manual_seed(1)
 import gif
 
-
 from configaro import Configaro
 from modelTuner import ModelTuner
 from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
+from models.sequentialVAE import SequentialVariationalAutoEncoder
 from helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images
 from data.loadMNIST import loadMNIST
 from data.loadCaloGAN import loadCalorimeterData
@@ -35,8 +35,7 @@ def load_data(config=None):
             batch_size=config.BATCH_SIZE,
             num_evts_train=config.NUM_EVTS_TRAIN,
             num_evts_test=config.NUM_EVTS_TEST, 
-            binarise=config.binarise_dataset,
-            fromPkl=config.load_data_from_pkl)
+            binarise=config.binarise_dataset)
 
     elif config.dataType.lower()=="calo":
         inFiles={
@@ -59,20 +58,31 @@ def load_data(config=None):
 
 def run(tuner=None, config=None):
     
-    #load data, internally registers train and test dataloaders
-    tuner.register_dataLoaders(*load_data(config=config))
-    input_dimension=tuner.get_input_dimension()
-    train_ds_mean=tuner.get_train_dataset_mean()
+    if config.load_data_from_pkl:
+        #To speed up chain. Postprocessing involves loop over data for normalisation.
+        #Load that data already prepped.
 
-#To speed up chain. Postprocessing involves loop over data for normalisation.
-#Load that data already prepped.
-    import pickle
-    dataFile=open("/Users/drdre/inputz/MNIST/preprocessed/full.pkl","rb")
-    train_loader=pickle.load(dataFile)
-    test_loader =pickle.load(dataFile)
-    dataFile.close()
-    return train_loader, test_loader
+        import pickle
+        dataFile=open("/Users/drdre/inputz/MNIST/preprocessed/full.pkl","rb")
+        train_loader=pickle.load(dataFile)
+        test_loader =pickle.load(dataFile)
+        input_dimension=pickle.load(dataFile)
+        train_ds_mean=pickle.load(dataFile)
+        dataFile.close()
+        tuner.register_dataLoaders(train_loader, test_loader)
 
+    else:
+        #load data, internally registers train and test dataloaders
+        tuner.register_dataLoaders(*load_data(config=config))
+        input_dimension=tuner.get_input_dimension()
+        train_ds_mean=tuner.get_train_dataset_mean()
+        import pickle
+        dataFile=open("/Users/drdre/inputz/MNIST/preprocessed/full.pkl","wb")
+        pickle.dump(tuner.train_loader,dataFile)
+        pickle.dump(tuner.test_loader,dataFile)
+        pickle.dump(input_dimension,dataFile)
+        pickle.dump(train_ds_mean,dataFile)
+        dataFile.close()
 
     #set model properties
     model=None
@@ -93,6 +103,9 @@ def run(tuner=None, config=None):
     
     elif config.type=="cVAE":
         model = ConditionalVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
+    
+    elif config.type=="sVAE":
+        model = SequentialVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
     elif config.type=="HiVAE":
         model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
@@ -105,6 +118,7 @@ def run(tuner=None, config=None):
         raise NotImplementedError
     
     model.create_networks()
+    exit()
     model.set_dataset_mean(train_ds_mean,input_dimension)
     #TODO avoid this if statement
     if config.type=="DiVAE": model.set_train_bias()
@@ -116,18 +130,6 @@ def run(tuner=None, config=None):
     tuner.register_model(model)
     tuner.register_optimiser(optimiser)
     
-    #TODO move this around
-    if config.test_generate_samples:
-        tuner.load_model(set_eval=True)
-        from generate_samples import generate_samples,generate_iterative_samples
-        # generate_samples(tuner._model)
-        generate_iterative_samples(tuner._model)
-        #TODO split this up in plotting and generation routine and have one
-        #common function for all generative models. 
-        if config.type=="VAE": 
-            from generate_samples import generate_samples,generate_iterative_samples
-            generate_samples_vae(tuner._model)
-        return
 
     if not config.load_model:
         gif_frames=[]
@@ -157,6 +159,26 @@ def run(tuner=None, config=None):
 
     else:
         tuner.load_model(set_eval=True)
+
+        #TODO move this around
+    if config.test_generate_samples:
+        if config.load_model:
+            configString=config.infile.split("/")[-1].replace('.pt','')
+ 
+        if config.type=="DiVAE":  
+            from generate_samples import generate_samples,generate_iterative_samples
+            # generate_samples(tuner._model)
+            generate_iterative_samples(tuner._model, configString)
+
+        #TODO split this up in plotting and generation routine and have one
+        #common function for all generative models. 
+        elif config.type=="VAE": 
+            from generate_samples import generate_samples_vae
+            generate_samples_vae(tuner._model, configString)
+
+        elif config.type=="cVAE": 
+            from generate_samples import generate_samples_cvae
+            generate_samples_cvae(tuner._model, configString)
         
     if config.create_plots:
         if config.dataType=='calo':
