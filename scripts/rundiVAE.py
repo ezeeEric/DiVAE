@@ -75,9 +75,9 @@ def run(tuner=None, config=None):
         #load data, internally registers train and test dataloaders
         tuner.register_dataLoaders(*load_data(config=config))
         input_dimension=tuner.get_input_dimension()
-        train_ds_mean=tuner.get_train_dataset_mean()
+        train_ds_mean=tuner.get_train_dataset_mean(input_dimension)
         import pickle
-        dataFile=open("/Users/drdre/inputz/MNIST/preprocessed/full.pkl","wb")
+        dataFile=open("/Users/drdre/inputz/calo/preprocessed/full_layer0.pkl","wb")
         pickle.dump(tuner.train_loader,dataFile)
         pickle.dump(tuner.test_loader,dataFile)
         pickle.dump(input_dimension,dataFile)
@@ -94,6 +94,9 @@ def run(tuner=None, config=None):
                                         config.num_latent_units,
                                         config.activation_fct,
                                         config.tag])
+    if config.dataType=='calo': 
+        configString+="_{0}_{1}".format(config.caloLayer,config.ptype)
+
     #TODO wrap all these in a container class
     if config.type=="AE":
         model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
@@ -118,7 +121,6 @@ def run(tuner=None, config=None):
         raise NotImplementedError
     
     model.create_networks()
-    exit()
     model.set_dataset_mean(train_ds_mean,input_dimension)
     #TODO avoid this if statement
     if config.type=="DiVAE": model.set_train_bias()
@@ -130,7 +132,6 @@ def run(tuner=None, config=None):
     tuner.register_model(model)
     tuner.register_optimiser(optimiser)
     
-
     if not config.load_model:
         gif_frames=[]
         logger.debug("Start Epoch Loop")
@@ -160,7 +161,7 @@ def run(tuner=None, config=None):
     else:
         tuner.load_model(set_eval=True)
 
-        #TODO move this around
+    #TODO move this around
     if config.test_generate_samples:
         if config.load_model:
             configString=config.infile.split("/")[-1].replace('.pt','')
