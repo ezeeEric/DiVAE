@@ -46,7 +46,7 @@ def load_data(config=None):
         train_loader,test_loader=loadCalorimeterData(
             inFiles=inFiles,
             ptype=config.ptype,
-            layer=config.caloLayer.lower(),
+            layers=config.caloLayers,
             batch_size=config.BATCH_SIZE,
             num_evts_train=config.NUM_EVTS_TRAIN,
             num_evts_test=config.NUM_EVTS_TEST, 
@@ -74,28 +74,34 @@ def run(tuner=None, config=None):
     else:
         #load data, internally registers train and test dataloaders
         tuner.register_dataLoaders(*load_data(config=config))
+        
         input_dimension=tuner.get_input_dimension()
-        train_ds_mean=tuner.get_train_dataset_mean(input_dimension)
-        import pickle
-        dataFile=open("/Users/drdre/inputz/calo/preprocessed/full_layer0.pkl","wb")
-        pickle.dump(tuner.train_loader,dataFile)
-        pickle.dump(tuner.test_loader,dataFile)
-        pickle.dump(input_dimension,dataFile)
-        pickle.dump(train_ds_mean,dataFile)
-        dataFile.close()
+        
+        train_ds_mean=tuner.get_train_dataset_mean()
+        # import pickle
+        # dataFile=open("/Users/drdre/inputz/calo/preprocessed/all_la.pkl","wb")
+        # pickle.dump(tuner.train_loader,dataFile)
+        # pickle.dump(tuner.test_loader,dataFile)
+        # pickle.dump(input_dimension,dataFile)
+        # pickle.dump(train_ds_mean,dataFile)
+        # dataFile.close()
 
     #set model properties
     model=None
     activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
-    configString="_".join(str(i) for i in [config.type,config.dataType,config.NUM_EVTS_TRAIN,
-                                        config.NUM_EVTS_TEST,config.BATCH_SIZE,
-                                        config.EPOCHS,config.LEARNING_RATE,
+    configString="_".join(str(i) for i in [config.type,
+                                        config.dataType,
+                                        config.NUM_EVTS_TRAIN,
+                                        config.NUM_EVTS_TEST,
+                                        config.BATCH_SIZE,
+                                        config.EPOCHS,
+                                        config.LEARNING_RATE,
                                         config.num_latent_hierarchy_levels,
                                         config.num_latent_units,
                                         config.activation_fct,
                                         config.tag])
     if config.dataType=='calo': 
-        configString+="_{0}_{1}".format(config.caloLayer,config.ptype)
+        configString+="_nlayers_{0}_{1}".format(len(config.caloLayers),config.ptype)
 
     #TODO wrap all these in a container class
     if config.type=="AE":
@@ -121,12 +127,13 @@ def run(tuner=None, config=None):
         raise NotImplementedError
     
     model.create_networks()
-    model.set_dataset_mean(train_ds_mean,input_dimension)
+    model.set_dataset_mean(train_ds_mean)
+    # model.set_input_dimension(input_dimension)
+
     #TODO avoid this if statement
     if config.type=="DiVAE": model.set_train_bias()
 
     model.print_model_info()
-    
     optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 
     tuner.register_model(model)

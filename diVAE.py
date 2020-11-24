@@ -24,15 +24,18 @@ torch.manual_seed(1)
 class AutoEncoderBase(nn.Module):
     def __init__(self, input_dimension=None, activation_fct=None, config=None, **kwargs):
         super(AutoEncoderBase,self).__init__(**kwargs)
-        
-        assert input_dimension is not None and input_dimension>0, "Input dimension not defined, needed for model structure"
+        if isinstance(input_dimension,list):
+            assert len(input_dimension)>0, "Input dimension not defined, needed for model structure"
+        else:
+            assert input_dimension>0, "Input dimension not defined, needed for model structure"
         assert config is not None, "Config not defined"
         assert config.num_latent_units is not None and config.num_latent_units>0, "Latent dimension must be >0"
         
         self._type=None
         self._config=config
         self._latent_dimensions=config.num_latent_units
-        self._input_dimension=input_dimension
+        logger.warning("Taking all input dimensions for sVAE. Only first for other models.")
+        self._input_dimension=input_dimension if self._config.type=="sVAE" else input_dimension[0]
         self._activation_fct=activation_fct
         self._dataset_mean=None
 
@@ -59,10 +62,8 @@ class AutoEncoderBase(nn.Module):
             else:
                 logger.info(par)
 
-    
-    def set_dataset_mean(self,mean,input_dimension):
-        self._dataset_mean=mean.view(-1,input_dimension)
-        return
+    def set_dataset_mean(self,mean):
+        self._dataset_mean=mean
 
 # Autoencoder implementation
 class AutoEncoder(AutoEncoderBase):
@@ -115,8 +116,9 @@ class AutoEncoder(AutoEncoderBase):
 #Adds VAE specific reparameterisation, loss and forward call to AutoEncoder framework
 class VariationalAutoEncoder(AutoEncoder):
     def __init__(self, **kwargs):
+        print("VAE1")
         super(VariationalAutoEncoder, self).__init__(**kwargs)
-        
+        print("VAE2")
         self._type="VAE"
 
         #define network structure
@@ -136,6 +138,20 @@ class VariationalAutoEncoder(AutoEncoder):
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
             self._decoder_nodes.append(nodepair)
+    
+    #Factory method to create VAEs with set encoder nodes
+    @classmethod
+    def init_with_nodelist(cls,dim,cfg,actfct, enc_nodes, rep_nodes, dec_nodes):
+        assert enc_nodes is not None and rep_nodes is not None and dec_nodes is not None,\
+            "Need defined nodelist for this type of initialisation"
+        vae=cls(input_dimension=dim,config=cfg,activation_fct=actfct)              
+        vae._encoder_nodes=enc_nodes
+        vae._reparam_nodes=rep_nodes
+        vae._decoder_nodes=dec_nodes
+        return vae
+
+    def get_modules(self):
+        return self.encoder,self._reparam_layers,self.decoder
 
     def create_networks(self):
         logger.debug("Creating Network Structures")
