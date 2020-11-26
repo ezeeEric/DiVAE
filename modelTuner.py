@@ -105,7 +105,7 @@ class ModelTuner(object):
 				train_loss = self._model.loss(inputData, outputData, mu, logvar)	
 				
 			elif self._config.type=='sVAE':
-				outputData, mu, logvar, zeta = self._model(inputData,label)
+				outputData, mu, logvar = self._model(inputData,label)
 				train_loss = self._model.loss(inputData, outputData, mu, logvar)	
 
 			elif self._config.type=='HiVAE':
@@ -165,7 +165,7 @@ class ModelTuner(object):
 					test_loss += self._model.loss(inputData, outputData, mu, logvar)	
 				
 				elif self._config.type=='sVAE':
-					outputData, mu, logvar, zeta = self._model(inputData,label)
+					outputData, mu, logvar = self._model(inputData,label)
 					test_loss += self._model.loss(inputData, outputData, mu, logvar)	
 				
 				elif self._config.type=='HiVAE':

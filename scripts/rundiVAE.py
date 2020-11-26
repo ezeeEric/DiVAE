@@ -22,7 +22,7 @@ from modelTuner import ModelTuner
 from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
-from helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images
+from helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 from data.loadMNIST import loadMNIST
 from data.loadCaloGAN import loadCalorimeterData
 
@@ -190,8 +190,14 @@ def run(tuner=None, config=None):
         
     if config.create_plots:
         if config.dataType=='calo':
-            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-            plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
+            if config.type=="sVAE":
+                print("HERE")
+                print(model.type)
+                test_loss, x_true, x_recon, zetas, labels   = tuner.test()
+                plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/201124_{1}.png".format(config.output,configString))
+            else:
+                test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+                plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
         else:
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
             # plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)

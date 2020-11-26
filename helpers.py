@@ -6,6 +6,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 import torch
 import numpy as np
+from matplotlib import colors
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import pandas as pd
@@ -73,6 +74,92 @@ def plot_image(image, layer, vmin=None, vmax=None):
 
     plt.tight_layout()
     return im
+
+
+    ax_idx=0
+    print(x_true.shape)
+    for i in range(n_samples):
+    # for i in range(n_rows):
+    #     for j in range(n_cols): 
+        if ax_idx%n_cols==0:
+            ax_idx+=1
+        current_ax=plt.subplot(n_rows, n_cols , i+1)
+        plt.imshow(x_true[i].reshape((28, 28)))
+        plt.gray()
+        current_ax.get_xaxis().set_visible(False)
+        current_ax .get_yaxis().set_visible(False)
+    fig = plt.gcf()
+    # fig.tight_layout()
+    fig.savefig(output, bbox_inches='tight')
+
+# Make images respond to changes in the norm of other images (e.g. via the
+# "edit axis, curves and images parameters" GUI on Qt), but be careful not to
+# recurse infinitely!
+def update(changed_image):
+    for im in images:
+        if (changed_image.get_cmap() != im.get_cmap()
+                or changed_image.get_clim() != im.get_clim()):
+            im.set_cmap(changed_image.get_cmap())
+            im.set_clim(changed_image.get_clim())
+
+def plot_calo_image_sequence(x_true, x_recon, input_dimension, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
+    for i in range(n_samples):
+
+        plt.figure(figsize=(10, 7))
+        # plt.subplots_adjust(right=0.8)
+
+        images=[]
+        for j in range(0,len(x_true)):
+            x=x_true[j]
+            x_out=x_recon[j]
+            # plt.ylim([0,12])
+
+            ax1 = plt.subplot(2, len(x_true), j + 1)
+            ax1.set_box_aspect(1)
+            if j==0:
+                ax1.set_ylabel(r'$\phi$ Cell ID')
+                # ax1.get_xaxis().set_visible(False)
+            # else:
+                # ax1.get_xaxis().set_visible(False)
+                # ax1.get_yaxis().set_visible(False)
+
+            im=plt.imshow(x[i],aspect="auto",cmap="cool",interpolation="none",norm=LogNorm(None,None))
+            images.append(im)
+            reco_image=x_out[i].reshape(x[i].shape)
+            #TODO this is arbitrary...
+            minVal=reco_image.min(1,keepdim=True)[0]*15
+            minVal=reco_image.min(1,keepdim=True)[0]
+
+            reco_image[reco_image<minVal]=0
+        
+            ax2 = plt.subplot(2, len(x_true), j + 1 + len(x_true))
+            ax2.set_box_aspect(1)
+            if j==0:
+                ax2.set_ylabel(r'$\phi$ Cell ID')
+            ax2.set_xlabel(r'$\eta$ Cell ID')
+            # else:
+            #     ax2.get_yaxis().set_visible(False)
+
+            im2=plt.imshow(reco_image,aspect="auto",cmap="cool",interpolation="none",norm=LogNorm(None,None))
+            # images.append(im2)
+
+        fig = plt.gcf()
+        # fig.subplots_adjust(right=0.8)
+        # Find the min and max of all colors for use in setting the color scale.
+        vmin = min(image.get_array().min() for image in images)
+        vmax = max(image.get_array().max() for image in images)
+        norm = colors.LogNorm(vmin=1e-5, vmax=vmax)
+        for im in images:
+            im.set_norm(norm)
+
+        cbar=fig.colorbar(images[0], ax=[fig.axes], orientation='vertical', fraction=.02)    
+        cbar.ax.set_ylabel('Energy Fraction', rotation=270)
+
+        for im in images:
+            im.callbacksSM.connect('changed', update)
+        fig.suptitle('Geant4 vs. sVAE Calorimeter shower')
+        # plt.tight_layout()
+        fig.savefig(output.replace(".png","_{0}.png".format(i)))
 
 @gif.frame
 def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
