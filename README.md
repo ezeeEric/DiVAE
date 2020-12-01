@@ -16,15 +16,19 @@ Implemented are:
 
 ### Input Data
 
-#### MNIST
+|  Dataset | Location |
+| ------------- | ------------- |
+| MNIST  | TODO |
+| Calorimeter Data (GEANT4 showers, ⟂ to center) | [![DOI](https://zenodo.org/badge/DOI/10.17632/pvn3xc3wy5.1.svg)](https://doi.org/10.17632/pvn3xc3wy5.1)|
 
-#### Calorimeter Images
+MNIST dataset.
 
+Calorimeter Image dataset is based on work in [2].
 
 ## Setup
 ```
-git clone
-
+git clone git@github.com:ezeeEric/DiVAE.git
+cd DiVAE
 ```
 ### Installation
 ```
@@ -34,14 +38,13 @@ git clone
 ### After Installation
 ```
 source source.me
-
 ```
+Sources the virtual environment and appends to `PYTHONPATH`.
 
 ## How To...
 ### ...run models
 ```
-python 
-
+python scripts/rundiVAE.py -c configs/default_divae_mnist.cfg 
 ```
 
 ## Notes
@@ -51,3 +54,4 @@ more clamping in KLD
 ### References
 [1] Jason Rolfe, Discrete Variational Autoencoders,
 http://arxiv.org/abs/1609.02200
+[2] M. Paganini ([@mickypaganini](https://github.com/mickypaganini)), L. de Oliveira ([@lukedeo](https://github.com/lukedeo)), B. Nachman ([@bnachman](https://github.com/bnachman)), _CaloGAN: Simulating 3D High Energy Particle Showers in Multi-Layer Electromagnetic Calorimeters with Generative Adversarial Networks_ [[`arXiv:1705.02355`](https://arxiv.org/abs/1705.02355)].
