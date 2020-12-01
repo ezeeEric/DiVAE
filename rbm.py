@@ -429,7 +429,7 @@ if __name__=="__main__":
 		# print(energy)
 		break
 	print(y.size())
-	from helpers import plot_MNIST_output
+	from util.helpers import plot_MNIST_output
 
 	# plot_MNIST_output(x_true,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))
 	# plot_MNIST_output(x_true,yrnd, n_samples=5, output="./output/rbm_test_200827_rnd_{0}.png".format(config_string))

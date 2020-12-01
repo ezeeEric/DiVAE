@@ -22,7 +22,7 @@ from modelTuner import ModelTuner
 from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
-from helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
+from util.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 from data.loadMNIST import loadMNIST
 from data.loadCaloGAN import loadCalorimeterData
 

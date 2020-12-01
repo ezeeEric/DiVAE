@@ -21,7 +21,7 @@ import gif
 from configaro import Configaro
 from modelTuner import ModelTuner
 from models.sequentialVAE import SequentialVariationalAutoEncoder
-from helpers import gif_output, plot_calo_images
+from util.helpers import gif_output, plot_calo_images
 from data.loadCaloGAN import loadCalorimeterData
 
 def load_data(config=None):

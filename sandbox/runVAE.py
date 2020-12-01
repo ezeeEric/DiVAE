@@ -15,7 +15,7 @@ from data.loadMNIST import loadMNIST
 
 from modelTuner import train,test,evaluate
 from diVAE import VAE
-from helpers import plot_MNIST_output, gif_output
+from util.helpers import plot_MNIST_output, gif_output
 
 from copy import copy
 import logging
