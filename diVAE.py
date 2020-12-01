@@ -11,7 +11,7 @@ import torch.distributions as dist
 import numpy as np
 
 from util.networks import HierarchicalEncoder,BasicEncoder,BasicDecoder
-from rbm import RBM
+from models.rbm import RBM
 from util.distributions import Bernoulli
 
 from copy import copy
