@@ -188,6 +188,10 @@ def run(tuner=None, config=None):
             from generate_samples import generate_samples_cvae
             generate_samples_cvae(tuner._model, configString)
         
+        elif config.type=="sVAE": 
+            from generate_samples import generate_samples_svae
+            generate_samples_svae(tuner._model, configString)
+
     if config.create_plots:
         if config.dataType=='calo':
             if config.type=="sVAE":

@@ -17,7 +17,6 @@ def generate_iterative_samples(model):
     init_samples_right=torch.cat([z2,z3])		
 
     output=model.generate_samples_per_gibbs(init_left_samples=init_samples_left, init_right_samples=init_samples_right,steps=10)
-    # print(output)
     out_tensor=torch.cat(output)
     out_tensor=out_tensor.detach()
     from helpers import plot_generative_output
@@ -44,6 +43,13 @@ def generate_samples_cvae(model, outstring=""):
     outputs=outputs.detach()
     from helpers import plot_generative_output
     plot_generative_output(outputs, n_samples=50, output="./output/cvae_mnist/sampling_{0}.png".format(outstring))
+    return
+
+def generate_samples_svae(model, outstring=""):
+    outputs=model.generate_samples(n_samples=5)
+    outputs=[ out.detach() for out in outputs]
+    from helpers import plot_calo_jet_generated
+    plot_calo_jet_generated(outputs, n_samples=5, output="./output/svae_calo/generated_{0}.png".format(outstring))
     return
 
 if __name__=="__main__":

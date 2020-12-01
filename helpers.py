@@ -102,6 +102,55 @@ def update(changed_image):
             im.set_cmap(changed_image.get_cmap())
             im.set_clim(changed_image.get_clim())
 
+def plot_calo_jet_generated(x_recon, n_samples=5, output="./output/testCalo.png", do_gif=False):
+    for i in range(n_samples):
+
+        plt.figure(figsize=(10, 3.5))
+
+        images=[]
+        for j in range(0,len(x_recon)):
+            x_out=x_recon[j]
+            if j==0:
+                shape=(3,96)
+            elif j==1:
+                shape=(12,12)
+            else:
+                shape=(12,6)
+
+            reco_image=x_out[i].reshape(shape)
+
+            #TODO this is arbitrary...
+            minVal=reco_image.min(1,keepdim=True)[0]*15
+            minVal=reco_image.min(1,keepdim=True)[0]
+
+            reco_image[reco_image<minVal]=0            
+            ax1 = plt.subplot(1, len(x_recon), j + 1)
+            ax1.set_box_aspect(1)
+            if j==0:
+                ax1.set_ylabel(r'$\phi$ Cell ID')
+            ax1.set_xlabel(r'$\eta$ Cell ID')
+
+            im=plt.imshow(reco_image,aspect="auto",cmap="cool",interpolation="none",norm=LogNorm(None,None))
+            images.append(im)
+
+        fig = plt.gcf()
+        # fig.subplots_adjust(right=0.8)
+        # Find the min and max of all colors for use in setting the color scale.
+        vmin = min(image.get_array().min() for image in images)
+        vmax = max(image.get_array().max() for image in images)
+        norm = colors.LogNorm(vmin=1e-5, vmax=vmax)
+        for im in images:
+            im.set_norm(norm)
+
+        cbar=fig.colorbar(images[0], ax=[fig.axes], orientation='vertical', fraction=.02)    
+        cbar.ax.set_ylabel('Energy Fraction', rotation=270)
+
+        for im in images:
+            im.callbacksSM.connect('changed', update)
+        fig.suptitle('Geant4 vs. sVAE Calorimeter shower')
+        # plt.tight_layout()
+        fig.savefig(output.replace(".png","_{0}.png".format(i)))
+
 def plot_calo_image_sequence(x_true, x_recon, input_dimension, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
     for i in range(n_samples):
 
