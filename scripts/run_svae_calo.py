@@ -157,18 +157,18 @@ def run(tuner=None, config=None):
             configString=config.infile.split("/")[-1].replace('.pt','')
  
         if config.type=="DiVAE":  
-            from generate_samples import generate_samples,generate_iterative_samples
+            from util.generate_samples import generate_samples,generate_iterative_samples
             # generate_samples(tuner._model)
             generate_iterative_samples(tuner._model, configString)
 
         #TODO split this up in plotting and generation routine and have one
         #common function for all generative models. 
         elif config.type=="VAE": 
-            from generate_samples import generate_samples_vae
+            from util.generate_samples import generate_samples_vae
             generate_samples_vae(tuner._model, configString)
 
         elif config.type=="cVAE": 
-            from generate_samples import generate_samples_cvae
+            from util.generate_samples import generate_samples_cvae
             generate_samples_cvae(tuner._model, configString)
         
     if config.create_plots:
