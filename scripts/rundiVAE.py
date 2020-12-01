@@ -18,7 +18,7 @@ torch.manual_seed(1)
 import gif
 
 from util.configaro import Configaro
-from modelTuner import ModelTuner
+from util.modelTuner import ModelTuner
 from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder

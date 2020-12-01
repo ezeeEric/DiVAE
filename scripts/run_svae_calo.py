@@ -19,7 +19,7 @@ torch.manual_seed(1)
 import gif
 
 from util.configaro import Configaro
-from modelTuner import ModelTuner
+from util.modelTuner import ModelTuner
 from models.sequentialVAE import SequentialVariationalAutoEncoder
 from util.helpers import gif_output, plot_calo_images
 from data.loadCaloGAN import loadCalorimeterData
