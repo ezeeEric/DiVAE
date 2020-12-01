@@ -12,7 +12,7 @@ import numpy as np
 
 from networks import HierarchicalEncoder,BasicEncoder,BasicDecoder
 from rbm import RBM
-from distributions import Bernoulli
+from util.distributions import Bernoulli
 
 from copy import copy
 import logging

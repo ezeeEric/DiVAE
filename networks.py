@@ -5,11 +5,10 @@ Autoencoders
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
-#pyTorch: Open source ML library dev. mainly by Facebook's AI research lab
 import torch
 import torch.nn as nn
 
-from distributions import SpikeAndExponentialSmoother
+from util.distributions import SpikeAndExponentialSmoother
 from copy import copy
 import logging
 logger = logging.getLogger(__name__)
