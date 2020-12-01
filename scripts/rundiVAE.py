@@ -19,7 +19,7 @@ import gif
 
 from util.configaro import Configaro
 from util.modelTuner import ModelTuner
-from diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
+from util.diVAE import AutoEncoder,VariationalAutoEncoder,HiVAE,DiVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
 from util.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence

@@ -14,7 +14,7 @@ import pickle
 from data.loadMNIST import loadMNIST
 
 from util.modelTuner import train,test,evaluate
-from diVAE import AE
+from util.diVAE import AE
 from util.helpers import plot_MNIST_output, gif_output
 
 from copy import copy
