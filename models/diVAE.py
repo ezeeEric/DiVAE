@@ -10,9 +10,9 @@ import torch.nn as nn
 import torch.distributions as dist
 import numpy as np
 
-from util.networks import HierarchicalEncoder,BasicEncoder,BasicDecoder
+from utils.networks import HierarchicalEncoder,BasicEncoder,BasicDecoder
 from models.rbm import RBM
-from util.distributions import Bernoulli
+from utils.distributions import Bernoulli
 
 from copy import copy
 import logging

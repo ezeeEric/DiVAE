@@ -8,7 +8,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 import torch
 import torch.nn as nn
 
-from util.distributions import SpikeAndExponentialSmoother
+from utils.distributions import SpikeAndExponentialSmoother
 from copy import copy
 import logging
 logger = logging.getLogger(__name__)

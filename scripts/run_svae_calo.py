@@ -18,10 +18,10 @@ import torch
 torch.manual_seed(1)
 import gif
 
-from util.configaro import Configaro
-from util.modelTuner import ModelTuner
+from utils.configaro import Configaro
+from utils.modelTuner import ModelTuner
 from models.sequentialVAE import SequentialVariationalAutoEncoder
-from util.helpers import gif_output, plot_calo_images
+from utils.helpers import gif_output, plot_calo_images
 from data.loadCaloGAN import loadCalorimeterData
 
 def load_data(config=None):
@@ -157,18 +157,18 @@ def run(tuner=None, config=None):
             configString=config.infile.split("/")[-1].replace('.pt','')
  
         if config.type=="DiVAE":  
-            from util.generate_samples import generate_samples,generate_iterative_samples
+            from utils.generate_samples import generate_samples,generate_iterative_samples
             # generate_samples(tuner._model)
             generate_iterative_samples(tuner._model, configString)
 
         #TODO split this up in plotting and generation routine and have one
         #common function for all generative models. 
         elif config.type=="VAE": 
-            from util.generate_samples import generate_samples_vae
+            from utils.generate_samples import generate_samples_vae
             generate_samples_vae(tuner._model, configString)
 
         elif config.type=="cVAE": 
-            from util.generate_samples import generate_samples_cvae
+            from utils.generate_samples import generate_samples_cvae
             generate_samples_cvae(tuner._model, configString)
         
     if config.create_plots:

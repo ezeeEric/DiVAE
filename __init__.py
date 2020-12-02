@@ -2,6 +2,9 @@
 
 @author Eric "Dr. Dre" Drechsler (eric.drechsler@cern.ch)
 """
+import torch
+torch.manual_seed(1)
+
 import logging
 
 logging.addLevelName( logging.INFO,    "\033[1;95m{0}\033[1;0m".format('INFO '))
