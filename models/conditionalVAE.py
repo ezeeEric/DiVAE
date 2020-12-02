@@ -12,7 +12,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
 
     def __init__(self, **kwargs):
         super(ConditionalVariationalAutoEncoder, self).__init__(**kwargs)
-        self._type="cVAE"
+        self._model_type="cVAE"
         #define network structure
         self._encoder_nodes=[]
         self._decoder_nodes=[]

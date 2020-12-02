@@ -31,7 +31,7 @@ class AutoEncoderBase(nn.Module):
         assert config is not None, "Config not defined"
         assert config.num_latent_units is not None and config.num_latent_units>0, "Latent dimension must be >0"
         
-        self._type=None
+        self._model_type=None
         self._config=config
         self._latent_dimensions=config.num_latent_units
         logger.warning("Taking all input dimensions for sVAE. Only first for other models.")
@@ -40,7 +40,7 @@ class AutoEncoderBase(nn.Module):
         self._dataset_mean=None
 
     def type(self):
-        return self._type
+        return self._model_type
 
     def _create_encoder(self):
         raise NotImplementedError
@@ -70,7 +70,7 @@ class AutoEncoder(AutoEncoderBase):
 
     def __init__(self, **kwargs):
         super(AutoEncoder,self).__init__(**kwargs)
-        self._type="AE"
+        self._model_type="AE"
 
         #define network structure
         self._encoder_nodes=[]
@@ -119,7 +119,7 @@ class VariationalAutoEncoder(AutoEncoder):
         print("VAE1")
         super(VariationalAutoEncoder, self).__init__(**kwargs)
         print("VAE2")
-        self._type="VAE"
+        self._model_type="VAE"
 
         #define network structure
         self._encoder_nodes=[]
@@ -213,7 +213,7 @@ class HiVAE(AutoEncoder):
     def __init__(self, **kwargs):
         super(HiVAE, self).__init__(**kwargs)
    
-        self._type="HiVAE"
+        self._model_type="HiVAE"
 
         self._reparamNodes=(self._config.num_det_units,self._latent_dimensions)  
 
@@ -297,7 +297,7 @@ class HiVAE(AutoEncoder):
 class DiVAE(AutoEncoderBase):
     def __init__(self, **kwargs):
         super(DiVAE, self).__init__(**kwargs)
-        self._type="DiVAE"
+        self._model_type="DiVAE"
 
         # self._decoder_nodes=[(self._latent_dimensions,128),]
         #TODO can this be done through inheritance?

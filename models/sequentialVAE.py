@@ -20,7 +20,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
 
     def __init__(self, **kwargs):
         super(SequentialVariationalAutoEncoder, self).__init__(**kwargs)
-        self._type="sVAE"
+        self._model_type="sVAE"
         self._autoencoders={}
         self._encoder_nodes={}
         self._reparam_nodes={}

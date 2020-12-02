@@ -2,7 +2,7 @@
 class DiVAE_BU(AutoEncoderBase):
     def __init__(self, **kwargs):
         super(DiVAE, self).__init__(**kwargs)
-        self._type="DiVAE"
+        self._model_type="DiVAE"
 
         self._reparamNodes=(128,self._latent_dimensions)  
         self._decoder_nodes=[(self._latent_dimensions,128),]
