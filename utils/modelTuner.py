@@ -41,7 +41,8 @@ class ModelTuner(object):
 	
 	def get_input_dimension(self):
 		assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
-		return self.train_loader.get_input_size()
+		input_sizes=self.train_loader.get_input_size()
+		return input_sizes if isinstance(input_sizes,list) else [input_sizes]
 	
 	def get_train_dataset_mean(self):
 		#returns mean of dataset as list

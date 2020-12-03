@@ -6,7 +6,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
-from utils.diVAE import VariationalAutoEncoder
+from models.diVAE import VariationalAutoEncoder
 
 class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
 

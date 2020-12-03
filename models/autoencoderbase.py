@@ -4,7 +4,7 @@ Autoencoder Base Class
 
 Author: Eric Drechsler (dr.eric.drechsler@gmail.com)
 """
-
+import torch
 import torch.nn as nn
 
 #logging module with handmade settings.
