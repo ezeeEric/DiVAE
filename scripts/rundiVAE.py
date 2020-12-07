@@ -23,6 +23,7 @@ from models.autoencoder import AutoEncoder
 from models.diVAE import VariationalAutoEncoder,HiVAE,DiVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
+from models.sparseAutoencoder import SparseAutoEncoder
 from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 from data.loadMNIST import loadMNIST
 from data.loadCaloGAN import loadCalorimeterData
@@ -106,8 +107,13 @@ def run(tuner=None, config=None):
 
     #TODO wrap all these in a container class
     if config.type=="AE":
-        model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
-        
+        if not config.sparse:
+            print("Non sparse AE")
+            model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
+        else:
+            print("sparse AE")
+            model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
+
     elif config.type=="VAE":
         model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
     

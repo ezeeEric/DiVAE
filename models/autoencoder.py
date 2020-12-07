@@ -4,9 +4,7 @@ Vanilla Autoencoder Model
 
 Author: Eric Drechsler (dr.eric.drechsler@gmail.com)
 """
-
-import torch.nn as nn
-
+from torch import nn
 from models.autoencoderbase import AutoEncoderBase
 
 from utils.networks import BasicEncoder,BasicDecoder
@@ -62,7 +60,10 @@ class AutoEncoder(AutoEncoderBase):
         return x_recon, zeta
     
     def loss(self, x_true, x_recon):
-        return self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
+        loss=self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
+        print("non sparse:",loss)
+        return loss
+        # return self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
 
 if __name__=="__main__":
     logger.info("Running autoencoder.py directly") 

@@ -50,7 +50,7 @@ class AutoEncoderBase(nn.Module):
         raise NotImplementedError
     
     def __repr__(self):
-        parameter_string="\n".join([str(par) for par in self.__dict__.items()])
+        parameter_string="\n".join([str(par.shape) if isinstance(par,torch.Tensor) else str(par)  for par in self.__dict__.items()])
         return parameter_string
     
     def forward(self, x):
