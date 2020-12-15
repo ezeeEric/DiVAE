@@ -120,7 +120,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
-    
+
     def loss(self, inputs, outputs, mus, logvars):
         total_loss=0
         for i,dim in enumerate(self._input_dimension):
@@ -129,4 +129,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             mu=mus[i]
             logvar=logvars[i]
             total_loss+=self._autoencoders[i].loss(x, x_rec, mu, logvar)
+            #TODO
+            # if self._config.sparse:
+            #     total_loss+=self._config.l1_regularisation_weight*self.l1_norm(ae=self._autoencoders[i],inputs=x.view(-1,dim))
         return total_loss

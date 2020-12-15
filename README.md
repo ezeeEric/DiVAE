@@ -7,9 +7,9 @@ Implemented are:
 - Vanilla VAE
 - conditional VAE
 - sequential VAE to process successive images (i.e. calorimeter data)
-- VAE with hierarchical encoder
+- VAE with hierarchical posterior
 - Discrete VAE [1]
-- RBM
+- Vanilla RBM
 - ...
 
 ## Overview
