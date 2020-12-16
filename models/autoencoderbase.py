@@ -1,8 +1,12 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Autoencoder Base Class
+Base class for Autoencoder frameworks.
 
-Author: Eric Drechsler (dr.eric.drechsler@gmail.com)
+Defines basic common methods and variables shared between models.
+Each model overwrites as needed. 
+This class inherits from torch.nn.Module, ensuring that network parameters
+are registered properly. 
 """
 import torch
 import torch.nn as nn
@@ -14,6 +18,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 # Base Class for Autoencoder models
 class AutoEncoderBase(nn.Module):
+    """Autoencoder Base Class
+    """
     def __init__(self, input_dimension=None, activation_fct=None, config=None, **kwargs):
         super(AutoEncoderBase,self).__init__(**kwargs)
         #sanity checks

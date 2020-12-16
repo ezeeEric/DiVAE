@@ -13,6 +13,19 @@ Implemented are:
 - ...
 
 ## Overview
+### Repository Structure
+
+
+| Directory        | Content    | 
+| ------------- |:-------------| 
+| `configs/`      | Configuration files | 
+| `models/` | Core module, includes definitions of all models.  |
+| `sandbox/` | Collection of test scripts and standalone models. |
+| `scripts/` | Steering scripts. |
+| `utils/` | Helper functionalities for core modules (plotting etc.) |
+|  | **Not part of repository** |
+| `data/` | Location of input data after download |
+| `output/` | Output Location |
 
 ### Input Data
 
@@ -30,6 +43,8 @@ Calorimeter Image dataset is based on work in [2].
 git clone git@github.com:ezeeEric/DiVAE.git
 cd DiVAE
 ```
+
+
 ### Installation
 ```
 
