@@ -80,6 +80,7 @@ def run(tuner=None, config=None):
         input_dimension=tuner.get_input_dimension()
         
         train_ds_mean=tuner.get_train_dataset_mean()
+
         # import pickle
         # dataFile=open("/Users/drdre/inputz/calo/preprocessed/all_la.pkl","wb")
         # pickle.dump(tuner.train_loader,dataFile)
@@ -134,7 +135,7 @@ def run(tuner=None, config=None):
         raise NotImplementedError
     
     model.create_networks()
-    model.set_dataset_mean(train_ds_mean)
+    model.(train_ds_mean)
     # model.set_input_dimension(input_dimension)
 
     #TODO avoid this if statement

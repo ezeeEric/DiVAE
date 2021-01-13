@@ -18,9 +18,10 @@ logging.getLogger().setLevel(logging.INFO)
 
 # Base Class for Autoencoder models
 class AutoEncoderBase(nn.Module):
-    """Autoencoder Base Class
-    """
-    def __init__(self, input_dimension=None, activation_fct=None, config=None, **kwargs):
+    def __init__(self, input_dimension, activation_fct, config, **kwargs):
+        """
+        """
+
         super(AutoEncoderBase,self).__init__(**kwargs)
         #sanity checks
         if isinstance(input_dimension,list):
@@ -30,8 +31,10 @@ class AutoEncoderBase(nn.Module):
         assert config is not None, "Config not defined"
         assert config.num_latent_units is not None and config.num_latent_units>0, "Latent dimension must be >0"
         
-        # a short tag identifying the exact model, such as AE, VAE, diVAE...
         self._model_type=None
+        """a short tag identifying the exact model, such as AE, VAE, diVAE...
+        """
+
         # the main configuration namespace returned by configaro
         self._config=config
         # number of nodes in latent layer
@@ -47,9 +50,19 @@ class AutoEncoderBase(nn.Module):
         self._dataset_mean=None
 
     def type(self):
+        """String identifier for current model.
+
+        Returns:
+            model_type: "AE", "VAE", etc.
+        """
         return self._model_type
 
     def _create_encoder(self):
+        """[summary]
+
+        Raises:
+            NotImplementedError: [description]
+        """
         raise NotImplementedError
 
     def _create_decoder(self):
@@ -60,6 +73,14 @@ class AutoEncoderBase(nn.Module):
         return parameter_string
     
     def forward(self, x):
+        """[summary]
+
+        Args:
+            x (): [aaa]
+
+        Raises:
+            NotImplementedError: [ccc]
+        """
         raise NotImplementedError
 
     def print_model_info(self):
@@ -69,8 +90,9 @@ class AutoEncoderBase(nn.Module):
             else:
                 logger.info(par)
 
+#TODO make this a getter setter thing
     def set_dataset_mean(self,mean):
-        self._dataset_mean=mean
+        self._dataset_mean=mean[0] if isinstance(mean,list) else mean
 
 if __name__=="__main__":
     logger.info("Running autoencoderbase.py directly") 
