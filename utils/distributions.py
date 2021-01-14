@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def sigmoid_cross_entropy_with_logits(logits, labels):
         logger.debug("WARNING sigmoid_cross_entropy_with_logits preliminary")
-        # this is the equivalent to the DWave code's
+        # this is the equivalent to the tensorflow
         # sigmoid_cross_entropy_with_logits(): return logits * labels +
         # tf.nn.softplus(-logits)
         #z- logits (=output)
@@ -121,8 +121,7 @@ class SpikeAndExponentialSmoother(Bernoulli):
         return zeta
 
     def entropy(self,x):
-        """ FROM DWAVE
-        Computes the entropy of the bernoulli distribution using:
+        """Computes the entropy of the bernoulli distribution using:
             x - x * z + log(1 + exp(-x)),  where x is logits, and z=sigmoid(x).
         Returns: 
             ent: entropy

@@ -228,8 +228,6 @@ class RBM(nn.Module):
 	
 	def get_samples(self, num_latent_units=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
 		logger.debug("generate_samples")
-		#this is supposed to be like the ancestral sampling described in DWave
-		#package. Unsure if it's the right procedure.
 		assert sampling_mode=="gibbs_ancestral" \
 			or sampling_mode=="gibbs_flat" \
 			or sampling_mode=="random", "Unknown sampling mode"

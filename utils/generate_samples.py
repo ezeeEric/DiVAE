@@ -3,7 +3,7 @@ import torch
 import logging
 logger = logging.getLogger(__name__)
 
-def generate_iterative_samples(model):
+def generate_iterative_samples(model, outstring=""):
     num_latent_units=100
     #TODO the range of this is taken from the clamping of the posterior
     #samples to -88,88. Where is this coming from? Check the values
@@ -20,21 +20,21 @@ def generate_iterative_samples(model):
     out_tensor=torch.cat(output)
     out_tensor=out_tensor.detach()
     from utils.helpers import plot_generative_output
-    plot_generative_output(out_tensor, n_samples=50, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110_successive.png")
+    plot_generative_output(out_tensor, n_samples=50, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
     return
 
-def generate_samples(model):
+def generate_samples(model, outstring=""):
     output=model.generate_samples(n_samples=100)
     output=output.detach()
     from utils.helpers import plot_generative_output
-    plot_generative_output(output, n_samples=100, output="./output/divae_mnist/rbm_samples/rbm_sampling_2011110.png")
+    plot_generative_output(output, n_samples=100, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
     return
 
-def generate_samples_vae(model):
+def generate_samples_vae(model, outstring=""):
     outputs=model.generate_samples(n_samples=50)
     outputs=outputs.detach()
     from utils.helpers import plot_generative_output
-    plot_generative_output(outputs, n_samples=50, output="./output/vae_mnist/gen_samples/sampling_2011113.png")
+    plot_generative_output(outputs, n_samples=50, output="./output/vae_mnist/gen_samples/sampling_{0}.png".format(outstring))
     return
 
 def generate_samples_cvae(model, outstring=""):

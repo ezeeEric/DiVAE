@@ -7,6 +7,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import os,sys
 import pickle
+import datetime
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
@@ -103,16 +104,16 @@ def run(tuner=None, config=None):
                                         config.num_latent_units,
                                         config.activation_fct,
                                         config.tag])
+    date=datetime.datetime.now().strftime("%y%m%d")
+
     if config.dataType=='calo': 
         configString+="_nlayers_{0}_{1}".format(len(config.caloLayers),config.ptype)
 
     #TODO wrap all these in a container class
     if config.type=="AE":
         if not config.sparse:
-            print("Non sparse AE")
             model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
         else:
-            print("sparse AE")
             model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
 
     elif config.type=="VAE":
@@ -157,7 +158,7 @@ def run(tuner=None, config=None):
             if config.create_gif:
                 #TODO improve
                 if config.dataType=='calo':
-                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString),do_gif=True))
+                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output,configString,date),do_gif=True))
                 else:
                     gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
             
@@ -166,7 +167,7 @@ def run(tuner=None, config=None):
                 #TODO make a plot of the output
 
         if config.create_gif:
-            gif.save(gif_frames,"{0}/runs _{1}.gif".format(config.output,configString),duration=200)
+            gif.save(gif_frames,"{0}/runs_{1}.gif".format(config.output,configString),duration=200)
         
         if config.save_model:
             tuner.save_model(configString)
@@ -203,17 +204,16 @@ def run(tuner=None, config=None):
     if config.create_plots:
         if config.dataType=='calo':
             if config.type=="sVAE":
-                print("HERE")
-                print(model.type)
                 test_loss, x_true, x_recon, zetas, labels   = tuner.test()
-                plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/201124_{1}.png".format(config.output,configString))
+                plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output,configString,date))
             else:
                 test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-                plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
+                plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output,configString,date))
         else:
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-            # plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)
-            plot_MNIST_output(x_true, x_recon, output="{0}/201007_reco_{1}.png".format(config.output,configString))
+            if not config.type=="cVAE" and not config.type=="DiVAE":
+                plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output,configString,date),dimensions=0)
+            plot_MNIST_output(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output,configString,date))
 
 if __name__=="__main__":
     logging.getLogger().setLevel(logging.INFO)

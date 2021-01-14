@@ -11,7 +11,6 @@ class DiVAE_BU(AutoEncoderBase):
         self._n_hidden_units=n_hidden_units
 
         #TODO change names globally
-        #configs from DWave
         #TODO one wd factor for both SimpleDecoder and encoder
         self.weight_decay_factor=1e-4
         
@@ -250,7 +249,6 @@ class DiVAE_BU(AutoEncoderBase):
                     approx_posterior_logit_marginalised=torch.where(posterior_sample>0.5,torch.ones(posterior_sample.size()),torch.zeros(posterior_sample.size()))
                 samples_last_layer_marginalized.append(approx_posterior_logit_marginalised)
             logits_concat=torch.cat(logit_list,1)
-            #TODO changed treatment wrt to DWave
             # samples_last_layer_marginalized_concat=torch.cat(samples_last_layer_marginalized,1)
             samples_last_layer_marginalized_concat=samples_last_layer_marginalized
             # print(samples_last_layer_marginalized_concat.size())
@@ -262,22 +260,6 @@ class DiVAE_BU(AutoEncoderBase):
         else: # either this posterior only has one latent layer or we are not looking at training
             # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
             # #the mean-field solution (num_latent_hierarchy_levels == 1) reduces to log_ratio = 0.
-            # logger.debug("kld for evaluation/training of one layer posterior")
-            # entropy=0
-            # entropy_reduced=0
-            # cross_entropy=0
-            # # cross_entropy_reduced=0
-            # #TODO implement these functions in distributions!   
-            # # for factorial in posterior:
-            # for factorial, samples in zip(posterior, posterior_samples):
-            #     entropy += factorial.entropy(samples)
-            #     # print(entropy.size()) #returns [number samples, number latent layers]
-            #     entropy_reduced=torch.sum(entropy,dim=1)
-            #     # print(entropy_reduced) # number of samples times a float
-            #     #TODO why is this only "samples" in DWave code? Looks like
-            #     #they'd only take the last element of the posterior_samples list.
-            #     cross_entropy+=self.prior.cross_entropy(samples)
-            # return cross_entropy - entropy_reduced
             return 0
 
     def generate_samples(self, n_samples=100):

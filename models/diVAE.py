@@ -310,7 +310,6 @@ class DiVAE(AutoEncoderBase):
             self._decoder_nodes.append(nodepair)
 
         #TODO change names globally
-        #configs from DWave
         #TODO one wd factor for both SimpleDecoder and encoder
         self.weight_decay_factor=self._config.weight_decay_factor
         
@@ -603,21 +602,6 @@ class DiVAE(AutoEncoderBase):
             # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
             # #the mean-field solution (num_latent_hierarchy_levels == 1) reduces to log_ratio = 0.
             # logger.debug("kld for evaluation/training of one layer posterior")
-            # entropy=0
-            # entropy_reduced=0
-            # cross_entropy=0
-            # # cross_entropy_reduced=0
-            # #TODO implement these functions in distributions!   
-            # # for factorial in posterior:
-            # for factorial, samples in zip(posterior, posterior_samples):
-            #     entropy += factorial.entropy(samples)
-            #     # print(entropy.size()) #returns [number samples, number latent layers]
-            #     entropy_reduced=torch.sum(entropy,dim=1)
-            #     # print(entropy_reduced) # number of samples times a float
-            #     #TODO why is this only "samples" in DWave code? Looks like
-            #     #they'd only take the last element of the posterior_samples list.
-            #     cross_entropy+=self.prior.cross_entropy(samples)
-            # return cross_entropy - entropy_reduced
             return 0
 
     def generate_samples_per_gibbs(self, init_left_samples=None, init_right_samples=None, steps=20):
