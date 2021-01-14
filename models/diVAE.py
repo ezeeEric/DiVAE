@@ -62,8 +62,11 @@ class AutoEncoderBase(nn.Module):
             else:
                 logger.info(par)
 
+    # def set_dataset_mean(self,mean):
+    #     self._dataset_mean=mean
+    #TODO make this a getter setter thing
     def set_dataset_mean(self,mean):
-        self._dataset_mean=mean
+        self._dataset_mean=mean[0] if isinstance(mean,list) else mean
 
 # Autoencoder implementation
 class AutoEncoder(AutoEncoderBase):
@@ -116,9 +119,7 @@ class AutoEncoder(AutoEncoderBase):
 #Adds VAE specific reparameterisation, loss and forward call to AutoEncoder framework
 class VariationalAutoEncoder(AutoEncoder):
     def __init__(self, **kwargs):
-        print("VAE1")
         super(VariationalAutoEncoder, self).__init__(**kwargs)
-        print("VAE2")
         self._model_type="VAE"
 
         #define network structure
@@ -387,7 +388,7 @@ class DiVAE(AutoEncoderBase):
     def loss(self, in_data, output, output_activations, output_distribution, posterior_distribution,posterior_samples):
         logger.debug("loss")
 
-        #1) total_kl = self.prior.kl_dist_from(posterior, post_samples,
+        #1) total_kl = .prior.kl_dist_from(posterior, post_samples,
         #   is_training)
         #KLD
         # checked on 201023 - various TODOs and question marks....        
@@ -426,10 +427,11 @@ class DiVAE(AutoEncoderBase):
         loss=neg_elbo#+weight_decay_loss  
         return loss
 
+
     def kl_div_prior_gradient(self, posterior_logits, posterior_binary_samples):
-        #DVAE Eq12 - gradient of prior
-        #that is, the gradient of the KL between approx posterior and priot wrt
-        #phi, parameters of the RBM
+        #DVAE Eq11 - gradient of prior
+        #gradient of the KLD between posterior and prior wrt to prior
+        #parameters theta, i.e. generative model parameters.
         """
         Integrated gradient of the KL-divergence between a hierarchical approximating posterior and an RBM prior.
         When differentiated, this gives the gradient with respect to the RBM prior.
@@ -496,9 +498,9 @@ class DiVAE(AutoEncoderBase):
         return kld_per_sample
 
     def kl_div_posterior_gradient(self, posterior_logits, posterior_binary_samples):
-        #DVAE Eq11 - gradient of AE model
-        #that is, the gradient of the KL between approx posterior and priot wrt
-        #theta, parameters of the AE model
+        #DVAE Eq12
+        #gradient of the KLD between posterior and prior wrt to posterior
+        #parameters phi
         """
         Integrated gradient of the KL-divergence between a hierarchical approximating posterior and an RBM prior.
         When differentiated, this gives the gradient with respect to the approximating posterior
@@ -528,8 +530,8 @@ class DiVAE(AutoEncoderBase):
         rbm_bias=torch.cat([rbm_bias_left,rbm_bias_right])#self._h
         rbm_weight=self.prior.get_weights()#self._J
 
-        #this is transposed, so we multiply what we call "right hand" ("hidden layer")
-        #samples with right rbm units
+        # this is transposed, so we multiply what we call "right hand" ("hidden layer")
+        # samples with right rbm units
         # rbm_weight_t=torch.transpose(rbm_weight,0,1)#self._J
         
         rbm_activation_right=torch.matmul(rbm_samples_right,rbm_weight.t())
@@ -539,28 +541,20 @@ class DiVAE(AutoEncoderBase):
         rbm_activation=torch.cat([rbm_activation_right,rbm_activation_left],1)
         
         #TODO what is this scaling factor?
+        #[400,400] 
         hierarchy_scaling= (1.0 - posterior_binary_samples) / (1.0 - posterior_probs)
         hierarchy_scaling_left,hierarchy_scaling_right=torch.split(hierarchy_scaling, split_size_or_sections=int(n_split),dim=1)
         
         #TODO why does this happen? This seems to scale only the left side of
         #the RBM. Th right side is replaced with ones.
         hierarchy_scaling_with_ones=torch.cat([hierarchy_scaling_left,torch.ones(hierarchy_scaling_right.size())],axis=1)
-        # print(posterior_logits)
-        # print(posterior_logits.shape)
-        # print(rbm_bias)
-        # print(rbm_bias.shape)
-        # print(rbm_activation)
-        # print(rbm_activation.shape)
-        # print(hierarchy_scaling_with_ones)
-        # print(hierarchy_scaling_with_ones.shape)
-        # exit() 
+        
         with torch.no_grad():
             undifferentiated_component=posterior_logits-rbm_bias-rbm_activation*hierarchy_scaling_with_ones
             undifferentiated_component=undifferentiated_component.detach()
         
         kld_per_sample = torch.sum(undifferentiated_component * posterior_probs, dim=1)
-        # print(kld_per_sample)
-        # exit()
+
         return kld_per_sample
 
     def kl_divergence(self, posterior_distribution , posterior_samples):
@@ -602,7 +596,7 @@ class DiVAE(AutoEncoderBase):
                 
             kl_div_prior=self.kl_div_prior_gradient(
                 posterior_logits=logits_concat,
-                posterior_binary_samples=samples_marginalised_concat)  #DVAE Eq12 - gradient of prior   
+                posterior_binary_samples=samples_marginalised_concat)  #DVAE Eq11 - gradient of prior   
             kld=kl_div_prior+kl_div_posterior_distribution 
             return kld
         else: # either this posterior only has one latent layer or we are not looking at training
@@ -682,16 +676,17 @@ class DiVAE(AutoEncoderBase):
 
     def forward(self, in_data):
         logger.debug("forward")
-        #TODO study if this does good things
+        #TODO data prep - study if this does good things
         in_data_centered=in_data.view(-1, self._input_dimension)-self._dataset_mean
+        #Step 1: Feed data through encoder 
         posterior_distributions, posterior_samples = self.encoder.hierarchical_posterior(in_data_centered)
         posterior_samples_concat=torch.cat(posterior_samples,1)
-        #take samples zeta and reconstruct output with decoder
+        #Step 2: take samples zeta and reconstruct output with decoder
         output_activations = self.decoder.decode(posterior_samples_concat)
-        #TODO why is this so crucial? Maybe to do with cut off in other todo?
-        output_activations =output_activations+self._train_bias
+        #TODO data prep
+        output_activations = output_activations+self._train_bias
         output_distribution = Bernoulli(logit=output_activations)
-        output=torch.sigmoid(output_distribution.logits)
+        output = torch.sigmoid(output_distribution.logits)
         return output, output_activations, output_distribution, \
             posterior_distributions, posterior_samples
 
