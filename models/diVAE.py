@@ -340,7 +340,6 @@ class DiVAE(AutoEncoderBase):
 
     def set_train_bias(self):
         # self.train_bias = -np.log(1. / np.clip(self.config_train['mean_x'], 0.001, 0.999) - 1.).astype(np.float32)
-        print(self._dataset_mean)
         clipped_mean=torch.clamp(self._dataset_mean,0.001,0.999).detach()
         self._train_bias=-torch.log(1/clipped_mean-1)
         # self._train_bias.detach()

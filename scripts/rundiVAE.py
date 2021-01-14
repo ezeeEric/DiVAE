@@ -135,7 +135,7 @@ def run(tuner=None, config=None):
         raise NotImplementedError
     
     model.create_networks()
-    model.(train_ds_mean)
+    model.set_dataset_mean(train_ds_mean)
     # model.set_input_dimension(input_dimension)
 
     #TODO avoid this if statement
