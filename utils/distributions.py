@@ -25,7 +25,6 @@ def sigmoid_cross_entropy_with_logits(logits, labels):
         #z- logits (=output)
         #x- labels (=input data?)
         # TODO this implentation follows sigmoid_cross_entropy_with_logits
-        # EXACTLY like DWave implementation
         #TODO check https://discuss.pytorch.org/t/equivalent-of-tensorflows-sigmoid-cross-entropy-with-logits-in-pytorch/1985/13
         #https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits
         #max(x, 0) - x * z + log(1 + exp(-abs(x)))
@@ -126,7 +125,6 @@ class SpikeAndExponentialSmoother(Bernoulli):
         Returns: 
             ent: entropy
         """
-        #TODO is x here the same as logits in DWave code?
         logger.debug("ERROR entropy()")
         z  = torch.sigmoid(x)
         # sp = torch.nn.Softplus()

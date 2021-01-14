@@ -6,7 +6,6 @@ __pycache__/
 .DS_Store
 *.swp
 .vscode/
-data/
 output/
 sources/
 .gif
