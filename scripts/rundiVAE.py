@@ -27,7 +27,7 @@ from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
 from models.sparseAE import SparseAutoEncoder
 
-from models.diVAE import HierarchicalVAE,DiVAE
+from models.diVAE import DiVAE
 
 from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 from data.loadMNIST import loadMNIST

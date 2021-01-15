@@ -8,6 +8,8 @@ import torch
 from torch import nn
 from models.autoencoder import AutoEncoder
 
+from utils.networks import HierarchicalEncoder
+
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
