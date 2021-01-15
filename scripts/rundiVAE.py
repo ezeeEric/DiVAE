@@ -22,11 +22,12 @@ from utils.configaro import Configaro
 from utils.modelTuner import ModelTuner
 from models.autoencoder import AutoEncoder
 from models.variationalAE import VariationalAutoEncoder
+from models.hierarchicalVAE import HierarchicalVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
-from models.sparseAutoencoder import SparseAutoEncoder
+from models.sparseAE import SparseAutoEncoder
 
-from models.diVAE import HiVAE,DiVAE
+from models.diVAE import HierarchicalVAE,DiVAE
 
 from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 from data.loadMNIST import loadMNIST
@@ -129,7 +130,7 @@ def run(tuner=None, config=None):
         model = SequentialVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
     elif config.type=="HiVAE":
-        model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
+        model = HierarchicalVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
 
     elif config.type=="DiVAE":
         activation_fct=torch.nn.Tanh() 

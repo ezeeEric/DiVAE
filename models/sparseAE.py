@@ -26,11 +26,6 @@ class SparseAutoEncoder(AutoEncoder):
         l1_norm = 0
         current_in = inputs
         
-        # layers=self.encoder._layers
-        # layers.extend(self.decoder._layers.detach())
-        # [-1]
-        # print(layers)
-        # exit()
         #this assumes encoder and decoder activation fct are the same
         act_fct=self.encoder._activation_fct
 

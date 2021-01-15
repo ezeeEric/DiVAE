@@ -101,7 +101,7 @@ def run(tuner=None, config=None):
         model = SequentialVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
     elif config.type=="HiVAE":
-        model = HiVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
+        model = HierarchicalVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
 
     elif config.type=="DiVAE":
         activation_fct=torch.nn.Tanh() 

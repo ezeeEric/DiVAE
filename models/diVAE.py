@@ -210,9 +210,9 @@ class VariationalAutoEncoder(AutoEncoder):
 
 #VAE with a hierarchical posterior modelled by encoder
 #samples drawn from gaussian
-class HiVAE(AutoEncoder):
+class HierarchicalVAE(AutoEncoder):
     def __init__(self, **kwargs):
-        super(HiVAE, self).__init__(**kwargs)
+        super(HierarchicalVAE, self).__init__(**kwargs)
    
         self._model_type="HiVAE"
 
@@ -679,7 +679,7 @@ if __name__=="__main__":
     logger.debug("Testing Model Setup") 
     # model=VAE()
     # model=DiVAE()
-    model=HiVAE()
+    model=HierarchicalVAE()
     print(model.encoder)
     logger.debug("Success")
     pass
