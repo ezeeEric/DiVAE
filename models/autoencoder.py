@@ -2,7 +2,7 @@
 """
 Vanilla Autoencoder Model
 
-Author: Eric Drechsler (dr.eric.drechsler@gmail.com)
+Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 from torch import nn
 from models.autoencoderbase import AutoEncoderBase
