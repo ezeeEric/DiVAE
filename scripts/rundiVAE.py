@@ -21,13 +21,12 @@ import gif
 from utils.configaro import Configaro
 from utils.modelTuner import ModelTuner
 from models.autoencoder import AutoEncoder
+from models.sparseAE import SparseAutoEncoder
 from models.variationalAE import VariationalAutoEncoder
 from models.hierarchicalVAE import HierarchicalVAE
 from models.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.sequentialVAE import SequentialVariationalAutoEncoder
-from models.sparseAE import SparseAutoEncoder
-
-from models.diVAE import DiVAE
+from models.discreteVAE import DiVAE
 
 from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 from data.loadMNIST import loadMNIST
