@@ -23,7 +23,7 @@ class HierarchicalVAE(AutoEncoder):
    
         self._model_type="HiVAE"
 
-        self._reparamNodes=(self._config.num_det_units,self._latent_dimensions)  
+        self._reparamNodes=(self._config.num_enc_layer_nodes,self._latent_dimensions)  
 
         self._decoder_nodes=[]
         dec_node_list=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels))]+self._config.decoder_hidden_nodes+[self._input_dimension]
@@ -44,9 +44,9 @@ class HierarchicalVAE(AutoEncoder):
         return HierarchicalEncoder(
             input_dimension=self._input_dimension,
             num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels,
-            num_latent_units=self._latent_dimensions,
-            num_det_units=self._config.num_det_units,
-            num_det_layers=self._config.num_det_layers,
+            num_latent_nodes=self._latent_dimensions,
+            num_enc_layer_nodes=self._config.num_enc_layer_nodes,
+            num_enc_layers=self._config.num_enc_layers,
             skip_latent_layer=True)
 
     #TODO should this be part of encoder?

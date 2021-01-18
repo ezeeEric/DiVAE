@@ -11,7 +11,8 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch
 import torch.nn as nn
-from models.diVAE import VariationalAutoEncoder,AutoEncoder
+from models.autoencoder import AutoEncoder
+
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)

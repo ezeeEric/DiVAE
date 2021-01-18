@@ -78,15 +78,15 @@ class SimpleEncoder(Network):
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
         self.num_latent_hierarchy_levels=4
-        #number of latent units in the prior - output units for each level of
+        #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the decoder, first layer
-        self.num_latent_units=100
-        #each hierarchy has NN with num_det_layers_enc layers
-        #number of deterministic units in each encoding layer. These layers map
+        self.num_latent_nodes=100
+        #each hierarchy has NN with num_enc_layers_enc layers
+        #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_det_units=200
+        self.num_enc_layer_nodes=200
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_det_layers=2 
+        self.num_enc_layers=2 
 
     def encode(self, x):
         logger.debug("encode")
@@ -100,7 +100,7 @@ class SimpleEncoder(Network):
     def hierarchical_posterior(self,x, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
             to num_latent_hierarchy_levels and each element in the list is a DistUtil object containing posterior distribution 
-            for the group of latent units in each hierarchy level. 
+            for the group of latent nodes in each hierarchy level. 
 
         Args:
             input: a tensor containing input tensor.
@@ -168,9 +168,9 @@ class HierarchicalEncoder(BasicEncoder):
         activation_fct=nn.Tanh(),
         input_dimension=784,
         num_latent_hierarchy_levels=4,
-        num_latent_units=100,
-        num_det_units=200,
-        num_det_layers=2,
+        num_latent_nodes=100,
+        num_enc_layer_nodes=200,
+        num_enc_layers=2,
         skip_latent_layer=False, 
         **kwargs):
         super(HierarchicalEncoder, self).__init__(**kwargs)
@@ -179,23 +179,23 @@ class HierarchicalEncoder(BasicEncoder):
         #batch normalisation
         #weight decay
 
-        self.num_input_units=input_dimension
+        self.num_input_nodes=input_dimension
 
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
         self.num_latent_hierarchy_levels=num_latent_hierarchy_levels
 
-        #number of latent units in the prior - output units for each level of
+        #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the decoder, first layer
-        self.num_latent_units=num_latent_units
+        self.num_latent_nodes=num_latent_nodes
 
-        #each hierarchy has NN with num_det_layers_enc layers
-        #number of deterministic units in each encoding layer. These layers map
+        #each hierarchy has NN with num_enc_layers_enc layers
+        #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_det_units=num_det_units
+        self.num_enc_layer_nodes=num_enc_layer_nodes
         
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_det_layers=num_det_layers
+        self.num_enc_layers=num_enc_layers
 
         # for all layers except latent (output)
         self.activation_fct=activation_fct
@@ -222,17 +222,17 @@ class HierarchicalEncoder(BasicEncoder):
         #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy level
         # this is done outside this class...  
         #TODO this should be revised with better structure for input layer config  
-        layers=[self.num_input_units+level*self.num_latent_units]+[self.num_det_units]*self.num_det_layers+[self.num_latent_units]
+        layers=[self.num_input_nodes+level*self.num_latent_nodes]+[self.num_enc_layer_nodes]*self.num_enc_layers+[self.num_latent_nodes]
         #in case we want to sample gaussian variables
         if skip_latent_layer: 
-            layers=[self.num_input_units+level*self.num_latent_units]+[self.num_det_units]*self.num_det_layers
+            layers=[self.num_input_nodes+level*self.num_latent_nodes]+[self.num_enc_layer_nodes]*self.num_enc_layers
 
         moduleLayers=nn.ModuleList([])
         for l in range(len(layers)-1):
-            n_in_units=layers[l]
-            n_out_units=layers[l+1]
+            n_in_nodes=layers[l]
+            n_out_nodes=layers[l+1]
 
-            moduleLayers.append(nn.Linear(n_in_units,n_out_units))
+            moduleLayers.append(nn.Linear(n_in_nodes,n_out_nodes))
             #apply the activation function for all layers except the last
             #(latent) layer 
             act_fct = nn.Identity() if l==len(layers)-2 else self.activation_fct
@@ -244,7 +244,7 @@ class HierarchicalEncoder(BasicEncoder):
     def hierarchical_posterior(self, in_data=None, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
             to num_latent_hierarchy_levels and each element in the list is a DistUtil object containing posterior distribution 
-            for the group of latent units in each hierarchy level. 
+            for the group of latent nodes in each hierarchy level. 
 
         Args:
             input: a tensor containing input tensor.
@@ -288,10 +288,10 @@ class Decoder(BasicDecoder):
         moduleLayers=nn.ModuleList([])
         
         for l in range(len(layers)):
-            n_in_units=layers[l][0]
-            n_out_units=layers[l][1]
+            n_in_nodes=layers[l][0]
+            n_out_nodes=layers[l][1]
 
-            moduleLayers.append(nn.Linear(n_in_units,n_out_units))
+            moduleLayers.append(nn.Linear(n_in_nodes,n_out_nodes))
             #apply the activation function for all layers except the last
             #(latent) layer 
             act_fct= self._output_activation_fct if l==len(layers)-1 else self._activation_fct

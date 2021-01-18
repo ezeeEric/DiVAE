@@ -29,7 +29,7 @@ class AutoEncoderBase(nn.Module):
         else:
             assert input_dimension>0, "Input dimension not defined, needed for model structure"
         assert config is not None, "Config not defined"
-        assert config.num_latent_units is not None and config.num_latent_units>0, "Latent dimension must be >0"
+        assert config.num_latent_nodes is not None and config.num_latent_nodes>0, "Latent dimension must be >0"
         
         self._model_type=None
         """a short tag identifying the exact model, such as AE, VAE, diVAE...
@@ -38,7 +38,7 @@ class AutoEncoderBase(nn.Module):
         # the main configuration namespace returned by configaro
         self._config=config
         # number of nodes in latent layer
-        self._latent_dimensions=config.num_latent_units
+        self._latent_dimensions=config.num_latent_nodes
         
         if len(input_dimension)>1:
             logger.warning("Received multiple input dimension numbers. Assuming multiple inputs.")

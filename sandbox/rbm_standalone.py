@@ -68,7 +68,7 @@ class Contrastive_Divergence(object):
 		for step in range(self.n_gibbs_sampling_steps):
 			probabilities_visible = self.sample_from_visible(output_hidden)
 			probabilities_hidden = self.sample_from_hidden(probabilities_visible)
-			#When using CDn, only the final update of the hidden units should use the probability.
+			#When using CDn, only the final update of the hidden nodes should use the probability.
 			output_hidden = (probabilities_hidden >= torch.rand(self.n_hidden)).float()
 		return probabilities_visible,probabilities_hidden
 
@@ -101,7 +101,7 @@ class Contrastive_Divergence(object):
 		#training turns out much more successful!
 		self.weights_update -= self._weights * self.weight_cost  # L2 weight decay
 
-		## simplified version of the same learning rule that uses the states of individual units
+		## simplified version of the same learning rule that uses the states of individual nodes
 		self.visible_bias_update *= self.momentum_coefficient
 		self.visible_bias_update += torch.sum(input_data - probabilities_visible_neg, dim=0)
 

@@ -104,7 +104,7 @@ def run(tuner=None, config=None):
                                         config.EPOCHS,
                                         config.LEARNING_RATE,
                                         config.num_latent_hierarchy_levels,
-                                        config.num_latent_units,
+                                        config.num_latent_nodes,
                                         config.activation_fct,
                                         config.tag])
     date=datetime.datetime.now().strftime("%y%m%d")
@@ -186,9 +186,8 @@ def run(tuner=None, config=None):
             configString=config.infile.split("/")[-1].replace('.pt','')
  
         if config.type=="DiVAE":  
-            from utils.generate_samples import generate_samples,generate_iterative_samples
-            # generate_samples(tuner._model)
-            generate_iterative_samples(tuner._model, configString)
+            from utils.generate_samples import generate_samples_divae
+            generate_samples_divae(tuner._model, configString)
 
         #TODO split this up in plotting and generation routine and have one
         #common function for all generative models. 

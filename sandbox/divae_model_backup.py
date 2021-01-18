@@ -8,7 +8,7 @@ class DiVAE_BU(AutoEncoderBase):
         self._decoder_nodes=[(self._latent_dimensions,128),]
         self._outputNodes=(128,784)     
 
-        self._n_hidden_units=n_hidden_units
+        self._n_hidden_nodes=n_hidden_nodes
 
         #TODO change names globally
         #TODO one wd factor for both SimpleDecoder and encoder
@@ -20,18 +20,18 @@ class DiVAE_BU(AutoEncoderBase):
         #layers. At each hierarchy level an output layer is formed.
         self.num_latent_hierarchy_levels=4
 
-        #number of latent units in the prior - output units for each level of
+        #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the SimpleDecoder, first layer
-        self.num_latent_units=100
+        self.num_latent_nodes=100
 
         self.activation_fct=activation_fct
-        #each hierarchy has NN with num_det_layers_enc layers
-        #number of deterministic units in each encoding layer. These layers map
+        #each hierarchy has NN with num_enc_layers_enc layers
+        #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_det_units=200
+        self.num_enc_layer_nodes=200
         
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_det_layers=2 
+        self.num_enc_layers=2 
 
         # for all layers except latent (output)
         self.activation_fct=nn.Tanh()
@@ -52,8 +52,8 @@ class DiVAE_BU(AutoEncoderBase):
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_units_per_layer=self.num_latent_hierarchy_levels*self.num_latent_units//2
-        return RBM(n_visible=num_rbm_units_per_layer,n_hidden=num_rbm_units_per_layer)
+        num_rbm_nodes_per_layer=self.num_latent_hierarchy_levels*self.num_latent_nodes//2
+        return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
         #TODO
@@ -182,18 +182,18 @@ class DiVAE_BU(AutoEncoderBase):
         #samples from posterior to RBM layers
         #TODO better automatisation for this split?
         #TODO YES! see below torch.split
-        samples_rbm_units_left=[]
-        samples_rbm_units_right=[]
+        samples_rbm_nodes_left=[]
+        samples_rbm_nodes_right=[]
         for i in range(1,len(approx_post_binary_samples)+1):
             if i<=len(approx_post_binary_samples)/2:
-                samples_rbm_units_left.append(approx_post_binary_samples[i-1])
+                samples_rbm_nodes_left.append(approx_post_binary_samples[i-1])
             else:
-                samples_rbm_units_right.append(approx_post_binary_samples[i-1])
+                samples_rbm_nodes_right.append(approx_post_binary_samples[i-1])
 
-        samples_rbm_units_left=torch.cat(samples_rbm_units_left,1)
-        samples_rbm_units_right=torch.cat(samples_rbm_units_right,1)
+        samples_rbm_nodes_left=torch.cat(samples_rbm_nodes_left,1)
+        samples_rbm_nodes_right=torch.cat(samples_rbm_nodes_right,1)
 
-        # print(samples_rbm_units_left.size())
+        # print(samples_rbm_nodes_left.size())
         # torch.Size([42, 200])
         #the following prepares the variables in the calculation in tehir format
         rbm_bias_left=self.prior.get_visible_bias()
@@ -205,10 +205,10 @@ class DiVAE_BU(AutoEncoderBase):
         rbm_weight=self.prior.get_weights()#self._J
         #torch.Size([201, 200]) n_vis=200(left),n_hid=201 (right)
         #this is transposed, so we multiply what we call "right hand" ("hidden layer")
-        #samples with right rbm units
+        #samples with right rbm nodes
         rbm_weight_t=torch.transpose(rbm_weight,0,1)#self._J
-        rbm_activation_right=torch.matmul(samples_rbm_units_right,rbm_weight_t)
-        rbm_activation_left=torch.matmul(samples_rbm_units_left,rbm_weight)
+        rbm_activation_right=torch.matmul(samples_rbm_nodes_right,rbm_weight_t)
+        rbm_activation_left=torch.matmul(samples_rbm_nodes_left,rbm_weight)
         #corresponds to samples_times_J
         rbm_activation=torch.cat([rbm_activation_right,rbm_activation_left],1)
 

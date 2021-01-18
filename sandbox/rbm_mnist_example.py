@@ -8,8 +8,8 @@ import torchvision.transforms
 class RBM():
 
     def __init__(self, num_visible, num_hidden, k, learning_rate=1e-3, momentum_coefficient=0.5, weight_decay=1e-4, use_cuda=True):
-        self.num_visible = num_visible #number of visible units
-        self.num_hidden = num_hidden #number of hidden units
+        self.num_visible = num_visible #number of visible nodes
+        self.num_hidden = num_hidden #number of hidden nodes
         self.k = k #something something contrastive divergence
         self.learning_rate = learning_rate #
         self.momentum_coefficient = momentum_coefficient #

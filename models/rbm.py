@@ -44,13 +44,13 @@ class Contrastive_Divergence(nn.Module):
 		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=require_grad)
   		# #all biases initialised to 0.5
 		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=require_grad)
-		# #applying a 0 bias to the hidden units
+		# #applying a 0 bias to the hidden nodes
 		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=require_grad)
 
 		# self._weights = torch.randn(n_visible, n_hidden) * 0.01
   		# #all biases initialised to 0.5
 		# self._visible_bias = torch.ones(n_visible) * 0.5
-		# #applying a 0 bias to the hidden units
+		# #applying a 0 bias to the hidden nodes
 		# self._hidden_bias = torch.zeros(n_hidden)
 		
 	def sample_from_hidden(self, probabilities_visible):
@@ -69,16 +69,16 @@ class Contrastive_Divergence(nn.Module):
 		for step in range(self.n_gibbs_sampling_steps):
 			probabilities_visible = self.sample_from_visible(output_hidden)
 			probabilities_hidden = self.sample_from_hidden(probabilities_visible)
-			#When using CDn, only the final update of the hidden units should use the probability.
+			#When using CDn, only the final update of the hidden nodes should use the probability.
 			output_hidden = (probabilities_hidden >= torch.rand(self.n_hidden)).float()
 		return probabilities_visible,probabilities_hidden
 
 	def contrastive_divergence_fixed_hid_vis(self, in_data):
 		# logit_list=[k.logits.detach() for k in in_data]
-		rbm_units_concat=torch.cat(in_data,dim=1).detach()
+		rbm_nodes_concat=torch.cat(in_data,dim=1).detach()
 		
-		n_split=rbm_units_concat.size()[1]//2
-		positive_samples_left,positive_samples_right=torch.split(rbm_units_concat,split_size_or_sections=int(n_split),dim=1)
+		n_split=rbm_nodes_concat.size()[1]//2
+		positive_samples_left,positive_samples_right=torch.split(rbm_nodes_concat,split_size_or_sections=int(n_split),dim=1)
 		# print(positive_samples_left)
 		# print(positive_samples_right)
 		# # exit()
@@ -106,7 +106,7 @@ class Contrastive_Divergence(nn.Module):
 		#training turns out much more successful!
 		self.weights_update -= self._weights * self.weight_cost  # L2 weight decay
 
-		## simplified version of the same learning rule that uses the states of individual units
+		## simplified version of the same learning rule that uses the states of individual nodes
 		self.visible_bias_update *= self.momentum_coefficient
 		self.visible_bias_update += torch.sum(output_visible_pos - probabilities_visible_neg, dim=0)
 
@@ -154,7 +154,7 @@ class Contrastive_Divergence(nn.Module):
 		#training turns out much more successful!
 		self.weights_update -= self._weights * self.weight_cost  # L2 weight decay
 
-		## simplified version of the same learning rule that uses the states of individual units
+		## simplified version of the same learning rule that uses the states of individual nodes
 		self.visible_bias_update *= self.momentum_coefficient
 		self.visible_bias_update += torch.sum(input_data - probabilities_visible_neg, dim=0)
 
@@ -212,54 +212,56 @@ class RBM(nn.Module):
 	
 	def get_weights(self):
 		return self.sampler._weights
-	
-	def get_samples_per_gibbs(self, init_left_samples=None, init_right_samples=None, n_gibbs_sampling_steps=10):
-		num_latent_units=100
-		left=init_left_samples
-		right=init_right_samples
-		for gibbs_step in range(0,n_gibbs_sampling_steps):
-			right=self.sampler.sample_from_hidden(left)
-			left=self.sampler.sample_from_visible(right)
 
-		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_units))
-		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_units))
-		
-		return [z0_fin,z1_fin,z2_fin,z3_fin]
-	
-	def get_samples(self, num_latent_units=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
+	def get_samples(self, num_latent_nodes=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
 		logger.debug("generate_samples")
 		assert sampling_mode=="gibbs_ancestral" \
 			or sampling_mode=="gibbs_flat" \
 			or sampling_mode=="random", "Unknown sampling mode"
-
-		#TODO the range of this is taken from the clamping of the posterior
-		#samples to -88,88. Where is this coming from? Check the values
-		#TODO check if this is actually the right sampling procedure...
-		z0=-166*torch.rand([num_latent_units])+88
-		z1=-166*torch.rand([num_latent_units])+88
-		z2=-166*torch.rand([num_latent_units])+88
-		z3=-166*torch.rand([num_latent_units])+88
 		
-		#flat, uniform sampled z0, no dependence. Straight to decoder. Does not
-		#look pretty.
+		#TODO this is only defined for 4 hierarchy layers at the moment. 
+		#TODO the range of this is taken from the clamping of the posterior
+		#samples to -88,88. Where is this coming from? Check the values again.
+		#TODO check if these are proper sampling procedures. Should this be PCD
+		#or similar?
+		z0=-166*torch.rand([num_latent_nodes])+88
+		z1=-166*torch.rand([num_latent_nodes])+88
+		z2=-166*torch.rand([num_latent_nodes])+88
+		z3=-166*torch.rand([num_latent_nodes])+88
+
+		############
+		##Sampling mode: random
+		############
+		#flat, uniform sampled z, no dependence. Straight to decoder.
 		if sampling_mode=="random":
 			return [z0,z1,z2,z3]
 		
+		############
+		##Sampling mode: gibbs_flat
+		############
+		# start with random z0,z1. Gibbs sampling from trained RBM.
 		init_samples_left=torch.cat([z0,z1])
+		#this is only used if no gibbs sampling invoked. Remove?
 		init_samples_right=torch.cat([z2,z3])
-		
+	
 		left=init_samples_left
 		right=init_samples_right
 		for gibbs_step in range(0,n_gibbs_sampling_steps):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 
-		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_units))
-		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_units))
+		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_nodes))
+		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_nodes))
 		
 		if sampling_mode=="gibbs_flat":
 			return [z0_fin,z1_fin,z2_fin,z3_fin]
 		
+		############
+		##Sampling mode: gibbs_ancestral
+		############
+		# start with random z0. Do gibbs sampling. Resulting z0, z1 are new left
+		# side of Gibbs Sampling. Repeat until all z sampled in dependence on
+		# each other...
 		final_sample=[]
 		final_sample.append(z0_fin)
 	
@@ -273,7 +275,7 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 		
-		_,z1_fin=torch.split(left,split_size_or_sections=int(num_latent_units))
+		_,z1_fin=torch.split(left,split_size_or_sections=int(num_latent_nodes))
 		final_sample.append(z1_fin)
 
 		init_samples_left=torch.cat([z0_fin,z1_fin])
@@ -285,7 +287,7 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 
-		z2_fin,_=torch.split(right,split_size_or_sections=int(num_latent_units))
+		z2_fin,_=torch.split(right,split_size_or_sections=int(num_latent_nodes))
 		final_sample.append(z2_fin)
 
 		init_samples_left=torch.cat([z0_fin,z1_fin])
@@ -297,7 +299,7 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 
-		_,z3_fin=torch.split(right,split_size_or_sections=int(num_latent_units))
+		_,z3_fin=torch.split(right,split_size_or_sections=int(num_latent_nodes))
 		final_sample.append(z3_fin)
 		
 		return final_sample

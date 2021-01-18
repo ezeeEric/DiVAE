@@ -81,7 +81,7 @@ def run(tuner=None, config=None):
                                         config.NUM_EVTS_TEST,config.BATCH_SIZE,
                                         config.EPOCHS,config.LEARNING_RATE,
                                         config.num_latent_hierarchy_levels,
-                                        config.num_latent_units,
+                                        config.num_latent_nodes,
                                         config.activation_fct,
                                         config.tag])
     if config.dataType=='calo': 

@@ -3,31 +3,12 @@ import torch
 import logging
 logger = logging.getLogger(__name__)
 
-def generate_iterative_samples(model, outstring=""):
-    num_latent_units=100
-    #TODO the range of this is taken from the clamping of the posterior
-    #samples to -88,88. Where is this coming from? Check the values
-    #TODO check if this is actually the right sampling procedure...
-    z0=-166*torch.rand([num_latent_units])+88
-    z1=-166*torch.rand([num_latent_units])+88
-    z2=-166*torch.rand([num_latent_units])+88
-    z3=-166*torch.rand([num_latent_units])+88
-
-    init_samples_left=torch.cat([z0,z1])
-    init_samples_right=torch.cat([z2,z3])		
-
-    output=model.generate_samples_per_gibbs(init_left_samples=init_samples_left, init_right_samples=init_samples_right,steps=10)
-    out_tensor=torch.cat(output)
-    out_tensor=out_tensor.detach()
+def generate_samples_divae(model, outstring=""):
+    n_samples=100
+    output=model.generate_samples( n_samples=n_samples, n_gibbs_sampling_steps=100, sampling_mode="gibbs_flat")
+    
     from utils.helpers import plot_generative_output
-    plot_generative_output(out_tensor, n_samples=50, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
-    return
-
-def generate_samples(model, outstring=""):
-    output=model.generate_samples(n_samples=100)
-    output=output.detach()
-    from utils.helpers import plot_generative_output
-    plot_generative_output(output, n_samples=100, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
+    plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
     return
 
 def generate_samples_vae(model, outstring=""):

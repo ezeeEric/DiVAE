@@ -29,11 +29,11 @@ class AutoEncoderBase(nn.Module):
         else:
             assert input_dimension>0, "Input dimension not defined, needed for model structure"
         assert config is not None, "Config not defined"
-        assert config.num_latent_units is not None and config.num_latent_units>0, "Latent dimension must be >0"
+        assert config.num_latent_nodes is not None and config.num_latent_nodes>0, "Latent dimension must be >0"
         
         self._model_type=None
         self._config=config
-        self._latent_dimensions=config.num_latent_units
+        self._latent_dimensions=config.num_latent_nodes
         logger.warning("Taking all input dimensions for sVAE. Only first for other models.")
         self._input_dimension=input_dimension if self._config.type=="sVAE" else input_dimension[0]
         self._activation_fct=activation_fct
@@ -216,7 +216,7 @@ class HierarchicalVAE(AutoEncoder):
    
         self._model_type="HiVAE"
 
-        self._reparamNodes=(self._config.num_det_units,self._latent_dimensions)  
+        self._reparamNodes=(self._config.num_enc_layer_nodes,self._latent_dimensions)  
 
         self._decoder_nodes=[]
         dec_node_list=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels))]+self._config.decoder_hidden_nodes+[self._input_dimension]
@@ -237,9 +237,9 @@ class HierarchicalVAE(AutoEncoder):
         return HierarchicalEncoder(
             input_dimension=self._input_dimension,
             num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels,
-            num_latent_units=self._latent_dimensions,
-            num_det_units=self._config.num_det_units,
-            num_det_layers=self._config.num_det_layers,
+            num_latent_nodes=self._latent_dimensions,
+            num_enc_layer_nodes=self._config.num_enc_layer_nodes,
+            num_enc_layers=self._config.num_enc_layers,
             skip_latent_layer=True)
 
     #TODO should this be part of encoder?
@@ -319,21 +319,21 @@ class DiVAE(AutoEncoderBase):
         #layers. At each hierarchy level an output layer is formed.
         self.num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels
 
-        #number of latent units in the prior - output units for each level of
+        #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the SimpleDecoder, first layer
-        self.num_latent_units=self._config.num_latent_units
+        self.num_latent_nodes=self._config.num_latent_nodes
 
-        #each hierarchy has NN with num_det_layers_enc layers
-        #number of deterministic units in each encoding layer. These layers map
+        #each hierarchy has NN with num_enc_layers_enc layers
+        #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_det_units=self._config.num_det_units
+        self.num_enc_layer_nodes=self._config.num_enc_layer_nodes
         
         #TODO this could be solved more elegantly. FOr example replace
         #"skip_latent layer" with something actually useful 
-        # assert self.num_latent_units==self.num_det_units, "Number of units in last det encoder layer must be the same as num latent unit"
+        # assert self.num_latent_nodes==self.num_enc_layer_nodes, "Number of nodes in last det encoder layer must be the same as num latent unit"
 
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_det_layers=self._config.num_det_layers
+        self.num_enc_layers=self._config.num_enc_layers
 
         self._train_bias=None
 
@@ -360,9 +360,9 @@ class DiVAE(AutoEncoderBase):
         return HierarchicalEncoder(
             input_dimension=self._input_dimension,
             num_latent_hierarchy_levels=self.num_latent_hierarchy_levels,
-            num_latent_units=self.num_latent_units,
-            num_det_units=self.num_det_units,
-            num_det_layers=self.num_det_layers,
+            num_latent_nodes=self.num_latent_nodes,
+            num_enc_layer_nodes=self.num_enc_layer_nodes,
+            num_enc_layers=self.num_enc_layers,
             skip_latent_layer=False)
 
     def _create_decoder(self):
@@ -372,8 +372,8 @@ class DiVAE(AutoEncoderBase):
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_units_per_layer=self._config.num_latent_hierarchy_levels*self._latent_dimensions//2
-        return RBM(n_visible=num_rbm_units_per_layer,n_hidden=num_rbm_units_per_layer)
+        num_rbm_nodes_per_layer=self._config.num_latent_hierarchy_levels*self._latent_dimensions//2
+        return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
         #TODO
@@ -475,7 +475,7 @@ class DiVAE(AutoEncoderBase):
         #samples from rbm are labelled negative
 
         #rbm_samples Tensor("zeros:0", shape=(200, 200), dtype=float32)
-        #this returns the full RBM set: left and right units concatenated
+        #this returns the full RBM set: left and right nodes concatenated
 
         #TODO What are these samples here?
         #TODO what's the impact of doing gibbs sampling here? does this make
@@ -530,7 +530,7 @@ class DiVAE(AutoEncoderBase):
         rbm_weight=self.prior.get_weights()#self._J
 
         # this is transposed, so we multiply what we call "right hand" ("hidden layer")
-        # samples with right rbm units
+        # samples with right rbm nodes
         # rbm_weight_t=torch.transpose(rbm_weight,0,1)#self._J
         
         rbm_activation_right=torch.matmul(rbm_samples_right,rbm_weight.t())
@@ -641,7 +641,7 @@ class DiVAE(AutoEncoderBase):
         prior_samples=[]
         for i in range(0,n_samples):
             prior_sample = self.prior.get_samples(
-                num_latent_units=self.num_latent_units,
+                num_latent_nodes=self.num_latent_nodes,
                 n_gibbs_sampling_steps=100, 
                 sampling_mode="gibbs_ancestral")
             prior_sample = torch.cat(prior_sample)
