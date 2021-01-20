@@ -21,72 +21,23 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 from DiVAE import config
 
-from data.loadMNIST import loadMNIST
-from data.loadCaloGAN import loadCalorimeterData
+from data.dataManager import DataManager
 
-def load_data(config=None):
-    logger.debug("Loading Data")
+def run(modelMaker=None):
 
-    train_loader,test_loader=None,None
-    if config.dataType.lower()=="mnist":
-        train_loader,test_loader=loadMNIST(
-            batch_size=config.BATCH_SIZE,
-            num_evts_train=config.NUM_EVTS_TRAIN,
-            num_evts_test=config.NUM_EVTS_TEST, 
-            binarise=config.binarise_dataset)
+    #container for our Dataloaders
+    dataMgr=DataManager()
+    #initialise data loaders
+    dataMgr.init_dataLoaders()
+    #run pre processing: get/set input dimensions and mean of train dataset
+    dataMgr.pre_processing()
+    #add dataMgr instance to modelMaker namespace
+    modelMaker.register_dataManager(dataMgr)
 
-    elif config.dataType.lower()=="calo":
-        #TODO move to config
-        inFiles={
-            'gamma':    '/Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5',
-            'eplus':    '/Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5',        
-            'piplus':   '/Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5'         
-        }
-        train_loader,test_loader=loadCalorimeterData(
-            inFiles=inFiles,
-            ptype=config.ptype,
-            layers=config.caloLayers,
-            batch_size=config.BATCH_SIZE,
-            num_evts_train=config.NUM_EVTS_TRAIN,
-            num_evts_test=config.NUM_EVTS_TEST, 
-            )
-    
-    logger.debug("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
-    logger.debug("{0}: {2} events, {1} batches".format(test_loader,len(test_loader),len(test_loader.dataset)))
-    return train_loader,test_loader
-
-def run(tuner=None):
-    
-
+    input_dimension=dataMgr.get_input_dimensions()
+    train_ds_mean=dataMgr.get_train_dataset_mean()
     exit()
-    if config.load_data_from_pkl:
-        #To speed up chain. Postprocessing involves loop over data for normalisation.
-        #Load that data already prepped.
 
-        import pickle
-        dataFile=open("/Users/drdre/inputz/MNIST/preprocessed/full.pkl","rb")
-        train_loader=pickle.load(dataFile)
-        test_loader =pickle.load(dataFile)
-        input_dimension=pickle.load(dataFile)
-        train_ds_mean=pickle.load(dataFile)
-        dataFile.close()
-        tuner.register_dataLoaders(train_loader, test_loader)
-
-    else:
-        #load data, internally registers train and test dataloaders
-        tuner.register_dataLoaders(*load_data(config=config))
-        
-        input_dimension=tuner.get_input_dimension()
-        
-        train_ds_mean=tuner.get_train_dataset_mean()
-
-        # import pickle
-        # dataFile=open("/Users/drdre/inputz/calo/preprocessed/all_la.pkl","wb")
-        # pickle.dump(tuner.train_loader,dataFile)
-        # pickle.dump(tuner.test_loader,dataFile)
-        # pickle.dump(input_dimension,dataFile)
-        # pickle.dump(train_ds_mean,dataFile)
-        # dataFile.close()
 
     #set model properties
     model=None
@@ -153,8 +104,8 @@ def run(tuner=None):
     model.print_model_info()
     optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
 
-    tuner.register_model(model)
-    tuner.register_optimiser(optimiser)
+    modelMaker.register_model(model)
+    modelMaker.register_optimiser(optimiser)
     
     #TODO rewrite this as "as helpers"
     from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
@@ -163,8 +114,8 @@ def run(tuner=None):
         gif_frames=[]
         logger.debug("Start Epoch Loop")
         for epoch in range(1, config.EPOCHS+1):   
-            train_loss = tuner.train(epoch)       
-            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+            train_loss = modelMaker.train(epoch)       
+            test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
 
             if config.create_gif:
                 #TODO improve
@@ -181,12 +132,12 @@ def run(tuner=None):
             gif.save(gif_frames,"{0}/runs_{1}.gif".format(config.output_path,configString),duration=200)
         
         if config.save_model:
-            tuner.save_model(configString)
+            modelMaker.save_model(configString)
             if model.type=="DiVAE": 
-                tuner.save_rbm(configString)
+                modelMaker.save_rbm(configString)
 
     else:
-        tuner.load_model(set_eval=True)
+        modelMaker.load_model(set_eval=True)
 
     #TODO move this around
     if config.test_generate_samples:
@@ -195,32 +146,32 @@ def run(tuner=None):
  
         if config.type=="DiVAE":  
             from utils.generate_samples import generate_samples_divae
-            generate_samples_divae(tuner._model, configString)
+            generate_samples_divae(modelMaker._model, configString)
 
         #TODO split this up in plotting and generation routine and have one
         #common function for all generative models. 
         elif config.type=="VAE": 
             from utils.generate_samples import generate_samples_vae
-            generate_samples_vae(tuner._model, configString)
+            generate_samples_vae(modelMaker._model, configString)
 
         elif config.type=="cVAE": 
             from utils.generate_samples import generate_samples_cvae
-            generate_samples_cvae(tuner._model, configString)
+            generate_samples_cvae(modelMaker._model, configString)
         
         elif config.type=="sVAE": 
             from utils.generate_samples import generate_samples_svae
-            generate_samples_svae(tuner._model, configString)
+            generate_samples_svae(modelMaker._model, configString)
 
     if config.create_plots:
         if config.dataType=='calo':
             if config.type=="sVAE":
-                test_loss, x_true, x_recon, zetas, labels   = tuner.test()
+                test_loss, x_true, x_recon, zetas, labels   = modelMaker.test()
                 plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
             else:
-                test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+                test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
                 plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         else:
-            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+            test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
             if not config.type=="cVAE" and not config.type=="DiVAE":
                 plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
             plot_MNIST_output(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))

@@ -6,12 +6,6 @@ configuration variable
 
 @author Eric Drechsler (eric.drechsler@cern.ch)
 """
-import os,sys
-import torch
-torch.manual_seed(1)
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 #pretty logging
 import logging

@@ -15,8 +15,7 @@ class ModelMaker(object):
         self._model=None
         self._optimiser=None
 
-        self.train_loader=None
-        self.test_loader=None
+        self.data_mgr=None
 
     def save_model(self,config_string='test'):
         logger.info("Saving Model")
@@ -33,33 +32,10 @@ class ModelMaker(object):
         f.close()
         return
 
-    def register_dataLoaders(self,train_loader,test_loader):
-        self.train_loader=train_loader
-        self.test_loader=test_loader
+    def register_dataManager(self,data_mgr):
+        assert data_mgr is not None, "Empty Data Mgr"
+        self.data_mgr=data_mgr
         return
-    
-    def get_input_dimension(self):
-        assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
-        input_sizes=self.train_loader.get_input_size()
-        return input_sizes if isinstance(input_sizes,list) else [input_sizes]
-    
-    def get_train_dataset_mean(self):
-        #returns mean of dataset as list
-        #multiple input datasets - multiple means
-        assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
-        
-        input_dimension=self.get_input_dimension()
-        imgPerLayer={}	
-        for i in range(0,len(input_dimension)):
-            imgPerLayer[i]=[]	
-        for i, (data, _) in enumerate(self.train_loader.dataset):
-            #loop over all layers
-            for l,d in enumerate(data):	
-                imgPerLayer[l].append(d.view(-1,input_dimension[l]))
-        means=[]
-        for l, imgList in imgPerLayer.items():
-            means.append(torch.mean(torch.stack(imgList),dim=0))
-        return means
 
     def load_model(self,set_eval=True):
         logger.info("Loading Model")
