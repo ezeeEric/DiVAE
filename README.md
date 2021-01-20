@@ -73,6 +73,9 @@ python scripts/rundiVAE.py -c configs/default_divae_mnist.cfg
 - In Hierarchical Encoder: probabilities are clamped (clipped)
 more clamping in KLD
 
+- The configuration object config is instantiated in the __init__ file of the
+  main module and imported as global variable.
+
 ### References
 [1] Jason Rolfe, Discrete Variational Autoencoders,
 http://arxiv.org/abs/1609.02200

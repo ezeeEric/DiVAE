@@ -6,9 +6,14 @@ configuration variable
 
 @author Eric Drechsler (eric.drechsler@cern.ch)
 """
+import os,sys
 import torch
 torch.manual_seed(1)
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+#pretty logging
 import logging
 
 logging.addLevelName( logging.INFO,    "\033[1;95m{0}\033[1;0m".format('INFO '))
@@ -23,6 +28,15 @@ BOLD = "\033[1m"
 RESET = "\033[0m"
 logging.basicConfig( level=logging.INFO, format='{0}[%(asctime)s.%(msecs)03d]{1} %(levelname)8s  {0}%(name)-50s{1}%(message)s'.format(BOLD,RESET),datefmt="%H:%M:%S")
 
-def exit():
-    import sys
-    sys.exit()
+logger = logging.getLogger(__name__)
+logger.info("Willkommen!")
+logger.info("Loading configuration.")
+
+#global definition of configuration object
+from utils.configaro import Configaro
+config=Configaro()
+
+#set debug logging mode if requested
+if config.debug:
+    logging.getLogger().setLevel(logging.DEBUG)
+    logger.debug("Logging in debug mode.")
