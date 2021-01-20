@@ -104,11 +104,11 @@ class RBM():
 
 if __name__=="__main__":
     ########## CONFIGURATION ##########
-    BATCH_SIZE = 64
+    n_batch_samples = 64
     VISIBLE_UNITS = 784  # 28 x 28 images
     HIDDEN_UNITS = 128
     CD_K = 2
-    EPOCHS = 2
+    n_epochs = 2
     
     DATA_FOLDER = '/Users/drdre/inputz/'
     
@@ -123,10 +123,10 @@ if __name__=="__main__":
     print('Loading dataset...')
 
     train_dataset = torchvision.datasets.MNIST(root=DATA_FOLDER, train=True, transform=torchvision.transforms.ToTensor(), download=False)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=n_batch_samples)
     
     test_dataset = torchvision.datasets.MNIST(root=DATA_FOLDER, train=False, transform=torchvision.transforms.ToTensor(), download=False)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=n_batch_samples)
     
     
     ########## TRAINING RBM ##########
@@ -134,7 +134,7 @@ if __name__=="__main__":
     
     rbm = RBM(VISIBLE_UNITS, HIDDEN_UNITS, CD_K, use_cuda=CUDA)
     
-    for epoch in range(EPOCHS):
+    for epoch in range(n_epochs):
         epoch_error = 0.0
     
         for batch, _ in train_loader:
@@ -164,8 +164,8 @@ if __name__=="__main__":
         if CUDA:
             batch = batch.cuda()
     
-        train_features[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = rbm.sample_hidden(batch).cpu().numpy()
-        train_labels[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = labels.numpy()
+        train_features[i*n_batch_samples:i*n_batch_samples+len(batch)] = rbm.sample_hidden(batch).cpu().numpy()
+        train_labels[i*n_batch_samples:i*n_batch_samples+len(batch)] = labels.numpy()
     
     for i, (batch, labels) in enumerate(test_loader):
         batch = batch.view(len(batch), VISIBLE_UNITS)  # flatten input data
@@ -173,8 +173,8 @@ if __name__=="__main__":
         if CUDA:
             batch = batch.cuda()
     
-        test_features[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = rbm.sample_hidden(batch).cpu().numpy()
-        test_labels[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = labels.numpy()
+        test_features[i*n_batch_samples:i*n_batch_samples+len(batch)] = rbm.sample_hidden(batch).cpu().numpy()
+        test_labels[i*n_batch_samples:i*n_batch_samples+len(batch)] = labels.numpy()
     
     
     ########## CLASSIFICATION ##########

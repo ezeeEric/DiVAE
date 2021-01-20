@@ -23,10 +23,10 @@ class HierarchicalVAE(AutoEncoder):
    
         self._model_type="HiVAE"
 
-        self._reparamNodes=(self._config.num_enc_layer_nodes,self._latent_dimensions)  
+        self._reparamNodes=(self._config.n_encoder_layer_nodes,self._latent_dimensions)  
 
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels))]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._input_dimension]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -43,17 +43,17 @@ class HierarchicalVAE(AutoEncoder):
         logger.debug("_create_encoder")
         return HierarchicalEncoder(
             input_dimension=self._input_dimension,
-            num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels,
-            num_latent_nodes=self._latent_dimensions,
-            num_enc_layer_nodes=self._config.num_enc_layer_nodes,
-            num_enc_layers=self._config.num_enc_layers,
+            n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls,
+            n_latent_nodes=self._latent_dimensions,
+            n_encoder_layer_nodes=self._config.n_encoder_layer_nodes,
+            n_encoder_layers=self._config.n_encoder_layers,
             skip_latent_layer=True)
 
     #TODO should this be part of encoder?
     def _create_reparameteriser(self,act_fct=None):
         logger.debug("ERROR _create_encoder dummy implementation")
         hierarchical_repara_layers=nn.ModuleDict()
-        for lvl in range(self._config.num_latent_hierarchy_levels):
+        for lvl in range(self._config.n_latent_hierarchy_lvls):
             hierarchical_repara_layers['mu_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
             hierarchical_repara_layers['var_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
         return hierarchical_repara_layers

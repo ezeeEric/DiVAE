@@ -25,7 +25,7 @@ class DiVAE(AutoEncoderBase):
         
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.num_latent_hierarchy_levels))]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._input_dimension]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -37,19 +37,19 @@ class DiVAE(AutoEncoderBase):
         
         #ENCODER SPECIFICS
         #number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
-        self.num_latent_hierarchy_levels=self._config.num_latent_hierarchy_levels
+        self.n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls
 
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy.
-        self.num_latent_nodes=self._config.num_latent_nodes
+        self.n_latent_nodes=self._config.n_latent_nodes
         
         # number of layers in encoder before latent layer. These layers map
         #input to the latent layer. 
-        self.num_enc_layers=self._config.num_enc_layers
+        self.n_encoder_layers=self._config.n_encoder_layers
 
-        #each hierarchy has NN with num_enc_layers_enc layers
+        #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. 
-        self.num_enc_layer_nodes=self._config.num_enc_layer_nodes
+        self.n_encoder_layer_nodes=self._config.n_encoder_layer_nodes
 
         #added to output activation of last decoder layer in forward call
         self._train_bias=None
@@ -71,10 +71,10 @@ class DiVAE(AutoEncoderBase):
         logger.debug("ERROR _create_encoder dummy implementation")
         return HierarchicalEncoder(
             input_dimension=self._input_dimension,
-            num_latent_hierarchy_levels=self.num_latent_hierarchy_levels,
-            num_latent_nodes=self.num_latent_nodes,
-            num_enc_layer_nodes=self.num_enc_layer_nodes,
-            num_enc_layers=self.num_enc_layers,
+            n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
+            n_latent_nodes=self.n_latent_nodes,
+            n_encoder_layer_nodes=self.n_encoder_layer_nodes,
+            n_encoder_layers=self.n_encoder_layers,
             skip_latent_layer=False)
 
     def _create_decoder(self):
@@ -84,7 +84,7 @@ class DiVAE(AutoEncoderBase):
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_nodes_per_layer=self._config.num_latent_hierarchy_levels*self._latent_dimensions//2
+        num_rbm_nodes_per_layer=self._config.n_latent_hierarchy_lvls*self._latent_dimensions//2
         return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
@@ -267,7 +267,7 @@ class DiVAE(AutoEncoderBase):
             return kld
         else: # either this posterior only has one latent layer or we are not looking at training
             # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
-            # #the mean-field solution (num_latent_hierarchy_levels == 1) reduces to log_ratio = 0.
+            # #the mean-field solution (n_latent_hierarchy_lvls == 1) reduces to log_ratio = 0.
             # logger.debug("kld for evaluation/training of one layer posterior")
             return 0
 
@@ -278,7 +278,7 @@ class DiVAE(AutoEncoderBase):
         #how many samples (i.e. digits) to look at
         for i in range(0,n_samples):
             prior_sample = self.prior.get_samples(
-                num_latent_nodes=self.num_latent_nodes,
+                n_latent_nodes=self.n_latent_nodes,
                 n_gibbs_sampling_steps=n_gibbs_sampling_steps, 
                 sampling_mode=sampling_mode)
             prior_sample = torch.cat(prior_sample)

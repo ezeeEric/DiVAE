@@ -213,7 +213,7 @@ class RBM(nn.Module):
 	def get_weights(self):
 		return self.sampler._weights
 
-	def get_samples(self, num_latent_nodes=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
+	def get_samples(self, n_latent_nodes=100, n_gibbs_sampling_steps=10, sampling_mode="ancestral"):
 		logger.debug("generate_samples")
 		assert sampling_mode=="gibbs_ancestral" \
 			or sampling_mode=="gibbs_flat" \
@@ -224,10 +224,10 @@ class RBM(nn.Module):
 		#samples to -88,88. Where is this coming from? Check the values again.
 		#TODO check if these are proper sampling procedures. Should this be PCD
 		#or similar?
-		z0=-166*torch.rand([num_latent_nodes])+88
-		z1=-166*torch.rand([num_latent_nodes])+88
-		z2=-166*torch.rand([num_latent_nodes])+88
-		z3=-166*torch.rand([num_latent_nodes])+88
+		z0=-166*torch.rand([n_latent_nodes])+88
+		z1=-166*torch.rand([n_latent_nodes])+88
+		z2=-166*torch.rand([n_latent_nodes])+88
+		z3=-166*torch.rand([n_latent_nodes])+88
 
 		############
 		##Sampling mode: random
@@ -250,8 +250,8 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 
-		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(num_latent_nodes))
-		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(num_latent_nodes))
+		z0_fin,z1_fin = torch.split(left,split_size_or_sections=int(n_latent_nodes))
+		z2_fin,z3_fin = torch.split(right,split_size_or_sections=int(n_latent_nodes))
 		
 		if sampling_mode=="gibbs_flat":
 			return [z0_fin,z1_fin,z2_fin,z3_fin]
@@ -275,7 +275,7 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 		
-		_,z1_fin=torch.split(left,split_size_or_sections=int(num_latent_nodes))
+		_,z1_fin=torch.split(left,split_size_or_sections=int(n_latent_nodes))
 		final_sample.append(z1_fin)
 
 		init_samples_left=torch.cat([z0_fin,z1_fin])
@@ -287,7 +287,7 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 
-		z2_fin,_=torch.split(right,split_size_or_sections=int(num_latent_nodes))
+		z2_fin,_=torch.split(right,split_size_or_sections=int(n_latent_nodes))
 		final_sample.append(z2_fin)
 
 		init_samples_left=torch.cat([z0_fin,z1_fin])
@@ -299,7 +299,7 @@ class RBM(nn.Module):
 			right=self.sampler.sample_from_hidden(left)
 			left=self.sampler.sample_from_visible(right)
 
-		_,z3_fin=torch.split(right,split_size_or_sections=int(num_latent_nodes))
+		_,z3_fin=torch.split(right,split_size_or_sections=int(n_latent_nodes))
 		final_sample.append(z3_fin)
 		
 		return final_sample
@@ -374,19 +374,19 @@ class RBM(nn.Module):
 if __name__=="__main__":
 	logger.info("Testing RBM Setup")
 
-	BATCH_SIZE = 32
+	n_batch_samples = 32
 	VISIBLE_UNITS = 784  # 28 x 28 images
 	HIDDEN_UNITS = 128
 	N_GIBBS_SAMPLING_STEPS = 10
-	EPOCHS = 6
+	n_epochs = 6
 	N_EVENTS_TRAIN=-1
 	N_EVENTS_TEST=-1
 	do_train=False
-	config_string="_".join(map(str,[N_EVENTS_TRAIN,EPOCHS,N_GIBBS_SAMPLING_STEPS]))
+	config_string="_".join(map(str,[N_EVENTS_TRAIN,n_epochs,N_GIBBS_SAMPLING_STEPS]))
 
 	from data.loadMNIST import loadMNIST
 	train_loader,test_loader=loadMNIST(
-			batch_size=BATCH_SIZE,
+			batch_size=n_batch_samples,
 			num_evts_train=N_EVENTS_TRAIN,
 			num_evts_test=N_EVENTS_TEST,
 			binarise="threshold")
@@ -394,7 +394,7 @@ if __name__=="__main__":
 	rbm = RBM(n_visible=VISIBLE_UNITS, n_hidden=HIDDEN_UNITS, n_gibbs_sampling_steps=N_GIBBS_SAMPLING_STEPS)
 
 	if do_train:
-		for epoch in range(EPOCHS):
+		for epoch in range(n_epochs):
 			loss = 0    
 			for batch_idx, (x_true, label) in enumerate(train_loader):
 				loss_per_batch = rbm.train_sampler(x_true.view(-1,VISIBLE_UNITS))
@@ -441,10 +441,10 @@ if __name__=="__main__":
 	
 	# for i, (batch, labels) in enumerate(train_loader):
 	#     batch = batch.view(len(batch), VISIBLE_UNITS)  # flatten input data
-	#     train_features[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
-	#     train_labels[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = labels.numpy()
+	#     train_features[i*n_batch_samples:i*n_batch_samples+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
+	#     train_labels[i*n_batch_samples:i*n_batch_samples+len(batch)] = labels.numpy()
 	
 	# for i, (batch, labels) in enumerate(test_loader):
 	#     batch = batch.view(len(batch), VISIBLE_UNITS)  # flatten input data
-	#     test_features[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
-	#     test_labels[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = labels.numpy()
+	#     test_features[i*n_batch_samples:i*n_batch_samples+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
+	#     test_labels[i*n_batch_samples:i*n_batch_samples+len(batch)] = labels.numpy()

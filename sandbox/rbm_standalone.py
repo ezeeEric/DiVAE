@@ -214,19 +214,19 @@ class RBM(Distribution):
 if __name__=="__main__":
 	logger.info("Testing RBM Setup")
 
-	BATCH_SIZE = 32
+	n_batch_samples = 32
 	VISIBLE_UNITS = 784  # 28 x 28 images
 	HIDDEN_UNITS = 128
 	N_GIBBS_SAMPLING_STEPS = 10
-	EPOCHS = 1
+	n_epochs = 1
 	N_EVENTS_TRAIN=100
 	N_EVENTS_TEST=-1
 	do_train=True
-	config_string="_".join(map(str,[N_EVENTS_TRAIN,EPOCHS,N_GIBBS_SAMPLING_STEPS]))
+	config_string="_".join(map(str,[N_EVENTS_TRAIN,n_epochs,N_GIBBS_SAMPLING_STEPS]))
 
 	from data.loadMNIST import loadMNIST
 	train_loader,test_loader=loadMNIST(
-			batch_size=BATCH_SIZE,
+			batch_size=n_batch_samples,
 			num_evts_train=N_EVENTS_TRAIN,
 			num_evts_test=N_EVENTS_TEST,
 			binarise="threshold")
@@ -234,7 +234,7 @@ if __name__=="__main__":
 	rbm = RBM(n_visible=VISIBLE_UNITS, n_hidden=HIDDEN_UNITS, n_gibbs_sampling_steps=N_GIBBS_SAMPLING_STEPS)
 
 	if do_train:
-		for epoch in range(EPOCHS):
+		for epoch in range(n_epochs):
 			loss = 0    
 			for batch_idx, (x_true, label) in enumerate(train_loader):
 				loss_per_batch = rbm.train(x_true.view(-1,VISIBLE_UNITS))
@@ -280,10 +280,10 @@ if __name__=="__main__":
 	
 	# for i, (batch, labels) in enumerate(train_loader):
 	#     batch = batch.view(len(batch), VISIBLE_UNITS)  # flatten input data
-	#     train_features[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
-	#     train_labels[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = labels.numpy()
+	#     train_features[i*n_batch_samples:i*n_batch_samples+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
+	#     train_labels[i*n_batch_samples:i*n_batch_samples+len(batch)] = labels.numpy()
 	
 	# for i, (batch, labels) in enumerate(test_loader):
 	#     batch = batch.view(len(batch), VISIBLE_UNITS)  # flatten input data
-	#     test_features[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
-	#     test_labels[i*BATCH_SIZE:i*BATCH_SIZE+len(batch)] = labels.numpy()
+	#     test_features[i*n_batch_samples:i*n_batch_samples+len(batch)] = rbm.sample_from_hidden(batch).cpu().numpy()
+	#     test_labels[i*n_batch_samples:i*n_batch_samples+len(batch)] = labels.numpy()

@@ -36,30 +36,28 @@ def run(modelMaker=None):
 
     input_dimension=dataMgr.get_input_dimensions()
     train_ds_mean=dataMgr.get_train_dataset_mean()
-    exit()
 
+    #set parameters relevant for this run
+    date=datetime.datetime.now().strftime("%y%m%d")
 
-    #set model properties
-    model=None
-    activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
-    
-    configString="_".join(str(i) for i in [config.type,
-                                        config.dataType,
-                                        config.NUM_EVTS_TRAIN,
-                                        config.NUM_EVTS_TEST,
-                                        config.BATCH_SIZE,
-                                        config.EPOCHS,
-                                        config.LEARNING_RATE,
-                                        config.num_latent_hierarchy_levels,
-                                        config.num_latent_nodes,
+    configString="_".join(str(i) for i in [config.model_type,
+                                        config.data_type,
+                                        config.n_train_samples,
+                                        config.n_test_samples,
+                                        config.n_batch_samples,
+                                        config.n_epochs,
+                                        config.learning_rate,
+                                        config.n_latent_hierarchy_lvls,
+                                        config.n_latent_nodes,
                                         config.activation_fct,
                                         config.tag])
     
-    date=datetime.datetime.now().strftime("%y%m%d")
+    if config.data_type=='calo': 
+        configString+="_nlayers_{0}_{1}".format(len(config.calo_layerss),config.ptype)
 
-    if config.dataType=='calo': 
-        configString+="_nlayers_{0}_{1}".format(len(config.caloLayers),config.ptype)
-
+    exit()
+    model=None
+    activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
 
     from models.autoencoder import AutoEncoder
     from models.sparseAE import SparseAutoEncoder
@@ -69,25 +67,25 @@ def run(modelMaker=None):
     from models.sequentialVAE import SequentialVariationalAutoEncoder
     from models.discreteVAE import DiVAE
     #TODO wrap all these in a container class
-    if config.type=="AE":
+    if config.model_type=="AE":
         if not config.sparse:
             model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
         else:
             model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
 
-    elif config.type=="VAE":
+    elif config.model_type=="VAE":
         model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
     
-    elif config.type=="cVAE":
+    elif config.model_type=="cVAE":
         model = ConditionalVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
     
-    elif config.type=="sVAE":
+    elif config.model_type=="sVAE":
         model = SequentialVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
-    elif config.type=="HiVAE":
+    elif config.model_type=="HiVAE":
         model = HierarchicalVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
 
-    elif config.type=="DiVAE":
+    elif config.model_type=="DiVAE":
         activation_fct=torch.nn.Tanh() 
         model = DiVAE(input_dimension=input_dimension, config=config, activation_fct=activation_fct)
     else:
@@ -99,10 +97,10 @@ def run(modelMaker=None):
     # model.set_input_dimension(input_dimension)
 
     #TODO avoid this if statement
-    if config.type=="DiVAE": model.set_train_bias()
+    if config.model_type=="DiVAE": model.set_train_bias()
 
     model.print_model_info()
-    optimiser = torch.optim.Adam(model.parameters(), lr=config.LEARNING_RATE)
+    optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
     modelMaker.register_model(model)
     modelMaker.register_optimiser(optimiser)
@@ -113,16 +111,16 @@ def run(modelMaker=None):
     if not config.load_model:
         gif_frames=[]
         logger.debug("Start Epoch Loop")
-        for epoch in range(1, config.EPOCHS+1):   
+        for epoch in range(1, config.n_epochs+1):   
             train_loss = modelMaker.train(epoch)       
             test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
 
             if config.create_gif:
                 #TODO improve
-                if config.dataType=='calo':
+                if config.data_type=='calo':
                     gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
                 else:
-                    gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
+                    gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
             
             if model.type=="DiVAE" and config.sample_from_prior:
                 random_samples=model.generate_samples()
@@ -144,27 +142,27 @@ def run(modelMaker=None):
         if config.load_model:
             configString=config.infile.split("/")[-1].replace('.pt','')
  
-        if config.type=="DiVAE":  
+        if config.model_type=="DiVAE":  
             from utils.generate_samples import generate_samples_divae
             generate_samples_divae(modelMaker._model, configString)
 
         #TODO split this up in plotting and generation routine and have one
         #common function for all generative models. 
-        elif config.type=="VAE": 
+        elif config.model_type=="VAE": 
             from utils.generate_samples import generate_samples_vae
             generate_samples_vae(modelMaker._model, configString)
 
-        elif config.type=="cVAE": 
+        elif config.model_type=="cVAE": 
             from utils.generate_samples import generate_samples_cvae
             generate_samples_cvae(modelMaker._model, configString)
         
-        elif config.type=="sVAE": 
+        elif config.model_type=="sVAE": 
             from utils.generate_samples import generate_samples_svae
             generate_samples_svae(modelMaker._model, configString)
 
     if config.create_plots:
-        if config.dataType=='calo':
-            if config.type=="sVAE":
+        if config.data_type=='calo':
+            if config.model_type=="sVAE":
                 test_loss, x_true, x_recon, zetas, labels   = modelMaker.test()
                 plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
             else:
@@ -172,7 +170,7 @@ def run(modelMaker=None):
                 plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         else:
             test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
-            if not config.type=="cVAE" and not config.type=="DiVAE":
+            if not config.model_type=="cVAE" and not config.model_type=="DiVAE":
                 plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
             plot_MNIST_output(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
 

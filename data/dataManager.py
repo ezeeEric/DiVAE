@@ -82,14 +82,14 @@ class DataManager(object):
         return
 
     def create_dataLoader(self):
-        if config.dataType.lower()=="mnist":
+        if config.data_type.lower()=="mnist":
             train_loader,test_loader=loadMNIST(
-                batch_size=config.BATCH_SIZE,
-                num_evts_train=config.NUM_EVTS_TRAIN,
-                num_evts_test=config.NUM_EVTS_TEST, 
+                batch_size=config.n_batch_samples,
+                num_evts_train=config.n_train_samples,
+                num_evts_test=config.n_test_samples, 
                 binarise=config.binarise_dataset)
 
-        elif config.dataType.lower()=="calo":
+        elif config.data_type.lower()=="calo":
             inFiles={
                 'gamma':    config.gamma,
                 'eplus':    config.eplus,        
@@ -98,10 +98,10 @@ class DataManager(object):
             train_loader,test_loader=loadCalorimeterData(
                 inFiles=inFiles,
                 ptype=config.ptype,
-                layers=config.caloLayers,
-                batch_size=config.BATCH_SIZE,
-                num_evts_train=config.NUM_EVTS_TRAIN,
-                num_evts_test=config.NUM_EVTS_TEST, 
+                layers=config.calo_layerss,
+                batch_size=config.n_batch_samples,
+                num_evts_train=config.n_train_samples,
+                num_evts_test=config.n_test_samples, 
                 )
         
         logger.debug("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))

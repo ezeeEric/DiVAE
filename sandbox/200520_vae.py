@@ -91,9 +91,9 @@ def plot_compare_histories(history_list, name_list, plot_accuracy=True):
     plt.xlim(0, min_epoch-1)
     plt.tight_layout()
 
-BATCH_SIZE = 128
-EPOCHS = 10
-LEARNING_RATE = 1e-3
+n_batch_samples = 128
+n_epochs = 10
+learning_rate = 1e-3
 LATENT_DIMS = 32
 
 torch.manual_seed(1);
@@ -105,14 +105,14 @@ train_loader = torch.utils.data.DataLoader(
                        transform=transforms.Compose([
                            transforms.ToTensor()
                        ])),
-    batch_size=BATCH_SIZE, shuffle=True)
+    batch_size=n_batch_samples, shuffle=True)
 
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST(root='./data', train=False, 
                        transform=transforms.Compose([
                            transforms.ToTensor()
                        ])),
-    batch_size=BATCH_SIZE, shuffle=True)
+    batch_size=n_batch_samples, shuffle=True)
 
 """Let's design a class for a VAE. We will need to define:
  - an encoder network
@@ -239,14 +239,14 @@ def test(model, test_loader):
 """Run the training sequence."""
 
 model = VAE()
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-for epoch in range(1, EPOCHS+1):
+for epoch in range(1, n_epochs+1):
     train(model, train_loader, optimizer, epoch)
     #test(model, test_loader)
 
-batch_mu = np.zeros((BATCH_SIZE, LATENT_DIMS))
-batch_logvar = np.zeros((BATCH_SIZE, LATENT_DIMS))
+batch_mu = np.zeros((n_batch_samples, LATENT_DIMS))
+batch_logvar = np.zeros((n_batch_samples, LATENT_DIMS))
 
 with torch.no_grad():
     for batch_idx, (x_true, label) in enumerate(test_loader):

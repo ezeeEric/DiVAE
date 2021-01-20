@@ -84,12 +84,12 @@ def loadMNIST(batch_size, num_evts_train=0, num_evts_test=0, binarise=None):
 
 if __name__=="__main__":
     NUM_EVTS = 100
-    BATCH_SIZE = 20
-    EPOCHS = 100
-    LEARNING_RATE = 1e-3
+    n_batch_samples = 20
+    n_epochs = 100
+    learning_rate = 1e-3
     LATENT_DIMS = 32
     load_binarised_MNIST="threshold"
-    train_loader,test_loader=loadMNIST(batch_size=BATCH_SIZE,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS,binarise=load_binarised_MNIST)
+    train_loader,test_loader=loadMNIST(batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS,binarise=load_binarised_MNIST)
     for batch_idx, (x_true, label) in enumerate(test_loader):
         print(batch_idx,(len(x_true), label)) 
     # from helpers import plot_MNIST_output

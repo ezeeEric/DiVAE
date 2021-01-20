@@ -18,20 +18,20 @@ class DiVAE_BU(AutoEncoderBase):
         
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hierarchy level an output layer is formed.
-        self.num_latent_hierarchy_levels=4
+        self.n_latent_hierarchy_lvls=4
 
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the SimpleDecoder, first layer
-        self.num_latent_nodes=100
+        self.n_latent_nodes=100
 
         self.activation_fct=activation_fct
-        #each hierarchy has NN with num_enc_layers_enc layers
+        #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_enc_layer_nodes=200
+        self.n_encoder_layer_nodes=200
         
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_enc_layers=2 
+        self.n_encoder_layers=2 
 
         # for all layers except latent (output)
         self.activation_fct=nn.Tanh()
@@ -52,7 +52,7 @@ class DiVAE_BU(AutoEncoderBase):
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_nodes_per_layer=self.num_latent_hierarchy_levels*self.num_latent_nodes//2
+        num_rbm_nodes_per_layer=self.n_latent_hierarchy_lvls*self.n_latent_nodes//2
         return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
@@ -259,7 +259,7 @@ class DiVAE_BU(AutoEncoderBase):
             return kld
         else: # either this posterior only has one latent layer or we are not looking at training
             # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
-            # #the mean-field solution (num_latent_hierarchy_levels == 1) reduces to log_ratio = 0.
+            # #the mean-field solution (n_latent_hierarchy_lvls == 1) reduces to log_ratio = 0.
             return 0
 
     def generate_samples(self, n_samples=100):

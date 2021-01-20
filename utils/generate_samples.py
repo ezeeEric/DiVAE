@@ -36,19 +36,19 @@ def generate_samples_svae(model, outstring=""):
 if __name__=="__main__":
     logger.info("Testing RBM Setup")
 
-    # BATCH_SIZE = 32
+    # n_batch_samples = 32
     # VISIBLE_UNITS = 784  # 28 x 28 images
     # HIDDEN_UNITS = 128
     # N_GIBBS_SAMPLING_STEPS = 10
-    # EPOCHS = 6
+    # n_epochs = 6
     # N_EVENTS_TRAIN=-1
     # N_EVENTS_TEST=-1
     # do_train=False
-    # config_string="_".join(map(str,[N_EVENTS_TRAIN,EPOCHS,N_GIBBS_SAMPLING_STEPS]))
+    # config_string="_".join(map(str,[N_EVENTS_TRAIN,n_epochs,N_GIBBS_SAMPLING_STEPS]))
 
     # from data.loadMNIST import loadMNIST
     # train_loader,test_loader=loadMNIST(
-    # 		batch_size=BATCH_SIZE,
+    # 		batch_size=n_batch_samples,
     # 		num_evts_train=N_EVENTS_TRAIN,
     # 		num_evts_test=N_EVENTS_TEST,
     # 		binarise="threshold")

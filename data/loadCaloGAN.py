@@ -154,9 +154,9 @@ def loadCalorimeterData(inFiles={}, ptype='gamma', layers=['layer_1'], batch_siz
 
 if __name__=="__main__":
     NUM_EVTS = 100
-    BATCH_SIZE = 100
-    EPOCHS = 100
-    LEARNING_RATE = 1e-3
+    n_batch_samples = 100
+    n_epochs = 100
+    learning_rate = 1e-3
     LATENT_DIMS = 32
     load_binarised_MNIST="threshold"
 
@@ -165,8 +165,8 @@ if __name__=="__main__":
         'eplus':    '/Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5',        
         'piplus':   '/Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5'         
     }
-    # train_loader,test_loader=loadCalorimeterData( ptype='gamma', layers=['layer_0'], inFiles=inFiles, batch_size=BATCH_SIZE,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
-    train_loader,test_loader=loadCalorimeterData( ptype='gamma', layers=['layer_0','layer_1','layer_2'], inFiles=inFiles, batch_size=BATCH_SIZE,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
+    # train_loader,test_loader=loadCalorimeterData( ptype='gamma', layers=['layer_0'], inFiles=inFiles, batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
+    train_loader,test_loader=loadCalorimeterData( ptype='gamma', layers=['layer_0','layer_1','layer_2'], inFiles=inFiles, batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
     print(train_loader.get_input_size())
     for batch_idx, (x_true, label) in enumerate(train_loader):
         print("Batch Idx: ", batch_idx)

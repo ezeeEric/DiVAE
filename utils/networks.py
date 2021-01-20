@@ -71,22 +71,22 @@ class BasicDecoder(Network):
         return x
 
 class SimpleEncoder(Network):
-    def __init__(self,smoothing_distribution=None,num_latent_hierarchy_levels=4,**kwargs):
+    def __init__(self,smoothing_distribution=None,n_latent_hierarchy_lvls=4,**kwargs):
         super(SimpleEncoder, self).__init__(**kwargs)
         self.smoothing_distribution=smoothing_distribution
 
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
-        self.num_latent_hierarchy_levels=4
+        self.n_latent_hierarchy_lvls=4
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the decoder, first layer
-        self.num_latent_nodes=100
-        #each hierarchy has NN with num_enc_layers_enc layers
+        self.n_latent_nodes=100
+        #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_enc_layer_nodes=200
+        self.n_encoder_layer_nodes=200
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_enc_layers=2 
+        self.n_encoder_layers=2 
 
     def encode(self, x):
         logger.debug("encode")
@@ -99,7 +99,7 @@ class SimpleEncoder(Network):
     
     def hierarchical_posterior(self,x, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
-            to num_latent_hierarchy_levels and each element in the list is a DistUtil object containing posterior distribution 
+            to n_latent_hierarchy_lvls and each element in the list is a DistUtil object containing posterior distribution 
             for the group of latent nodes in each hierarchy level. 
 
         Args:
@@ -115,7 +115,7 @@ class SimpleEncoder(Network):
         post_samples = []
         #TODO switched off hierarchy for now.
         # import pickle
-        for i in range(self.num_latent_hierarchy_levels):
+        for i in range(self.n_latent_hierarchy_lvls):
             qprime=self.encode(x)
             # pickle.dump(qprime,open( "datasample.pkl", "wb" ))
             sigmoid=torch.nn.Sigmoid()
@@ -167,10 +167,10 @@ class HierarchicalEncoder(BasicEncoder):
     def __init__(self, 
         activation_fct=nn.Tanh(),
         input_dimension=784,
-        num_latent_hierarchy_levels=4,
-        num_latent_nodes=100,
-        num_enc_layer_nodes=200,
-        num_enc_layers=2,
+        n_latent_hierarchy_lvls=4,
+        n_latent_nodes=100,
+        n_encoder_layer_nodes=200,
+        n_encoder_layers=2,
         skip_latent_layer=False, 
         **kwargs):
         super(HierarchicalEncoder, self).__init__(**kwargs)
@@ -183,19 +183,19 @@ class HierarchicalEncoder(BasicEncoder):
 
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
-        self.num_latent_hierarchy_levels=num_latent_hierarchy_levels
+        self.n_latent_hierarchy_lvls=n_latent_hierarchy_lvls
 
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the decoder, first layer
-        self.num_latent_nodes=num_latent_nodes
+        self.n_latent_nodes=n_latent_nodes
 
-        #each hierarchy has NN with num_enc_layers_enc layers
+        #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.num_enc_layer_nodes=num_enc_layer_nodes
+        self.n_encoder_layer_nodes=n_encoder_layer_nodes
         
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.num_enc_layers=num_enc_layers
+        self.n_encoder_layers=n_encoder_layers
 
         # for all layers except latent (output)
         self.activation_fct=activation_fct
@@ -205,7 +205,7 @@ class HierarchicalEncoder(BasicEncoder):
         
         #skip_latent_layer: instead of having a single latent layer, use
         #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy
-        #level. This gives num_latent_hierarchy_levels latent variables, which
+        #level. This gives n_latent_hierarchy_lvls latent variables, which
         #are then combined outside this class into one layer.
         self.skip_latent_layer=skip_latent_layer
 
@@ -213,7 +213,7 @@ class HierarchicalEncoder(BasicEncoder):
         
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
-        for lvl in  range(self.num_latent_hierarchy_levels):
+        for lvl in  range(self.n_latent_hierarchy_lvls):
             network=self._create_hierarchy_network(level=lvl, skip_latent_layer=skip_latent_layer)
             self._networks.append(network)
 
@@ -222,10 +222,10 @@ class HierarchicalEncoder(BasicEncoder):
         #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy level
         # this is done outside this class...  
         #TODO this should be revised with better structure for input layer config  
-        layers=[self.num_input_nodes+level*self.num_latent_nodes]+[self.num_enc_layer_nodes]*self.num_enc_layers+[self.num_latent_nodes]
+        layers=[self.num_input_nodes+level*self.n_latent_nodes]+[self.n_encoder_layer_nodes]*self.n_encoder_layers+[self.n_latent_nodes]
         #in case we want to sample gaussian variables
         if skip_latent_layer: 
-            layers=[self.num_input_nodes+level*self.num_latent_nodes]+[self.num_enc_layer_nodes]*self.num_enc_layers
+            layers=[self.num_input_nodes+level*self.n_latent_nodes]+[self.n_encoder_layer_nodes]*self.n_encoder_layers
 
         moduleLayers=nn.ModuleList([])
         for l in range(len(layers)-1):
@@ -243,7 +243,7 @@ class HierarchicalEncoder(BasicEncoder):
 
     def hierarchical_posterior(self, in_data=None, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
-            to num_latent_hierarchy_levels and each element in the list is a DistUtil object containing posterior distribution 
+            to n_latent_hierarchy_lvls and each element in the list is a DistUtil object containing posterior distribution 
             for the group of latent nodes in each hierarchy level. 
 
         Args:
@@ -260,7 +260,7 @@ class HierarchicalEncoder(BasicEncoder):
         post_samples = []
         #loop hierarchy levels. apply previously defined network to input.
         #input is concatenation of data and latent variables per layer.
-        for lvl in range(self.num_latent_hierarchy_levels):
+        for lvl in range(self.n_latent_hierarchy_lvls):
             #network of hierarchy level lvl 
             current_net=self._networks[lvl]
             #input to this level current_net
