@@ -132,7 +132,7 @@ def run(tuner=None, config=None):
             if config.create_gif:
                 #TODO improve
                 if config.dataType=='calo':
-                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString),do_gif=True))
+                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output_path,configString),do_gif=True))
                 else:
                     gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
             
@@ -141,7 +141,7 @@ def run(tuner=None, config=None):
                 #TODO make a plot of the output
 
         if config.create_gif:
-            gif.save(gif_frames,"{0}/runs _{1}.gif".format(config.output,configString),duration=200)
+            gif.save(gif_frames,"{0}/runs _{1}.gif".format(config.output_path,configString),duration=200)
         
         if config.save_model:
             tuner.save_model(configString)
@@ -174,11 +174,11 @@ def run(tuner=None, config=None):
     if config.create_plots:
         if config.dataType=='calo':
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-            plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output,configString))
+            plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output_path,configString))
         else:
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-            # plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output,configString),dimensions=0)
-            plot_MNIST_output(x_true, x_recon, output="{0}/201007_reco_{1}.png".format(config.output,configString))
+            # plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output_path,configString),dimensions=0)
+            plot_MNIST_output(x_true, x_recon, output="{0}/201007_reco_{1}.png".format(config.output_path,configString))
 
 if __name__=="__main__":
     logging.getLogger().setLevel(logging.INFO)
@@ -192,9 +192,9 @@ if __name__=="__main__":
 
     tuner=ModelTuner(config)
     
-    if not os.path.exists(config.output):
-        os.mkdir(config.output)
-    tuner.outpath=config.output
+    if not os.path.exists(config.output_path):
+        os.mkdir(config.output_path)
+    tuner.outpath=config.output_path
     tuner.infile=config.infile
     
     run(tuner,config)

@@ -377,7 +377,7 @@ def plot_compare_histories(history_list, name_list, plot_accuracy=True):
 
 
 @gif.frame
-def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_loss=-1, outpath="./output/testVAE.gif"):
+def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_loss=-1):
     #trained with list-like code
     n_samples=5
     plt.figure(figsize=(10, 4.5))

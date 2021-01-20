@@ -44,6 +44,7 @@ def load_data(config=None):
             binarise=config.binarise_dataset)
 
     elif config.dataType.lower()=="calo":
+        #TODO move to config
         inFiles={
             'gamma':    '/Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5',
             'eplus':    '/Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5',        
@@ -96,6 +97,7 @@ def run(tuner=None, config=None):
     #set model properties
     model=None
     activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
+    
     configString="_".join(str(i) for i in [config.type,
                                         config.dataType,
                                         config.NUM_EVTS_TRAIN,
@@ -107,6 +109,7 @@ def run(tuner=None, config=None):
                                         config.num_latent_nodes,
                                         config.activation_fct,
                                         config.tag])
+    
     date=datetime.datetime.now().strftime("%y%m%d")
 
     if config.dataType=='calo': 
@@ -161,7 +164,7 @@ def run(tuner=None, config=None):
             if config.create_gif:
                 #TODO improve
                 if config.dataType=='calo':
-                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output,configString,date),do_gif=True))
+                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
                 else:
                     gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.EPOCHS, train_loss=train_loss,test_loss=test_loss))
             
@@ -170,7 +173,7 @@ def run(tuner=None, config=None):
                 #TODO make a plot of the output
 
         if config.create_gif:
-            gif.save(gif_frames,"{0}/runs_{1}.gif".format(config.output,configString),duration=200)
+            gif.save(gif_frames,"{0}/runs_{1}.gif".format(config.output_path,configString),duration=200)
         
         if config.save_model:
             tuner.save_model(configString)
@@ -207,15 +210,15 @@ def run(tuner=None, config=None):
         if config.dataType=='calo':
             if config.type=="sVAE":
                 test_loss, x_true, x_recon, zetas, labels   = tuner.test()
-                plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output,configString,date))
+                plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
             else:
                 test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-                plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output,configString,date))
+                plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         else:
             test_loss, x_true, x_recon, zetas, labels  = tuner.test()
             if not config.type=="cVAE" and not config.type=="DiVAE":
-                plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output,configString,date),dimensions=0)
-            plot_MNIST_output(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output,configString,date))
+                plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
+            plot_MNIST_output(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
 
 if __name__=="__main__":
     logging.getLogger().setLevel(logging.INFO)
@@ -229,9 +232,9 @@ if __name__=="__main__":
 
     tuner=ModelTuner(config)
     
-    if not os.path.exists(config.output):
-        os.mkdir(config.output)
-    tuner.outpath=config.output
+    if not os.path.exists(config.output_path):
+        os.mkdir(config.output_path)
+    tuner.outpath=config.output_path
     tuner.infile=config.infile
     
     run(tuner,config)

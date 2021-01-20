@@ -1,6 +1,10 @@
-""" Package wide definition of logging style
+""" Package wide definitions.
 
-@author Eric "Dr. Dre" Drechsler (eric.drechsler@cern.ch)
+Logging Style
+exit() function
+configuration variable
+
+@author Eric Drechsler (eric.drechsler@cern.ch)
 """
 import torch
 torch.manual_seed(1)
