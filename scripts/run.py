@@ -63,17 +63,9 @@ def run(modelMaker=None):
     model=modelMaker.init_model()
     model.create_networks()
     model.print_model_info()
+
+    modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     exit()
-
-    #TODO avoid this if statement
-    if config.model_type=="DiVAE": model.set_train_bias()
-
-    model.print_model_info()
-    optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-
-    modelMaker.register_model(model)
-    modelMaker.register_optimiser(optimiser)
-    
     #TODO rewrite this as "as helpers"
     from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 

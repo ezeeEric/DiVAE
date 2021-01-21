@@ -95,16 +95,14 @@ class ModelMaker(object):
         if set_eval:
             self._model.eval()
         return
-    
-    def register_model(self,model):
-        logger.debug("Register Model")
-        self._model=model
-        return
 
-    def register_optimiser(self,optimiser):
-        logger.debug("Register Model")
+    @property
+    def optimiser(self):
+        return self._optimiser
+    
+    @optimiser.setter   
+    def optimiser(self,optimiser):
         self._optimiser=optimiser
-        return
 
     def train(self, epoch):
         logger.info("Training Model")
