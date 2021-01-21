@@ -53,46 +53,23 @@ def run(modelMaker=None):
                                         config.tag])
     
     if config.data_type=='calo': 
-        configString+="_nlayers_{0}_{1}".format(len(config.calo_layerss),config.ptype)
+        configString+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
+
+    if config.activation_fct.lower()=="relu":
+        modelMaker.default_activation_fct=torch.nn.ReLU() 
+    elif config.activation_fct.lower()=="tanh":
+        modelMaker.default_activation_fct=torch.nn.ReLU() 
+    else:
+        logger.warning("Setting identity as default activation fct")
+        modelMaker.default_activation_fct=torch.nn.Identity() 
+        
+    model=modelMaker.init_model()
+    exit()
+    model.create_networks()
+    model.print_model_info()
 
     exit()
-    model=None
-    activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
 
-    from models.autoencoder import AutoEncoder
-    from models.sparseAE import SparseAutoEncoder
-    from models.variationalAE import VariationalAutoEncoder
-    from models.hierarchicalVAE import HierarchicalVAE
-    from models.conditionalVAE import ConditionalVariationalAutoEncoder
-    from models.sequentialVAE import SequentialVariationalAutoEncoder
-    from models.discreteVAE import DiVAE
-    #TODO wrap all these in a container class
-    if config.model_type=="AE":
-        if not config.sparse:
-            model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
-        else:
-            model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
-
-    elif config.model_type=="VAE":
-        model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
-    
-    elif config.model_type=="cVAE":
-        model = ConditionalVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
-    
-    elif config.model_type=="sVAE":
-        model = SequentialVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
-
-    elif config.model_type=="HiVAE":
-        model = HierarchicalVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
-
-    elif config.model_type=="DiVAE":
-        activation_fct=torch.nn.Tanh() 
-        model = DiVAE(input_dimension=input_dimension, config=config, activation_fct=activation_fct)
-    else:
-        logger.debug("ERROR Unknown Model Type")
-        raise NotImplementedError
-    
-    model.create_networks()
     model.set_dataset_mean(train_ds_mean)
     # model.set_input_dimension(input_dimension)
 

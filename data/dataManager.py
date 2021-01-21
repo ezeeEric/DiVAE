@@ -97,8 +97,8 @@ class DataManager(object):
             }
             train_loader,test_loader=loadCalorimeterData(
                 inFiles=inFiles,
-                ptype=config.ptype,
-                layers=config.calo_layerss,
+                ptype=config.particle_type,
+                layers=config.calo_layers,
                 batch_size=config.n_batch_samples,
                 num_evts_train=config.n_train_samples,
                 num_evts_test=config.n_test_samples, 

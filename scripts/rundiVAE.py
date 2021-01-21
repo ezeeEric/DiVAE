@@ -52,8 +52,8 @@ def load_data(config=None):
         }
         train_loader,test_loader=loadCalorimeterData(
             inFiles=inFiles,
-            ptype=config.ptype,
-            layers=config.calo_layerss,
+            ptype=config.particle_type,
+            layers=config.calo_layers,
             batch_size=config.n_batch_samples,
             num_evts_train=config.n_train_samples,
             num_evts_test=config.n_test_samples, 
@@ -113,15 +113,15 @@ def run(tuner=None, config=None):
     date=datetime.datetime.now().strftime("%y%m%d")
 
     if config.data_type=='calo': 
-        configString+="_nlayers_{0}_{1}".format(len(config.calo_layerss),config.ptype)
+        configString+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
 
     #TODO wrap all these in a container class
     if config.model_type=="AE":
-        if not config.sparse:
-            model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
-        else:
-            model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
-
+        model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
+    
+    elif config.model_type=="sparseAE":
+        model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
+        
     elif config.model_type=="VAE":
         model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
     

@@ -36,7 +36,7 @@ def load_data(config=None):
         }
         train_loader,test_loader=loadCalorimeterData(
             inFiles=inFiles,
-            ptype=config.ptype,
+            ptype=config.particle_type,
             layer=config.calo_layers.lower(),
             batch_size=config.n_batch_samples,
             num_evts_train=config.n_train_samples,
@@ -85,7 +85,7 @@ def run(tuner=None, config=None):
                                         config.activation_fct,
                                         config.tag])
     if config.data_type=='calo': 
-        configString+="_{0}_{1}".format(config.calo_layers,config.ptype)
+        configString+="_{0}_{1}".format(config.calo_layers,config.particle_type)
         
     #TODO wrap all these in a container class
     if config.model_type=="AE":

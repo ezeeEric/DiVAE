@@ -9,24 +9,74 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 from DiVAE import config
 
+#import defined models
+from models.autoencoder import AutoEncoder
+from models.sparseAE import SparseAutoEncoder
+from models.variationalAE import VariationalAutoEncoder
+from models.hierarchicalVAE import HierarchicalVAE
+from models.conditionalVAE import ConditionalVariationalAutoEncoder
+from models.sequentialVAE import SequentialVariationalAutoEncoder
+from models.discreteVAE import DiVAE
+
+model_dict={
+    "AE": AutoEncoder, 
+    "sparseAE": SparseAutoEncoder,
+    "VAE": VariationalAutoEncoder,
+    "cVAE": ConditionalVariationalAutoEncoder,
+    "sVAE": SequentialVariationalAutoEncoder,
+    "HiVAE": HierarchicalVAE,
+    "DiVAE": DiVAE
+}
+
 class ModelMaker(object):
     def __init__(self):
-        self._config=config
         self._model=None
         self._optimiser=None
 
         self.data_mgr=None
 
+        self._default_activation_fct=None
+    
+    def init_model(self):
+        for key, model_class in model_dict.items(): 
+            if key.lower()==config.model_type.lower():
+                logger.info("Initialising Model Type {0}".format(config.model_type))
+                #TODO change init arguments
+                self.model=model_class(
+                            input_dimension=self.data_mgr.get_input_dimensions(),
+                            config=config,
+                            activation_fct=self._default_activation_fct)
+                return self.model
+        logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")
+        raise NotImplementedError
+
+    @property
+    def model(self):
+        assert self._model is not None, "Model is not defined."
+        return self._model
+
+    @model.setter
+    def model(self,model):
+        self._model=model
+
+    @property
+    def default_activation_fct(self):
+        return self._default_activation_fct
+
+    @default_activation_fct.setter
+    def default_activation_fct(self, act_fct):
+        self._default_activation_fct=act_fct
+
     def save_model(self,config_string='test'):
         logger.info("Saving Model")
-        f=open(os.path.join(self._config.output_path,"model_{0}.pt".format(config_string)),'wb')
+        f=open(os.path.join(config.output_path,"model_{0}.pt".format(config_string)),'wb')
         torch.save(self._model.state_dict(),f)
         f.close()
         return
     
     def save_rbm(self,config_string='test'):
         logger.info("Saving RBM")
-        f=open(os.path.join(self._config.output_path,"rbm_{0}.pt".format(config_string)),'wb')
+        f=open(os.path.join(config.output_path,"rbm_{0}.pt".format(config_string)),'wb')
         print(self._model.prior)
         torch.save(self._model.prior,f)
         f.close()
@@ -40,7 +90,7 @@ class ModelMaker(object):
     def load_model(self,set_eval=True):
         logger.info("Loading Model")
         #attention: model must be defined already
-        self._model.load_state_dict(torch.load(self._config.infile))
+        self._model.load_state_dict(torch.load(config.infile))
         #training of model
         if set_eval:
             self._model.eval()
@@ -68,27 +118,27 @@ class ModelMaker(object):
 
             #each of the architectures implement slightly different forward
             #calls and loss functions
-            if self._config.model_type=='AE':
+            if config.model_type=='AE':
                 outputData, zeta = self._model(inputData)
                 train_loss = self._model.loss(inputData,outputData)
 
-            elif self._config.model_type=='VAE':
+            elif config.model_type=='VAE':
                 outputData, mu, logvar, zeta = self._model(inputData)
                 train_loss = self._model.loss(inputData, outputData, mu, logvar)	
             
-            elif self._config.model_type=='cVAE':
+            elif config.model_type=='cVAE':
                 outputData, mu, logvar, zeta = self._model(inputData,label)
                 train_loss = self._model.loss(inputData, outputData, mu, logvar)	
                 
-            elif self._config.model_type=='sVAE':
+            elif config.model_type=='sVAE':
                 outputData, mu, logvar = self._model(inputData,label)
                 train_loss = self._model.loss(inputData, outputData, mu, logvar)	
 
-            elif self._config.model_type=='HiVAE':
+            elif config.model_type=='HiVAE':
                 outputData, mu_list, logvar_list, zeta_list = self._model(inputData)
                 train_loss = self._model.loss(inputData, outputData, mu_list, logvar_list)	
 
-            elif self._config.model_type=='DiVAE':
+            elif config.model_type=='DiVAE':
                 outputData, output_activations, output_distribution,\
                          posterior_distribution, posterior_samples = self._model(inputData)
                 train_loss = self._model.loss(inputData, outputData, output_activations, output_distribution, posterior_distribution, posterior_samples)
@@ -120,7 +170,7 @@ class ModelMaker(object):
 
         with torch.no_grad():
             for batch_idx, (inputData, label) in enumerate(self.test_loader):
-                if self._config.model_type=='AE':
+                if config.model_type=='AE':
                     outputData, zeta = self._model(inputData)
                     test_loss += self._model.loss(inputData,outputData)
                     
@@ -128,7 +178,7 @@ class ModelMaker(object):
                     zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
                     label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
                 
-                elif self._config.model_type=='VAE':
+                elif config.model_type=='VAE':
                     outputData, mu, logvar, zeta = self._model(inputData)
                     test_loss += self._model.loss(inputData, outputData, mu, logvar)
                     
@@ -136,22 +186,22 @@ class ModelMaker(object):
                     zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
                     label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
                 
-                elif self._config.model_type=='cVAE':
+                elif config.model_type=='cVAE':
                     outputData, mu, logvar, zeta = self._model(inputData,label)
                     test_loss += self._model.loss(inputData, outputData, mu, logvar)	
                 
-                elif self._config.model_type=='sVAE':
+                elif config.model_type=='sVAE':
                     outputData, mu, logvar = self._model(inputData,label)
                     test_loss += self._model.loss(inputData, outputData, mu, logvar)	
                 
-                elif self._config.model_type=='HiVAE':
+                elif config.model_type=='HiVAE':
                     outputData, mu_list, logvar_list, zeta_hierarchy_list = self._model(inputData)
                     test_loss += self._model.loss(inputData, outputData, mu_list, logvar_list)
                     for zeta in zeta_hierarchy_list:
                         zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
                     label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
                 
-                elif self._config.model_type=='DiVAE':
+                elif config.model_type=='DiVAE':
                     outputData, output_activations, output_distribution,\
                          posterior_distribution, posterior_samples = self._model(inputData)
                     # test_loss += self._model.loss(inputData, outputData, output_activations, output_distribution, posterior_distribution, posterior_samples)
