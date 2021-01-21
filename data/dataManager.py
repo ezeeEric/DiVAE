@@ -45,7 +45,6 @@ class DataManager(object):
     def get_input_dimensions(self):
         return self._input_dimensions
 
-
     def _set_input_dimensions(self):
         assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
         input_sizes=self.train_loader.get_input_size()

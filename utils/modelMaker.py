@@ -44,7 +44,7 @@ class ModelMaker(object):
                 #TODO change init arguments
                 self.model=model_class(
                             input_dimension=self.data_mgr.get_input_dimensions(),
-                            config=config,
+                            train_ds_mean=self.data_mgr.get_train_dataset_mean(),
                             activation_fct=self._default_activation_fct)
                 return self.model
         logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")

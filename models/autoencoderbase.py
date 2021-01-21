@@ -16,9 +16,11 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
 
+from DiVAE import config
+
 # Base Class for Autoencoder models
 class AutoEncoderBase(nn.Module):
-    def __init__(self, input_dimension, activation_fct, config, **kwargs):
+    def __init__(self, input_dimension, train_ds_mean, activation_fct,  **kwargs):
         """
         """
 
@@ -47,7 +49,8 @@ class AutoEncoderBase(nn.Module):
             self._input_dimension=input_dimension[0]
 
         self._activation_fct=activation_fct
-        self._dataset_mean=None
+
+        self._dataset_mean=train_ds_mean[0] if isinstance(train_ds_mean,list) else train_ds_mean
 
     def type(self):
         """String identifier for current model.
@@ -89,10 +92,6 @@ class AutoEncoderBase(nn.Module):
                 logger.info(par.shape)
             else:
                 logger.info(par)
-
-#TODO make this a getter setter thing
-    def set_dataset_mean(self,mean):
-        self._dataset_mean=mean[0] if isinstance(mean,list) else mean
 
 if __name__=="__main__":
     logger.info("Running autoencoderbase.py directly") 

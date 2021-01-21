@@ -34,9 +34,6 @@ def run(modelMaker=None):
     #add dataMgr instance to modelMaker namespace
     modelMaker.register_dataManager(dataMgr)
 
-    input_dimension=dataMgr.get_input_dimensions()
-    train_ds_mean=dataMgr.get_train_dataset_mean()
-
     #set parameters relevant for this run
     date=datetime.datetime.now().strftime("%y%m%d")
 
@@ -64,14 +61,9 @@ def run(modelMaker=None):
         modelMaker.default_activation_fct=torch.nn.Identity() 
         
     model=modelMaker.init_model()
-    exit()
     model.create_networks()
     model.print_model_info()
-
     exit()
-
-    model.set_dataset_mean(train_ds_mean)
-    # model.set_input_dimension(input_dimension)
 
     #TODO avoid this if statement
     if config.model_type=="DiVAE": model.set_train_bias()
@@ -140,6 +132,8 @@ def run(modelMaker=None):
     if config.create_plots:
         if config.data_type=='calo':
             if config.model_type=="sVAE":
+                #TODO remove this
+                input_dimension=dataMgr.get_input_dimensions()
                 test_loss, x_true, x_recon, zetas, labels   = modelMaker.test()
                 plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
             else:

@@ -52,13 +52,12 @@ class DiVAE(AutoEncoderBase):
         self.n_encoder_layer_nodes=self._config.n_encoder_layer_nodes
 
         #added to output activation of last decoder layer in forward call
-        self._train_bias=None
+        self._train_bias=self.set_train_bias()
 
     def set_train_bias(self):
         #TODO where did this definition come from? 
         clipped_mean=torch.clamp(self._dataset_mean,0.001,0.999).detach()
-        self._train_bias=-torch.log(1/clipped_mean-1)
-        return
+        return -torch.log(1/clipped_mean-1)
 
     def create_networks(self):
         logger.debug("Creating Network Structures")
