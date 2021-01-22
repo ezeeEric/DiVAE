@@ -18,6 +18,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 from DiVAE import config
 
+from utils.helpers import OutputContainer
+
 # Base Class for Autoencoder models
 class AutoEncoderBase(nn.Module):
     def __init__(self, input_dimension, train_ds_mean, activation_fct,  **kwargs):
@@ -51,6 +53,8 @@ class AutoEncoderBase(nn.Module):
         self._activation_fct=activation_fct
 
         self._dataset_mean=train_ds_mean[0] if isinstance(train_ds_mean,list) else train_ds_mean
+
+        self._output_container=OutputContainer()
 
     def type(self):
         """String identifier for current model.
