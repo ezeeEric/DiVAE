@@ -37,13 +37,16 @@ class SparseAutoEncoder(AutoEncoder):
             l1_norm += torch.mean(torch.abs(current_in))
         return l1_norm
 
-    def loss(self, x_true, x_recon):
+    def loss(self, input_data, fwd_out):
         
         total_loss=0
         l1_regularisation=0
-        reconstruction_loss=self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
-        l1_regularisation=self.l1_norm(x_true.view(-1,self._input_dimension))
+        
+        reconstruction_loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._input_dimension), reduction='sum')
+        l1_regularisation=self.l1_norm(input_data.view(-1,self._input_dimension))
+        
         total_loss=reconstruction_loss+self.regularisation_weight*l1_regularisation
+        
         return total_loss
 
 if __name__=="__main__":

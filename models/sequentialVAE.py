@@ -60,7 +60,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
     #to this class, despite each VAE being properly registered.
     def flatten_network_dependency(self):
         for key,vae in self._autoencoders.items():
-            self.dummy.extend(self._autoencoders[key].get_modules())
+            self.dummy.einput_datatend(self._autoencoders[key].get_modules())
     
     def create_networks(self):
         logger.debug("Creating Network Structures")
@@ -76,30 +76,33 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             self._autoencoders[i].create_networks()   
         self.flatten_network_dependency()
 
-    def forward(self, x, label):
-        outputs=[]
-        mus=[]
-        logvars=[]
+    def forward(self, input_data, label):
+        #see definition for einput_dataplanation
+        out=self._output_container.clear()
+
+        out.outputs=[]
+        out.mus=[]
+        out.logvars=[]
 
         for i,dim in enumerate(self._input_dimension):
             current_vae=self._autoencoders[i]
             #every input is concatenation of previous inputs
-            # x_transformed=x[i].view(-1, dim) if i==0 else torch.cat([x_transformed,x[i].view(-1, dim)],dim=-1)
-            x_transformed=x[i].view(-1, dim) if i==0 else torch.cat(outputs+[x[i].view(-1, dim)],dim=-1)
-            q = current_vae.encoder.encode(x_transformed)
+            # input_data_transformed=input_data[i].view(-1, dim) if i==0 else torch.cat([input_data_transformed,input_data[i].view(-1, dim)],dim=-1)
+            input_data_transformed=input_data[i].view(-1, dim) if i==0 else torch.cat(outputs+[input_data[i].view(-1, dim)],dim=-1)
+            q = current_vae.encoder.encode(input_data_transformed)
             mu = current_vae._reparam_layers['mu'](q)
             logvar = current_vae._reparam_layers['var'](q)
             zeta = current_vae.reparameterize(mu, logvar)
             zeta_transformed=zeta
             for out in outputs:
-                # flat_x=x[j].view(-1, self._input_dimension[j])
                 zeta_transformed=torch.cat([zeta_transformed,out],dim=-1)
-            x_recon = current_vae.decoder.decode(zeta_transformed)
+            output_data = current_vae.decoder.decode(zeta_transformed)
 
-            outputs.append(x_recon)
-            mus.append(mu)
-            logvars.append(logvar)
-        return outputs, mus, logvars
+            out.outputs.append(output_data)
+            out.mus.append(mu)
+            out.logvars.append(logvar)
+            
+        return out
 
     def generate_samples(self,n_samples=5):
         """ 
@@ -120,17 +123,18 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         """
         
         eps = torch.randn_like(mu)
-        return mu + eps*torch.exp(0.5 * logvar)
+        return mu + eps*torch.einput_datap(0.5 * logvar)
 
-    def loss(self, inputs, outputs, mus, logvars):
+    def loss(self, input_data, fwd_out):
+
         total_loss=0
         for i,dim in enumerate(self._input_dimension):
-            x=inputs[i]
-            x_rec=outputs[i]
-            mu=mus[i]
-            logvar=logvars[i]
-            total_loss+=self._autoencoders[i].loss(x, x_rec, mu, logvar)
+            input_data=input_data[i]
+            input_data_rec=fwd_out.outputs[i]
+            mu=fwd_out.mus[i]
+            logvar=fwd_out.logvars[i]
+            total_loss+=self._autoencoders[i].loss(input_data, input_data_rec, mu, logvar)
             #TODO
             # if self._config.sparse:
-            #     total_loss+=self._config.l1_regularisation_weight*self.l1_norm(ae=self._autoencoders[i],inputs=x.view(-1,dim))
+            #     total_loss+=self._config.l1_regularisation_weight*self.l1_norm(ae=self._autoencoders[i],inputs=input_data.view(-1,dim))
         return total_loss

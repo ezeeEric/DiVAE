@@ -64,43 +64,47 @@ class HierarchicalVAE(AutoEncoder):
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
         
-    def loss(self, x, x_recon, mu_list, logvar_list):
+    def loss(self, input_data, fwd_out):
+        output_data, mu_list, logvar_list
         logger.debug("loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, self._input_dimension), reduction='sum')
+        auto_loss = nn.functional.binary_cross_entropy(out.output_data, input_data.view(-1, self._input_dimension), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
-        mu=torch.cat(mu_list,axis=1)
-        logvar=torch.cat(logvar_list,axis=1)
+        mu=torch.cat(out.mu_list,axis=1)
+        logvar=torch.cat(out.logvar_list,axis=1)
         kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
         return auto_loss - kl_loss
                             
-    def forward(self, x):
-        data=x.view(-1, self._input_dimension)
-        # x_enc_logits=[]
-        zeta_list=[]
-        mu_list=[]
-        logvar_list=[]
+    def forward(self, input_data):
+        #see definition for explanation
+        out=self._output_container.clear()
+
+        out.zeta_list=[]
+        out.mu_list=[]
+        out.logvar_list=[]
+
+        data=input_data.view(-1, self._input_dimension)
         lvl=0
         for hierarchy in self.encoder._networks:
             indata=torch.cat([data,*zeta_list],axis=1)
 
-            #apply activation fct as the hierarchicalposterior gives back
+            #apply activation fct as the hierarchical posterior gives back
             #identity operation on last layer
-            x_enc_hierarchy_logits=self.encoder.activation_fct(hierarchy(indata))
-            # x_enc_logits.append(x_enc_hierarchy_logits)
+            q_enc_hierarchy_logits=self.encoder.activation_fct(hierarchy(indata))
 
-            mu = self.reparameteriser['mu_'+str(lvl)](x_enc_hierarchy_logits)
-            logvar = self.reparameteriser['var_'+str(lvl)](x_enc_hierarchy_logits)
-            mu_list.append(mu)
-            logvar_list.append(logvar)
+            mu = self.reparameteriser['mu_'+str(lvl)](q_enc_hierarchy_logits)
+            logvar = self.reparameteriser['var_'+str(lvl)](q_enc_hierarchy_logits)
+            out.mu_list.append(mu)
+            out.logvar_list.append(logvar)
             zeta = self.reparameterize(mu, logvar)
-            zeta_list.append(zeta)
+            out.zeta_list.append(zeta)
             lvl+=1    
 
         zeta_concat=torch.cat(zeta_list,axis=1)
-        x_recon = self.decoder.decode(zeta_concat)
-        return x_recon, mu_list, logvar_list, zeta_list
+        out.output_data = self.decoder.decode(zeta_concat)
+
+        return out
 
 if __name__=="__main__":
     logger.info("Running hierarchicalVAE.py directly") 

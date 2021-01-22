@@ -168,10 +168,10 @@ if __name__=="__main__":
     # train_loader,test_loader=loadCalorimeterData( ptype='gamma', layers=['layer_0'], inFiles=inFiles, batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
     train_loader,test_loader=loadCalorimeterData( ptype='gamma', layers=['layer_0','layer_1','layer_2'], inFiles=inFiles, batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS)
     print(train_loader.get_input_size())
-    for batch_idx, (x_true, label) in enumerate(train_loader):
+    for batch_idx, (input_data, label) in enumerate(train_loader):
         print("Batch Idx: ", batch_idx)
-        print("Number of images per event: ",len(x_true))
+        print("Number of images per event: ",len(input_data))
         print("Image shapes: ")
-        for x in x_true:
+        for x in input_data:
             print(x.shape)
         print(label[0])

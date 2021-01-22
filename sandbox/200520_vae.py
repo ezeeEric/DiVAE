@@ -198,9 +198,9 @@ class VAE(nn.Module):
  - the KL term, which tries to keep the distribution of the latent variables close to Gaussian
 """
 
-def loss(x, x_recon, mu, logvar):
+def loss(x, output_data, mu, logvar):
     # Autoencoding term
-    auto_loss = F.binary_cross_entropy(x_recon, x.view(-1, 784), reduction='sum')
+    auto_loss = F.binary_cross_entropy(output_data, x.view(-1, 784), reduction='sum')
      
     # KL loss term assuming Gaussian-distributed latent variables
     kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
@@ -211,11 +211,11 @@ def loss(x, x_recon, mu, logvar):
 def train(model, train_loader, optimizer, epoch):
     model.train()
     total_train_loss = 0
-    for batch_idx, (x_true, label) in enumerate(train_loader):
+    for batch_idx, (input_data, label) in enumerate(train_loader):
         optimizer.zero_grad()
-        x_true = Variable(x_true)
-        x_recon, mu, logvar = model(x_true)
-        train_loss = loss(x_true, x_recon, mu, logvar)
+        input_data = Variable(input_data)
+        output_data, mu, logvar = model(input_data)
+        train_loss = loss(input_data, output_data, mu, logvar)
         train_loss.backward()
         total_train_loss += train_loss.item()
         optimizer.step()
@@ -223,16 +223,16 @@ def train(model, train_loader, optimizer, epoch):
         # Output logging
         if batch_idx % 100 == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(x_true), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), train_loss.data.item() / len(x_true)))
+                epoch, batch_idx * len(input_data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), train_loss.data.item() / len(input_data)))
 
 def test(model, test_loader):
     model.eval()
     test_loss = 0
     with torch.no_grad():
-        for batch_idx, (x_true, label) in enumerate(test_loader):
-            x_recon, mu, logvar = model(x_true)
-            test_loss += loss(x_true, x_recon, mu, logvar)
+        for batch_idx, (input_data, label) in enumerate(test_loader):
+            output_data, mu, logvar = model(input_data)
+            test_loss += loss(input_data, output_data, mu, logvar)
         
     test_loss /= len(test_loader.dataset)
 
@@ -249,8 +249,8 @@ batch_mu = np.zeros((n_batch_samples, LATENT_DIMS))
 batch_logvar = np.zeros((n_batch_samples, LATENT_DIMS))
 
 with torch.no_grad():
-    for batch_idx, (x_true, label) in enumerate(test_loader):
-        x_recon, mu, logvar = model(x_true)
+    for batch_idx, (input_data, label) in enumerate(test_loader):
+        output_data, mu, logvar = model(input_data)
         batch_mu = mu
         batch_logvar = logvar
 
@@ -262,13 +262,13 @@ for i in range(n_samples):
 
       # plot original image
     ax = plt.subplot(2, 5, i + 1)
-    plt.imshow(x_true[i].reshape((28, 28)))
+    plt.imshow(input_data[i].reshape((28, 28)))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
     ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-    decImg=x_recon[i].reshape((28, 28))
+    decImg=output_data[i].reshape((28, 28))
     plt.imshow(decImg)
     plt.gray()
     ax.get_xaxis().set_visible(False)
@@ -283,13 +283,13 @@ for i in range(n_samples):
 
       # plot original image
     ax = plt.subplot(2, 5, i + 1)
-    plt.imshow(x_true[i].reshape((28, 28)))
+    plt.imshow(input_data[i].reshape((28, 28)))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
     ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-    decImg=x_recon[i].reshape((28, 28))
+    decImg=output_data[i].reshape((28, 28))
     plt.imshow(decImg)
     plt.gray()
     ax.get_xaxis().set_visible(False)

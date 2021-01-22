@@ -90,7 +90,7 @@ if __name__=="__main__":
     LATENT_DIMS = 32
     load_binarised_MNIST="threshold"
     train_loader,test_loader=loadMNIST(batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS,binarise=load_binarised_MNIST)
-    for batch_idx, (x_true, label) in enumerate(test_loader):
-        print(batch_idx,(len(x_true), label)) 
+    for batch_idx, (input_data, label) in enumerate(test_loader):
+        print(batch_idx,(len(input_data), label)) 
     # from helpers import plot_MNIST_output
-    # plot_MNIST_output(x_true,x_true,output="./output/testbinarising.png")
+    # plot_MNIST_output(input_data,input_data,output="./output/testbinarising.png")

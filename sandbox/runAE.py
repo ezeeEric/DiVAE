@@ -45,8 +45,8 @@ for epoch in range(1, n_epochs+1):xw
     train_loss = train(model, train_loader, optimizer, epoch)
     test_loss  = test(model, test_loader)
     if create_gif:
-        x_true, x_recon = evaluate(model, test_loader, batch_size=n_batch_samples, latent_dimensions=LATENT_DIMS)
-        gif_frames.append(gif_output(x_true, x_recon,epoch=epoch, max_epochs=n_epochs, train_loss=train_loss,test_loss=test_loss))
+        input_data, output_data = evaluate(model, test_loader, batch_size=n_batch_samples, latent_dimensions=LATENT_DIMS)
+        gif_frames.append(gif_output(input_data, output_data,epoch=epoch, max_epochs=n_epochs, train_loss=train_loss,test_loss=test_loss))
 
 logger.debug("Finished Epoch Loop")
 
@@ -55,6 +55,6 @@ configString="_".join(str(i) for i in [NUM_EVTS,n_batch_samples,n_epochs,learnin
 gif.save(gif_frames,"./output/200806_AEruns_{0}.gif".format(configString),duration=100)
 
 #possible to return many other parameters, x, x' just for plotting
-x_true, x_recon = evaluate(model, test_loader, batch_size=n_batch_samples, latent_dimensions=LATENT_DIMS)
+input_data, output_data = evaluate(model, test_loader, batch_size=n_batch_samples, latent_dimensions=LATENT_DIMS)
 
-plot_MNIST_output(x_true, x_recon)
+plot_MNIST_output(input_data, output_data)

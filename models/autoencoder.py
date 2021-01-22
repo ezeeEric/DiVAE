@@ -37,7 +37,7 @@ class AutoEncoder(AutoEncoderBase):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
             self._decoder_nodes.append(nodepair)
 
-        #only works if x_true, x_recon in [0,1]
+        #only works if input_data, output_data in [0,1]
         self._loss_fct= nn.functional.binary_cross_entropy
 
     def create_networks(self):
@@ -54,16 +54,18 @@ class AutoEncoder(AutoEncoderBase):
         logger.debug("_create_decoder")
         return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Sigmoid())
 
-    def forward(self, x):
-        zeta = self.encoder.encode(x.view(-1,self._input_dimension))
-        x_recon = self.decoder.decode(zeta)
-        return x_recon, zeta
+    def forward(self, input_data):
+        #see definition for einput_dataplanation
+        out=self._output_container.clear()
+        
+        out.zeta = self.encoder.encode(input_data.view(-1,self._input_dimension))
+        out.output_data = self.decoder.decode(zeta)
+
+        return out
     
-    def loss(self, x_true, x_recon):
-        loss=self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
-        print("non sparse:",loss)
+    def loss(self, input_data, fwd_out):
+        loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._input_dimension), reduction='sum')
         return loss
-        # return self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
 
 if __name__=="__main__":
     logger.info("Running autoencoder.py directly") 

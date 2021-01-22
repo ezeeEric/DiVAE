@@ -236,8 +236,8 @@ if __name__=="__main__":
 	if do_train:
 		for epoch in range(n_epochs):
 			loss = 0    
-			for batch_idx, (x_true, label) in enumerate(train_loader):
-				loss_per_batch = rbm.train(x_true.view(-1,VISIBLE_UNITS))
+			for batch_idx, (input_data, label) in enumerate(train_loader):
+				loss_per_batch = rbm.train(input_data.view(-1,VISIBLE_UNITS))
 				loss += loss_per_batch
 			loss /= len(train_loader.dataset)
 			logger.info('Epoch {0}. Loss={1:.2f}'.format(epoch,loss))
@@ -253,25 +253,25 @@ if __name__=="__main__":
 	
 	# # ########## EXTRACT FEATURES ##########
 	logger.info("Sampling from RBM")
-	for batch_idx, (x_true, label) in enumerate(test_loader):
-		print(x_true.size())
+	for batch_idx, (input_data, label) in enumerate(test_loader):
+		print(input_data.size())
 		print(label)
-		y=rbm.get_samples(x_true.view(-1,VISIBLE_UNITS))
-		energy=rbm.energy(x_true.view(-1,VISIBLE_UNITS))
+		y=rbm.get_samples(input_data.view(-1,VISIBLE_UNITS))
+		energy=rbm.energy(input_data.view(-1,VISIBLE_UNITS))
 		print(energy)
-		cross_entropy=rbm.cross_entropy(x_true.view(-1,VISIBLE_UNITS))
+		cross_entropy=rbm.cross_entropy(input_data.view(-1,VISIBLE_UNITS))
 		print(cross_entropy)
 		# use a random picture for sanity checks
-		# samples=torch.rand(x_true.view(-1,VISIBLE_UNITS).size())
-		# yrnd=rbm.get_samples(x_true.view(-1,VISIBLE_UNITS), random=True)
+		# samples=torch.rand(input_data.view(-1,VISIBLE_UNITS).size())
+		# yrnd=rbm.get_samples(input_data.view(-1,VISIBLE_UNITS), random=True)
 		# energy=rbm.energy(samples)
 		# print(energy)
 		break
 	print(y.size())
 	from utils.helpers import plot_MNIST_output
 
-	plot_MNIST_output(x_true,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))
-	# plot_MNIST_output(x_true,yrnd, n_samples=5, output="./output/rbm_test_200827_rnd_{0}.png".format(config_string))
+	plot_MNIST_output(input_data,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))
+	# plot_MNIST_output(input_data,yrnd, n_samples=5, output="./output/rbm_test_200827_rnd_{0}.png".format(config_string))
 
 	# train_features = np.zeros((len(train_dataset), HIDDEN_UNITS))
 	# train_labels = np.zeros(len(train_dataset))

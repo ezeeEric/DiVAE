@@ -82,22 +82,26 @@ class VariationalAutoEncoder(AutoEncoder):
         output = self.decoder.decode(zeta)
         return output
 
-    def loss(self, x, x_recon, mu, logvar):
+    def loss(self, input_data, fwd_out):
         logger.debug("VAE Loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, self._input_dimension), reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, self._input_dimension), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
-        kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
+        kl_loss = 0.5 * torch.sum(1 + fwd_out.logvar - fwd_out.mu.pow(2) - torch.exp(fwd_out.logvar))
         return auto_loss - kl_loss
                             
-    def forward(self, x):
-        z = self.encoder.encode(x.view(-1, self._input_dimension))
-        mu = self._reparam_layers['mu'](z)
-        logvar = self._reparam_layers['var'](z)
-        zeta = self.reparameterize(mu, logvar)
-        x_recon = self.decoder.decode(zeta)
-        return x_recon, mu, logvar, zeta
+    def forward(self, input_data):
+        #see definition for explanation
+        out=self._output_container.clear()
+
+        z = self.encoder.encode(input_data.view(-1, self._input_dimension))
+        out.mu = self._reparam_layers['mu'](z)
+        out.logvar = self._reparam_layers['var'](z)
+        out.zeta = self.reparameterize(out.mu, out.logvar)
+        out.output_data = self.decoder.decode(out.zeta)
+
+        return out
 
 if __name__=="__main__":
     logger.info("Running variationalautoencoder.py directly") 

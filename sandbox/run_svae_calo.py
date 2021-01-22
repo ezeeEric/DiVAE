@@ -127,14 +127,14 @@ def run(tuner=None, config=None):
         logger.debug("Start Epoch Loop")
         for epoch in range(1, config.n_epochs+1):   
             train_loss = tuner.train(epoch)       
-            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+            test_loss, input_data, output_data, zetas, labels  = tuner.test()
 
             if config.create_gif:
                 #TODO improve
                 if config.data_type=='calo':
-                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output_path,configString),do_gif=True))
+                    gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/200810_reco_{1}.png".format(config.output_path,configString),do_gif=True))
                 else:
-                    gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
+                    gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
             
             if model.type=="DiVAE" and config.sample_from_prior:
                 random_samples=model.generate_samples()
@@ -173,12 +173,12 @@ def run(tuner=None, config=None):
         
     if config.create_plots:
         if config.data_type=='calo':
-            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
-            plot_calo_images(x_true, x_recon, output="{0}/200810_reco_{1}.png".format(config.output_path,configString))
+            test_loss, input_data, output_data, zetas, labels  = tuner.test()
+            plot_calo_images(input_data, output_data, output="{0}/200810_reco_{1}.png".format(config.output_path,configString))
         else:
-            test_loss, x_true, x_recon, zetas, labels  = tuner.test()
+            test_loss, input_data, output_data, zetas, labels  = tuner.test()
             # plot_latent_space(zetas, labels, output="{0}/200810_latSpace_{1}".format(config.output_path,configString),dimensions=0)
-            plot_MNIST_output(x_true, x_recon, output="{0}/201007_reco_{1}.png".format(config.output_path,configString))
+            plot_MNIST_output(input_data, output_data, output="{0}/201007_reco_{1}.png".format(config.output_path,configString))
 
 if __name__=="__main__":
     logging.getLogger().setLevel(logging.INFO)

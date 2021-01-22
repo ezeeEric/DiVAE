@@ -17,12 +17,21 @@ from data.loadCaloGAN import loadCalorimeterData
 
 class DataManager(object):
     def __init__(self,train_loader=None,test_loader=None):
-        self.train_loader=train_loader
-        self.test_loader=test_loader
+        #
+        self._train_loader=train_loader
+        self._test_loader=test_loader
 
         self._input_dimensions=None
         self._train_dataset_mean=None
         return
+
+    @property
+    def train_loader(self):
+        return self._train_loader
+
+    @property
+    def test_loader(self):
+        return self._test_loader
 
     def init_dataLoaders(self):
         logger.info("Loading Data")
@@ -35,8 +44,8 @@ class DataManager(object):
         assert train_loader is not None, "Failed to set up train_loader"
         assert test_loader is not None, "Failed to set up train_loader"
 
-        self.train_loader=train_loader
-        self.test_loader=test_loader
+        self._train_loader=train_loader
+        self._test_loader=test_loader
         return
 
     def get_train_dataset_mean(self):
@@ -46,21 +55,21 @@ class DataManager(object):
         return self._input_dimensions
 
     def _set_input_dimensions(self):
-        assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
-        input_sizes=self.train_loader.get_input_size()
+        assert self._train_loader is not None, "Trying to retrieve datapoint from empty train loader"
+        input_sizes=self._train_loader.get_input_size()
         self._input_dimensions=input_sizes if isinstance(input_sizes,list) else [input_sizes]
         return
 
     def _set_train_dataset_mean(self):
         #returns mean of dataset as list
         #multiple input datasets - multiple means
-        assert self.train_loader is not None, "Trying to retrieve datapoint from empty train loader"
+        assert self._train_loader is not None, "Trying to retrieve datapoint from empty train loader"
         
         input_dimensions=self.get_input_dimensions()
         imgPerLayer={}	
         for i in range(0,len(input_dimensions)):
             imgPerLayer[i]=[]	
-        for i, (data, _) in enumerate(self.train_loader.dataset):
+        for i, (data, _) in enumerate(self._train_loader.dataset):
             #loop over all layers
             for l,d in enumerate(data):	
                 imgPerLayer[l].append(d.view(-1,input_dimensions[l]))

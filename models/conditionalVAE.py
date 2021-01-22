@@ -32,17 +32,23 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
             self._decoder_nodes.append(nodepair)
         pass
 
-    def forward(self, x, label):
-        x_transformed=x.view(-1, self._input_dimension)
+    def forward(self, input_data, label):
+        #see definition for explanation
+        out=self._output_container.clear()
+
+        input_data_transformed=input_data.view(-1, self._input_dimension)
         label_unsqueezed=label.unsqueeze(-1)
-        x_cat=torch.cat([x_transformed,label_unsqueezed],dim=1)
-        z = self.encoder.encode(x_cat)
-        mu = self._reparam_layers['mu'](z)
-        logvar = self._reparam_layers['var'](z)
-        zeta = self.reparameterize(mu, logvar)
-        zeta_cat=torch.cat([zeta,label_unsqueezed],dim=1)
-        x_recon = self.decoder.decode(zeta_cat)
-        return x_recon, mu, logvar, zeta_cat
+
+        input_data_cat=torch.cat([input_data_transformed,label_unsqueezed],dim=1)
+        z = self.encoder.encode(input_data_cat)
+        out.mu = self._reparam_layers['mu'](z)
+        out.logvar = self._reparam_layers['var'](z)
+        zeta = self.reparameterize(out.mu, out.logvar)
+        out.zeta_cat=torch.cat([zeta,label_unsqueezed],dim=1)
+        
+        out.output_data = self.decoder.decode(out.zeta_cat)
+
+        return out
 
     def generate_samples(self,n_samples_per_nr=5, nrs=[0,1,2]):
         """ 

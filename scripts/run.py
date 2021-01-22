@@ -65,23 +65,31 @@ def run(modelMaker=None):
     model.print_model_info()
 
     modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    #if we load a model from a file, we don't need to train
+    if config.load_model:
+        #TODO needs re-implementation
+        # modelMaker.load_model(set_eval=True)
+    else:
+        for epoch in range(1, config.n_epochs+1):   
+            train_loss = modelMaker.fit(epoch=epoch, is_training=True)
+            test_loss = modelMaker.fit(epoch=epoch, is_training=False)
+    
     exit()
     #TODO rewrite this as "as helpers"
     from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 
-    if not config.load_model:
         gif_frames=[]
         logger.debug("Start Epoch Loop")
         for epoch in range(1, config.n_epochs+1):   
             train_loss = modelMaker.train(epoch)       
-            test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
+            test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
 
             if config.create_gif:
                 #TODO improve
                 if config.data_type=='calo':
-                    gif_frames.append(plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
+                    gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
                 else:
-                    gif_frames.append(gif_output(x_true, x_recon, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
+                    gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
             
             if model.type=="DiVAE" and config.sample_from_prior:
                 random_samples=model.generate_samples()
@@ -94,9 +102,6 @@ def run(modelMaker=None):
             modelMaker.save_model(configString)
             if model.type=="DiVAE": 
                 modelMaker.save_rbm(configString)
-
-    else:
-        modelMaker.load_model(set_eval=True)
 
     #TODO move this around
     if config.test_generate_samples:
@@ -126,16 +131,16 @@ def run(modelMaker=None):
             if config.model_type=="sVAE":
                 #TODO remove this
                 input_dimension=dataMgr.get_input_dimensions()
-                test_loss, x_true, x_recon, zetas, labels   = modelMaker.test()
-                plot_calo_image_sequence(x_true, x_recon, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
+                test_loss, input_data, output_data, zetas, labels   = modelMaker.test()
+                plot_calo_image_sequence(input_data, output_data, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
             else:
-                test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
-                plot_calo_images(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
+                test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
+                plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         else:
-            test_loss, x_true, x_recon, zetas, labels  = modelMaker.test()
+            test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
             if not config.model_type=="cVAE" and not config.model_type=="DiVAE":
                 plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
-            plot_MNIST_output(x_true, x_recon, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
+            plot_MNIST_output(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
 
 if __name__=="__main__":
     logger.info("Starting main executable.")

@@ -30,7 +30,7 @@ def sigmoid_cross_entropy_with_logits(logits, labels):
         #max(x, 0) - x * z + log(1 + exp(-abs(x)))
         #TODO check if this changes something in the training
         sp=torch.nn.Softplus()
-        # return torch.max(x_recon,torch.zeros(x_recon.size()))-x_recon*x_true-sp(torch.abs(x_recon))
+        # return torch.max(output_data,torch.zeros(output_data.size()))-output_data*input_data-sp(torch.abs(output_data))
         return logits - logits * labels + sp(-logits)
 
 

@@ -91,14 +91,14 @@ class DiVAE(AutoEncoderBase):
         logger.debug("ERROR weight_decay_loss NOT IMPLEMENTED")
         return NotImplementedError
 
-    def loss(self, in_data, output, output_activations, output_distribution, posterior_distribution,posterior_samples):
+    def loss(self, input_data, fwd_out):
         logger.debug("loss")
 
         #1) Gradients of KL Divergence     
-        kl_loss=self.kl_divergence(posterior_distribution,posterior_samples)
+        kl_loss=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
 
         #2) AE loss
-        ae_loss_matrix=-output_distribution.log_prob_per_var(in_data.view(-1, self._input_dimension))
+        ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._input_dimension))
         #loss is the sum of all variables (pixels) per sample (event in batch)
         ae_loss=torch.sum(ae_loss_matrix,1)
 
@@ -290,21 +290,25 @@ class DiVAE(AutoEncoderBase):
         output=torch.sigmoid(output_distribution.logits)
         return output
 
-    def forward(self, in_data):
+    def forward(self, input_data):
         logger.debug("forward")
+
+        #see definition for explanation
+        out=self._output_container.clear()
+
         #TODO data prep - study if this does good things
-        in_data_centered=in_data.view(-1, self._input_dimension)-self._dataset_mean
+        input_data_centered=input_data.view(-1, self._input_dimension)-self._dataset_mean
         #Step 1: Feed data through encoder 
-        posterior_distributions, posterior_samples = self.encoder.hierarchical_posterior(in_data_centered)
-        posterior_samples_concat=torch.cat(posterior_samples,1)
+        out.posterior_distributions, out.posterior_samples = self.encoder.hierarchical_posterior(input_data_centered)
+        posterior_samples_concat=torch.cat(out.posterior_samples,1)
         #Step 2: take samples zeta and reconstruct output with decoder
         output_activations = self.decoder.decode(posterior_samples_concat)
         #TODO data prep
-        output_activations = output_activations+self._train_bias
-        output_distribution = Bernoulli(logit=output_activations)
-        output = torch.sigmoid(output_distribution.logits)
-        return output, output_activations, output_distribution, \
-            posterior_distributions, posterior_samples
+        out.output_activations = output_activations+self._train_bias
+        out.output_distribution = Bernoulli(logit=out.output_activations)
+        out.output = torch.sigmoid(out.output_distribution.logits)
+        
+        return out
 
 if __name__=="__main__":
     logger.debug("Testing Model Setup") 

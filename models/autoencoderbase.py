@@ -36,7 +36,7 @@ class AutoEncoderBase(nn.Module):
         assert config.n_latent_nodes is not None and config.n_latent_nodes>0, "Latent dimension must be >0"
         
         self._model_type=None
-        """a short tag identifying the exact model, such as AE, VAE, diVAE...
+        """a short tag identifying the einput_dataact model, such as AE, VAE, diVAE...
         """
 
         # the main configuration namespace returned by configaro
@@ -79,11 +79,11 @@ class AutoEncoderBase(nn.Module):
         parameter_string="\n".join([str(par.shape) if isinstance(par,torch.Tensor) else str(par)  for par in self.__dict__.items()])
         return parameter_string
     
-    def forward(self, x):
+    def forward(self, input_data):
         """[summary]
 
         Args:
-            x (): [aaa]
+            input_data (): [aaa]
 
         Raises:
             NotImplementedError: [ccc]

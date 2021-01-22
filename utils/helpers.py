@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Unsorted helper functions
 
@@ -109,14 +110,14 @@ def plot_image(image, layer, vmin=None, vmax=None):
 
 
     ax_idx=0
-    print(x_true.shape)
+    print(input_data.shape)
     for i in range(n_samples):
     # for i in range(n_rows):
     #     for j in range(n_cols): 
         if ax_idx%n_cols==0:
             ax_idx+=1
         current_ax=plt.subplot(n_rows, n_cols , i+1)
-        plt.imshow(x_true[i].reshape((28, 28)))
+        plt.imshow(input_data[i].reshape((28, 28)))
         plt.gray()
         current_ax.get_xaxis().set_visible(False)
         current_ax .get_yaxis().set_visible(False)
@@ -134,14 +135,14 @@ def update(changed_image):
             im.set_cmap(changed_image.get_cmap())
             im.set_clim(changed_image.get_clim())
 
-def plot_calo_jet_generated(x_recon, n_samples=5, output="./output/testCalo.png", do_gif=False):
+def plot_calo_jet_generated(output_data, n_samples=5, output="./output/testCalo.png", do_gif=False):
     for i in range(n_samples):
 
         plt.figure(figsize=(10, 3.5))
 
         images=[]
-        for j in range(0,len(x_recon)):
-            x_out=x_recon[j]
+        for j in range(0,len(output_data)):
+            x_out=output_data[j]
             if j==0:
                 shape=(3,96)
             elif j==1:
@@ -156,7 +157,7 @@ def plot_calo_jet_generated(x_recon, n_samples=5, output="./output/testCalo.png"
             minVal=reco_image.min(1,keepdim=True)[0]
 
             reco_image[reco_image<minVal]=0            
-            ax1 = plt.subplot(1, len(x_recon), j + 1)
+            ax1 = plt.subplot(1, len(output_data), j + 1)
             ax1.set_box_aspect(1)
             if j==0:
                 ax1.set_ylabel(r'$\phi$ Cell ID')
@@ -183,19 +184,19 @@ def plot_calo_jet_generated(x_recon, n_samples=5, output="./output/testCalo.png"
         # plt.tight_layout()
         fig.savefig(output.replace(".png","_{0}.png".format(i)))
 
-def plot_calo_image_sequence(x_true, x_recon, input_dimension, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
+def plot_calo_image_sequence(input_data, output_data, input_dimension, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
     for i in range(n_samples):
 
         plt.figure(figsize=(10, 7))
         # plt.subplots_adjust(right=0.8)
 
         images=[]
-        for j in range(0,len(x_true)):
-            x=x_true[j]
-            x_out=x_recon[j]
+        for j in range(0,len(input_data)):
+            x=input_data[j]
+            x_out=output_data[j]
             # plt.ylim([0,12])
 
-            ax1 = plt.subplot(2, len(x_true), j + 1)
+            ax1 = plt.subplot(2, len(input_data), j + 1)
             ax1.set_box_aspect(1)
             if j==0:
                 ax1.set_ylabel(r'$\phi$ Cell ID')
@@ -213,7 +214,7 @@ def plot_calo_image_sequence(x_true, x_recon, input_dimension, layer=0, n_sample
 
             reco_image[reco_image<minVal]=0
         
-            ax2 = plt.subplot(2, len(x_true), j + 1 + len(x_true))
+            ax2 = plt.subplot(2, len(input_data), j + 1 + len(input_data))
             ax2.set_box_aspect(1)
             if j==0:
                 ax2.set_ylabel(r'$\phi$ Cell ID')
@@ -243,7 +244,7 @@ def plot_calo_image_sequence(x_true, x_recon, input_dimension, layer=0, n_sample
         fig.savefig(output.replace(".png","_{0}.png".format(i)))
 
 @gif.frame
-def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
+def plot_calo_images(input_data, output_data, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
     plt.figure(figsize=(10, 4.5))
     axes_rec=[]
     axes_true=[]
@@ -251,7 +252,7 @@ def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/tes
     for i in range(n_samples):
         # plot original image
         ax1 = plt.subplot(2, n_samples, i + 1)
-        im = plt.imshow(x_true[i],
+        im = plt.imshow(input_data[i],
         # aspect=float(96)/3,
         norm=LogNorm(None,None)
         )
@@ -264,7 +265,7 @@ def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/tes
             ax1.get_xaxis().set_visible(False)
             ax1.get_yaxis().set_visible(False)
         
-        reco_image=x_recon[i].reshape(x_true[i].shape)
+        reco_image=output_data[i].reshape(input_data[i].shape)
         #TODO this is arbitrary...
         minVal=reco_image.min(1,keepdim=True)[0]*5
         minVal=reco_image.min(1,keepdim=True)[0]
@@ -307,13 +308,13 @@ def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/tes
     #            norm=LogNorm(vmin, vmax)
     # )
 
-#         plt.imshow(x_true[i].reshape((28, 28)))
+#         plt.imshow(input_data[i].reshape((28, 28)))
 #         # plt.gray()
 #         # ax.get_xaxis().set_visible(False)
 #         # ax.get_yaxis().set_visible(False)
 
 #         ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-#         decImg=x_recon[i].reshape((28, 28))
+#         decImg=output_data[i].reshape((28, 28))
 #         plt.imshow(decImg)
 #         plt.gray()
 #         ax.get_xaxis().set_visible(False)
@@ -323,18 +324,18 @@ def plot_calo_images(x_true, x_recon, layer=0, n_samples=5, output="./output/tes
 #     fig.savefig(output)
 
 
-def plot_MNIST_output(x_true, x_recon, n_samples=5, output="./output/testVAE.png"):
+def plot_MNIST_output(input_data, output_data, n_samples=5, output="./output/testVAE.png"):
     plt.figure(figsize=(10, 4.5))
     for i in range(n_samples):
         # plot original image
         ax = plt.subplot(2, n_samples, i + 1)
-        plt.imshow(x_true[i].reshape((28, 28)))
+        plt.imshow(input_data[i].reshape((28, 28)))
         plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
         ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-        decImg=x_recon[i].reshape((28, 28))
+        decImg=output_data[i].reshape((28, 28))
         plt.imshow(decImg)
         plt.gray()
         ax.get_xaxis().set_visible(False)
@@ -409,7 +410,7 @@ def plot_compare_histories(history_list, name_list, plot_accuracy=True):
 
 
 @gif.frame
-def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_loss=-1):
+def gif_output(input_data, output_data, epoch=None, max_epochs=None, train_loss=-1,test_loss=-1):
     #trained with list-like code
     n_samples=5
     plt.figure(figsize=(10, 4.5))
@@ -418,13 +419,13 @@ def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_
 
         # plot original image
         ax = plt.subplot(2, 5, i + 1)
-        plt.imshow(x_true[i])
+        plt.imshow(input_data[i])
         # plt.gray()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
         ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-        decImg=x_recon[i].reshape(x_true[i].shape)
+        decImg=output_data[i].reshape(input_data[i].shape)
         plt.imshow(decImg)
         # plt.gray()
         ax.get_xaxis().set_visible(False)
@@ -432,19 +433,19 @@ def gif_output(x_true, x_recon, epoch=None, max_epochs=None, train_loss=-1,test_
         if i==0:
             ax.text(x=0,y=35,s="Epoch {0}/{1}. Train Loss {2:.2f}. Test Loss {3:.2f}.".format(epoch,max_epochs,train_loss,test_loss))
 
-def plot_generative_output(x_true, n_samples=100, output="./output/testVAE.png"):
+def plot_generative_output(input_data, n_samples=100, output="./output/testVAE.png"):
     n_cols=5
     n_rows=int(n_samples/n_cols)
     fig,ax = plt.subplots(figsize=(n_cols,n_rows),nrows=n_rows, ncols=n_cols)
     ax_idx=0
-    print(x_true.shape)
+    print(input_data.shape)
     for i in range(n_samples):
     # for i in range(n_rows):
     #     for j in range(n_cols): 
         if ax_idx%n_cols==0:
             ax_idx+=1
         current_ax=plt.subplot(n_rows, n_cols , i+1)
-        plt.imshow(x_true[i].reshape((28, 28)))
+        plt.imshow(input_data[i].reshape((28, 28)))
         plt.gray()
         current_ax.get_xaxis().set_visible(False)
         current_ax .get_yaxis().set_visible(False)
@@ -452,7 +453,7 @@ def plot_generative_output(x_true, n_samples=100, output="./output/testVAE.png")
     # fig.tight_layout()
     fig.savefig(output, bbox_inches='tight')
 #         ax = plt.subplot(, n_samples, i + 1)
-#         plt.imshow(x_true[i].reshape((28, 28)))
+#         plt.imshow(input_data[i].reshape((28, 28)))
 #         plt.gray()
 #         ax.get_xaxis().set_visible(False)
 #         ax.get_yaxis().set_visible(False)

@@ -91,7 +91,7 @@ class AutoEncoder(AutoEncoderBase):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
             self._decoder_nodes.append(nodepair)
 
-        #only works if x_true, x_recon in [0,1]
+        #only works if input_data, output_data in [0,1]
         self._loss_fct= nn.functional.binary_cross_entropy
 
     def create_networks(self):
@@ -110,11 +110,11 @@ class AutoEncoder(AutoEncoderBase):
 
     def forward(self, x):
         zeta = self.encoder.encode(x.view(-1,self._input_dimension))
-        x_recon = self.decoder.decode(zeta)
-        return x_recon, zeta
+        output_data = self.decoder.decode(zeta)
+        return output_data, zeta
     
-    def loss(self, x_true, x_recon):
-        return self._loss_fct(x_recon, x_true.view(-1,self._input_dimension), reduction='sum')
+    def loss(self, input_data, output_data):
+        return self._loss_fct(output_data, input_data.view(-1,self._input_dimension), reduction='sum')
 
 #Adds VAE specific reparameterisation, loss and forward call to AutoEncoder framework
 class VariationalAutoEncoder(AutoEncoder):
@@ -191,10 +191,10 @@ class VariationalAutoEncoder(AutoEncoder):
         output = self.decoder.decode(zeta)
         return output
 
-    def loss(self, x, x_recon, mu, logvar):
+    def loss(self, x, output_data, mu, logvar):
         logger.debug("VAE Loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, self._input_dimension), reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(output_data, x.view(-1, self._input_dimension), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         kl_loss = 0.5 * torch.sum(1 + logvar - mu.pow(2) - torch.exp(logvar))
@@ -205,8 +205,8 @@ class VariationalAutoEncoder(AutoEncoder):
         mu = self._reparam_layers['mu'](z)
         logvar = self._reparam_layers['var'](z)
         zeta = self.reparameterize(mu, logvar)
-        x_recon = self.decoder.decode(zeta)
-        return x_recon, mu, logvar, zeta
+        output_data = self.decoder.decode(zeta)
+        return output_data, mu, logvar, zeta
 
 #VAE with a hierarchical posterior modelled by encoder
 #samples drawn from gaussian
@@ -257,10 +257,10 @@ class HierarchicalVAE(AutoEncoder):
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
         
-    def loss(self, x, x_recon, mu_list, logvar_list):
+    def loss(self, x, output_data, mu_list, logvar_list):
         logger.debug("loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(x_recon, x.view(-1, self._input_dimension), reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(output_data, x.view(-1, self._input_dimension), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         mu=torch.cat(mu_list,axis=1)
@@ -292,8 +292,8 @@ class HierarchicalVAE(AutoEncoder):
             lvl+=1    
 
         zeta_concat=torch.cat(zeta_list,axis=1)
-        x_recon = self.decoder.decode(zeta_concat)
-        return x_recon, mu_list, logvar_list, zeta_list
+        output_data = self.decoder.decode(zeta_concat)
+        return output_data, mu_list, logvar_list, zeta_list
 
 class DiVAE(AutoEncoderBase):
     def __init__(self, **kwargs):
