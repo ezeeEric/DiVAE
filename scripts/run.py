@@ -59,31 +59,62 @@ def run(modelMaker=None):
     else:
         logger.warning("Setting identity as default activation fct")
         modelMaker.default_activation_fct=torch.nn.Identity() 
-        
+    
+    #instantiate the chosen model
     model=modelMaker.init_model()
+    #create the NN infrastructure
     model.create_networks()
     model.print_model_info()
 
+    #instantiate and register optimisation algorithm
     modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    
     #if we load a model from a file, we don't need to train
     if config.load_model:
         #TODO needs re-implementation
         # modelMaker.load_model(set_eval=True)
+        #        if config.load_model:
+        #   configString=config.infile.split("/")[-1].replace('.pt','')
+ 
+        pass
     else:
         for epoch in range(1, config.n_epochs+1):   
             train_loss = modelMaker.fit(epoch=epoch, is_training=True)
             test_loss = modelMaker.fit(epoch=epoch, is_training=False)
     
+    #TODO improve the save functionality
+    if config.save_model:
+        modelMaker.save_model(configString)
+        if model.type=="DiVAE": 
+            modelMaker.save_rbm(configString)
+
     exit()
-    #TODO rewrite this as "as helpers"
+    #TODO SAMPLE GENERATION - UNIFY, TEST
+    if config.test_generate_samples:
+        output_generated=modelMaker.generate_samples()
+
+        #move this to PlotProvider 
+        # if config.model_type=="DiVAE":  
+        #     from utils.generate_samples import generate_samples_divae
+        #     generate_samples_divae(modelMaker._model, configString)
+        # #TODO split this up in plotting and generation routine and have one
+        # #common function for all generative models. 
+        # elif config.model_type=="VAE": 
+        #     from utils.generate_samples import generate_samples_vae
+        #     generate_samples_vae(modelMaker._model, configString)
+        # elif config.model_type=="cVAE": 
+        #     from utils.generate_samples import generate_samples_cvae
+        #     generate_samples_cvae(modelMaker._model, configString)    
+        # elif config.model_type=="sVAE": 
+        #     from utils.generate_samples import generate_samples_svae
+        #     generate_samples_svae(modelMaker._model, configString)
+
+   #TODO PLOTTING
     from utils.helpers import plot_MNIST_output, gif_output, plot_latent_space, plot_calo_images, plot_calo_image_sequence
 
         gif_frames=[]
-        logger.debug("Start Epoch Loop")
         for epoch in range(1, config.n_epochs+1):   
-            train_loss = modelMaker.train(epoch)       
             test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
-
             if config.create_gif:
                 #TODO improve
                 if config.data_type=='calo':
@@ -91,56 +122,23 @@ def run(modelMaker=None):
                 else:
                     gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
             
-            if model.type=="DiVAE" and config.sample_from_prior:
-                random_samples=model.generate_samples()
-                #TODO make a plot of the output
-
         if config.create_gif:
             gif.save(gif_frames,"{0}/runs_{1}.gif".format(config.output_path,configString),duration=200)
-        
-        if config.save_model:
-            modelMaker.save_model(configString)
-            if model.type=="DiVAE": 
-                modelMaker.save_rbm(configString)
-
-    #TODO move this around
-    if config.test_generate_samples:
-        if config.load_model:
-            configString=config.infile.split("/")[-1].replace('.pt','')
- 
-        if config.model_type=="DiVAE":  
-            from utils.generate_samples import generate_samples_divae
-            generate_samples_divae(modelMaker._model, configString)
-
-        #TODO split this up in plotting and generation routine and have one
-        #common function for all generative models. 
-        elif config.model_type=="VAE": 
-            from utils.generate_samples import generate_samples_vae
-            generate_samples_vae(modelMaker._model, configString)
-
-        elif config.model_type=="cVAE": 
-            from utils.generate_samples import generate_samples_cvae
-            generate_samples_cvae(modelMaker._model, configString)
-        
-        elif config.model_type=="sVAE": 
-            from utils.generate_samples import generate_samples_svae
-            generate_samples_svae(modelMaker._model, configString)
-
-    if config.create_plots:
-        if config.data_type=='calo':
-            if config.model_type=="sVAE":
-                #TODO remove this
-                input_dimension=dataMgr.get_input_dimensions()
-                test_loss, input_data, output_data, zetas, labels   = modelMaker.test()
-                plot_calo_image_sequence(input_data, output_data, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
+        if config.create_plots:
+            if config.data_type=='calo':
+                if config.model_type=="sVAE":
+                    #TODO remove this
+                    input_dimension=dataMgr.get_input_dimensions()
+                    test_loss, input_data, output_data, zetas, labels   = modelMaker.test()
+                    plot_calo_image_sequence(input_data, output_data, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
+                else:
+                    test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
+                    plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
             else:
                 test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
-                plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
-        else:
-            test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
-            if not config.model_type=="cVAE" and not config.model_type=="DiVAE":
-                plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
-            plot_MNIST_output(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
+                if not config.model_type=="cVAE" and not config.model_type=="DiVAE":
+                    plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
+                plot_MNIST_output(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
 
 if __name__=="__main__":
     logger.info("Starting main executable.")

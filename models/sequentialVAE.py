@@ -113,6 +113,8 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             rnd_input=torch.randn((n_samples,self._latent_dimensions))
             rnd_input_cat=torch.cat([rnd_input]+ outputs, dim=1)
             output = self._autoencoders[i].decoder.decode(rnd_input_cat)
+            output.detach()
+
             outputs.append(output)
         return outputs
     

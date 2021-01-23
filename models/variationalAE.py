@@ -80,6 +80,7 @@ class VariationalAutoEncoder(AutoEncoder):
         rnd_input=torch.randn((n_samples,self._reparam_nodes[1]))
         zeta=rnd_input 
         output = self.decoder.decode(zeta)
+        output.detach()
         return output
 
     def loss(self, input_data, fwd_out):

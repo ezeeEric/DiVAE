@@ -288,6 +288,8 @@ class DiVAE(AutoEncoderBase):
         output_activations = output_activations+self._train_bias
         output_distribution = Bernoulli(logit=output_activations)
         output=torch.sigmoid(output_distribution.logits)
+        output.detach()
+
         return output
 
     def forward(self, input_data):

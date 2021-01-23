@@ -60,5 +60,6 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
             target=torch.full((n_samples_per_nr, 1), i, dtype=torch.float32)
             rnd_input_cat=torch.cat([rnd_input,target], dim=1)
             output = self.decoder.decode(rnd_input_cat)
+            output.detach()
             outlist.append(output)
         return torch.cat(outlist)
