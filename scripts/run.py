@@ -39,7 +39,7 @@ def run(modelMaker=None):
     #set parameters relevant for this run
     date=datetime.datetime.now().strftime("%y%m%d")
 
-    configString="_".join(str(i) for i in [config.model_type,
+    config_string="_".join(str(i) for i in [config.model_type,
                                         config.data_type,
                                         config.n_train_samples,
                                         config.n_test_samples,
@@ -52,7 +52,7 @@ def run(modelMaker=None):
                                         config.tag])
     
     if config.data_type=='calo': 
-        configString+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
+        config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
 
     if config.activation_fct.lower()=="relu":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
@@ -76,7 +76,7 @@ def run(modelMaker=None):
         #TODO needs re-implementation
         # modelMaker.load_model(set_eval=True)
         #        if config.load_model:
-        #   configString=config.infile.split("/")[-1].replace('.pt','')
+        #   config_string=config.infile.split("/")[-1].replace('.pt','')
  
         pass
     else:
@@ -86,18 +86,25 @@ def run(modelMaker=None):
     
     #TODO improve the save functionality
     if config.save_model:
-        modelMaker.save_model(configString)
+        modelMaker.save_model(config_string)
         if model.type=="DiVAE": 
-            modelMaker.save_rbm(configString)
+            modelMaker.save_rbm(config_string)
 
-    #TODO SAMPLE GENERATION - UNIFY, TEST
+    #sample generation
     if config.generate_samples:
         output_generated=modelMaker.generate_samples()
-    exit()
 
     if config.create_plots:
-        #config.output_path,configString,date
-        pp=PlotProvider()
+        #call a forward method derivative - for output object.
+        eval_output=modelMaker.evaluate()
+        #create plotting infrastructure
+        pp=PlotProvider(config_string=config_string,date_tag=date)
+        #TODO is there a neater integration?
+        pp.data_dimensions=dataMgr.get_input_dimensions()
+        #create plot
+        pp.plot(eval_output)
+    logger.info("run() finished successfully.")
+
 
 if __name__=="__main__":
     logger.info("Starting main executable.")

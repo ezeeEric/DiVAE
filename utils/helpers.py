@@ -45,10 +45,35 @@ class OutputContainer(SimpleNamespace):
         for key,_ in self.__dict__.items():
             self.__dict__[key]=None
         return self
+    
+    def print(self):
+        """Clears the current namespace. Safety feature.
+        """
+        out=[str(key) for key,_ in self.__dict__.items()]
+        logger.info("OutputContainer keys: {0}".format(out))
+        return
 
+def plot_MNIST_output(input_data, output_data, n_samples=10, out_file="./output/testVAE.png"):
+    plt.figure(figsize=(10, 4.5))
+    for i in range(n_samples):
+        # plot original image
+        ax = plt.subplot(2, n_samples, i + 1)
+        plt.imshow(input_data[i].reshape((28, 28)))
+        plt.gray()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
+        ax = plt.subplot(2, n_samples, i + 1 + n_samples)
+        decImg=output_data[i].reshape((28, 28))
+        plt.imshow(decImg)
+        plt.gray()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+    fig = plt.gcf()
+    fig.savefig(out_file)
 
 #@title Helper Functions
-def plot_latent_space(zeta, label, output='', dimensions=2):
+def plot_latent_space(zeta, label, out_file="", dimensions=2):
     logger.info("Plotting Latent Space")
     fig = plt.figure()
     if dimensions==0:
@@ -89,42 +114,6 @@ def plot_latent_space(zeta, label, output='', dimensions=2):
     fig = plt.gcf()
     fig.savefig(output+".pdf")
 
-def plot_image(image, layer, vmin=None, vmax=None):
-    fig = plt.figure(figsize=(20,20))
-
-    cbar = plt.colorbar(fraction=0.0455)
-    cbar.set_label(r'Energy (MeV)', y=0.83)
-    cbar.ax.tick_params()
-   
-    xticks = range(sizes[layer*2 + 1])
-    yticks = range(sizes[layer*2])
-    if layer == 0:
-        xticks = xticks[::10]
-    plt.xticks(xticks)
-    plt.yticks(yticks)
-    plt.xlabel(r'$\eta$ Cell ID')
-    plt.ylabel(r'$\phi$ Cell ID')
-
-    plt.tight_layout()
-    return im
-
-
-    ax_idx=0
-    print(input_data.shape)
-    for i in range(n_samples):
-    # for i in range(n_rows):
-    #     for j in range(n_cols): 
-        if ax_idx%n_cols==0:
-            ax_idx+=1
-        current_ax=plt.subplot(n_rows, n_cols , i+1)
-        plt.imshow(input_data[i].reshape((28, 28)))
-        plt.gray()
-        current_ax.get_xaxis().set_visible(False)
-        current_ax .get_yaxis().set_visible(False)
-    fig = plt.gcf()
-    # fig.tight_layout()
-    fig.savefig(output, bbox_inches='tight')
-
 # Make images respond to changes in the norm of other images (e.g. via the
 # "edit axis, curves and images parameters" GUI on Qt), but be careful not to
 # recurse infinitely!
@@ -135,7 +124,7 @@ def update(changed_image):
             im.set_cmap(changed_image.get_cmap())
             im.set_clim(changed_image.get_clim())
 
-def plot_calo_jet_generated(output_data, n_samples=5, output="./output/testCalo.png", do_gif=False):
+def plot_calo_jet_generated(output_data, n_samples=5, out_file="./output/testCalo.png", do_gif=False):
     for i in range(n_samples):
 
         plt.figure(figsize=(10, 3.5))
@@ -184,7 +173,7 @@ def plot_calo_jet_generated(output_data, n_samples=5, output="./output/testCalo.
         # plt.tight_layout()
         fig.savefig(output.replace(".png","_{0}.png".format(i)))
 
-def plot_calo_image_sequence(input_data, output_data, input_dimension, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
+def plot_calo_image_sequence(input_data, output_data, input_dimension, layer=0, n_samples=5, out_file="./output/testCalo.png", do_gif=False):
     for i in range(n_samples):
 
         plt.figure(figsize=(10, 7))
@@ -244,7 +233,7 @@ def plot_calo_image_sequence(input_data, output_data, input_dimension, layer=0, 
         fig.savefig(output.replace(".png","_{0}.png".format(i)))
 
 @gif.frame
-def plot_calo_images(input_data, output_data, layer=0, n_samples=5, output="./output/testCalo.png", do_gif=False):
+def plot_calo_images(input_data, output_data, layer=0, n_samples=5, out_file="./output/testCalo.png", do_gif=False):
     plt.figure(figsize=(10, 4.5))
     axes_rec=[]
     axes_true=[]
@@ -284,65 +273,12 @@ def plot_calo_images(input_data, output_data, layer=0, n_samples=5, output="./ou
         axes_true.append(ax1)
         axes_rec.append(ax2)
 
-    # cbar = plt.colorbar(fraction=0.0455)
-    # cbar.set_label(r'Energy (MeV)', y=0.83)
-    # cbar.ax.tick_params()
-   
-    # xticks = range(sizes[layer*2 + 1])
-    # yticks = range(sizes[layer*2])
-    # if layer == 0:
-    #     xticks = xticks[::10]
-    # plt.xticks(xticks)
-    # plt.yticks(yticks)
-
     if not do_gif:
         plt.tight_layout()
         fig = plt.gcf()
-    #  plt.show()
         fig.savefig(output)
         import sys
         sys.exit()
-    #     im = plt.imshow(image,
-    #            aspect=float(sizes[layer*2 + 1])/sizes[layer*2],
-    #            interpolation='nearest',
-    #            norm=LogNorm(vmin, vmax)
-    # )
-
-#         plt.imshow(input_data[i].reshape((28, 28)))
-#         # plt.gray()
-#         # ax.get_xaxis().set_visible(False)
-#         # ax.get_yaxis().set_visible(False)
-
-#         ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-#         decImg=output_data[i].reshape((28, 28))
-#         plt.imshow(decImg)
-#         plt.gray()
-#         ax.get_xaxis().set_visible(False)
-#         ax.get_yaxis().set_visible(False)
-#     fig = plt.gcf()
-#   #  plt.show()
-#     fig.savefig(output)
-
-
-def plot_MNIST_output(input_data, output_data, n_samples=5, output="./output/testVAE.png"):
-    plt.figure(figsize=(10, 4.5))
-    for i in range(n_samples):
-        # plot original image
-        ax = plt.subplot(2, n_samples, i + 1)
-        plt.imshow(input_data[i].reshape((28, 28)))
-        plt.gray()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
-        ax = plt.subplot(2, n_samples, i + 1 + n_samples)
-        decImg=output_data[i].reshape((28, 28))
-        plt.imshow(decImg)
-        plt.gray()
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-    fig = plt.gcf()
-  #  plt.show()
-    fig.savefig(output)
 
 #@title Helper Functions
 def plot_autoencoder_outputs(model, n, dims):
@@ -408,7 +344,6 @@ def plot_compare_histories(history_list, name_list, plot_accuracy=True):
     plt.xlim(0, min_epoch-1)
     plt.tight_layout()
 
-
 @gif.frame
 def gif_output(input_data, output_data, epoch=None, max_epochs=None, train_loss=-1,test_loss=-1):
     #trained with list-like code
@@ -433,15 +368,12 @@ def gif_output(input_data, output_data, epoch=None, max_epochs=None, train_loss=
         if i==0:
             ax.text(x=0,y=35,s="Epoch {0}/{1}. Train Loss {2:.2f}. Test Loss {3:.2f}.".format(epoch,max_epochs,train_loss,test_loss))
 
-def plot_generative_output(input_data, n_samples=100, output="./output/testVAE.png"):
+def plot_generative_output(input_data, n_samples=100, out_file="./output/testVAE.png"):
     n_cols=5
     n_rows=int(n_samples/n_cols)
     fig,ax = plt.subplots(figsize=(n_cols,n_rows),nrows=n_rows, ncols=n_cols)
     ax_idx=0
-    print(input_data.shape)
     for i in range(n_samples):
-    # for i in range(n_rows):
-    #     for j in range(n_cols): 
         if ax_idx%n_cols==0:
             ax_idx+=1
         current_ax=plt.subplot(n_rows, n_cols , i+1)
@@ -452,12 +384,3 @@ def plot_generative_output(input_data, n_samples=100, output="./output/testVAE.p
     fig = plt.gcf()
     # fig.tight_layout()
     fig.savefig(output, bbox_inches='tight')
-#         ax = plt.subplot(, n_samples, i + 1)
-#         plt.imshow(input_data[i].reshape((28, 28)))
-#         plt.gray()
-#         ax.get_xaxis().set_visible(False)
-#         ax.get_yaxis().set_visible(False)
-#     fig = plt.gcf()
-#   #  plt.show()
-#     fig.savefig(output)
-# plot_generative_output(1)

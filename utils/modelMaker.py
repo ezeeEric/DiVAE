@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+PlotProvider. Work in progress.
+
+Author: Eric Drechsler (eric_drechsler@sfu.ca)
+"""
+
 import os
 import torch
 import numpy as np
@@ -142,7 +149,6 @@ class ModelMaker(object):
             self._model.eval()            
             context=torch.no_grad()
             data_loader=self.data_mgr.test_loader
-            outstring="Test"
 
         total_loss = 0
         with context:
@@ -178,55 +184,17 @@ class ModelMaker(object):
         logger.info("Total Loss ({0}):\t {1:.4f}".format(outstring,total_loss))
         return total_loss
     
-    def test(self):
-        logger.info("Testing Model")
+    def evaluate(self):
+        #similar to test call of fit() method but returning values
         self._model.eval()
-
-        test_loss = 0
-        zeta_list=None
-        label_list=None
+        #do plots on test dataset           
+        data_loader=self.data_mgr.test_loader
 
         with torch.no_grad():
-            for batch_idx, (input_data, label) in enumerate(self.test_loader):
-                if config.model_type=='AE':
-                    outputData, zeta = self._model(input_data)
-                    test_loss += self._model.loss(input_data,outputData)
-                    
-                    #for plotting
-                    zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
-                    label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
-                
-                elif config.model_type=='VAE':
-                    outputData, mu, logvar, zeta = self._model(input_data)
-                    test_loss += self._model.loss(input_data, outputData, mu, logvar)
-                    
-                    #for plotting
-                    zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
-                    label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
-                
-                elif config.model_type=='cVAE':
-                    outputData, mu, logvar, zeta = self._model(input_data,label)
-                    test_loss += self._model.loss(input_data, outputData, mu, logvar)	
-                
-                elif config.model_type=='sVAE':
-                    outputData, mu, logvar = self._model(input_data,label)
-                    test_loss += self._model.loss(input_data, outputData, mu, logvar)	
-                
-                elif config.model_type=='HiVAE':
-                    outputData, mu_list, logvar_list, zeta_hierarchy_list = self._model(input_data)
-                    test_loss += self._model.loss(input_data, outputData, mu_list, logvar_list)
-                    for zeta in zeta_hierarchy_list:
-                        zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
-                    label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
-                
-                elif config.model_type=='DiVAE':
-                    outputData, output_activations, output_distribution,\
-                         posterior_distribution, posterior_samples = self._model(input_data)
-                    # test_loss += self._model.loss(input_data, outputData, output_activations, output_distribution, posterior_distribution, posterior_samples)
-                
-        test_loss /= len(self.test_loader.dataset)
-        logger.info("Test Loss: {0}".format(test_loss))
-        return test_loss, input_data, outputData, zeta_list, label_list
+            for _, (input_data, label) in enumerate(data_loader):
+                fwd_output=self._model(input_data)
+                fwd_output.input_data=input_data
+        return fwd_output
 
 if __name__=="__main__":
     logger.info("Willkommen!")
