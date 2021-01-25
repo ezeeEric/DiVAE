@@ -152,7 +152,7 @@ def run(tuner=None, config=None):
         tuner.load_model(set_eval=True)
 
         #TODO move this around
-    if config.test_generate_samples:
+    if config.generate_samples:
         if config.load_model:
             configString=config.infile.split("/")[-1].replace('.pt','')
  

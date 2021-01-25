@@ -107,19 +107,17 @@ class ModelMaker(object):
         self._optimiser=optimiser
 
     def generate_samples(self):
-        #TODO
-
         #options
         #n_samples=100
 
-        output=model.generate_samples( n_samples=n_samples, n_gibbs_sampling_steps=100, sampling_mode="gibbs_flat")
-        outputs=model.generate_samples(n_samples=50)
-    nrs=[i for i in range(0,10)]
-    outputs=model.generate_samples(n_samples_per_nr=5,nrs=nrs)
-        outputs=model.generate_samples(n_samples=5)
-    outputs=[ out.detach() for out in outputs]
-        from utils.helpers import plot_generative_output
-        plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
+        # output=model.generate_samples( n_samples=n_samples, n_gibbs_sampling_steps=100, sampling_mode="gibbs_flat")
+        # outputs=model.generate_samples(n_samples=50)
+        # nrs=[i for i in range(0,10)]
+        # outputs=model.generate_samples(n_samples_per_nr=5,nrs=nrs)
+        # outputs=model.generate_samples(n_samples=5)
+        # outputs=[ out.detach() for out in outputs]
+        # from utils.helpers import plot_generative_output
+        # plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
         return
 
     def fit(self, epoch, is_training=True):
