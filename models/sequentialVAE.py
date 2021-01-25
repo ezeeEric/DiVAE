@@ -15,7 +15,7 @@ from models.autoencoder import AutoEncoder
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
+from DiVAE import config
 
 class SequentialVariationalAutoEncoder(AutoEncoder):
 
@@ -104,13 +104,11 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             
         return out
 
-    def generate_samples(self,n_samples=5):
-        """ 
-        Similar to fwd. only skip encoding part...
-        """
+    def generate_samples(self):
+
         outputs=[]
         for i,dim in enumerate(self._input_dimension):
-            rnd_input=torch.randn((n_samples,self._latent_dimensions))
+            rnd_input=torch.randn((config.n_samples,self._latent_dimensions))
             rnd_input_cat=torch.cat([rnd_input]+ outputs, dim=1)
             output = self._autoencoders[i].decoder.decode(rnd_input_cat)
             output.detach()

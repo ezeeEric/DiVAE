@@ -16,7 +16,7 @@ from utils.distributions import Bernoulli
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
+from DiVAE import config
 
 class DiVAE(AutoEncoderBase):
     def __init__(self, **kwargs):
@@ -272,14 +272,14 @@ class DiVAE(AutoEncoderBase):
 
     #TODO experimental for now. The sampling technique in the prior is not
     #cross checked with anything.
-    def generate_samples(self, n_samples=5, n_gibbs_sampling_steps=100, sampling_mode="gibbs_flat"):
+    def generate_samples(self):
         prior_samples=[]
         #how many samples (i.e. digits) to look at
-        for i in range(0,n_samples):
+        for i in range(0,config.n_generate_samples):
             prior_sample = self.prior.get_samples(
                 n_latent_nodes=self.n_latent_nodes,
-                n_gibbs_sampling_steps=n_gibbs_sampling_steps, 
-                sampling_mode=sampling_mode)
+                n_gibbs_sampling_steps=config.n_gibbs_sampling_steps, 
+                sampling_mode=config.sampling_mode)
             prior_sample = torch.cat(prior_sample)
             prior_samples.append(prior_sample)
         

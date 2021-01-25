@@ -50,7 +50,9 @@ class PlotProvider(object):
     #                 plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
     #             plot_MNIST_output(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         
-        
+        # from utils.helpers import plot_generative_output
+        # plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
+
         #move this to PlotProvider 
         # if config.model_type=="DiVAE":  
         #     from utils.generate_samples import generate_samples_divae

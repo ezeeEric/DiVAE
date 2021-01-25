@@ -8,6 +8,11 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 import torch
 from models.variationalAE import VariationalAutoEncoder
 
+#logging module with handmade settings.
+from DiVAE import logging
+logger = logging.getLogger(__name__)
+from DiVAE import config
+
 class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
 
     def __init__(self, **kwargs):
@@ -50,12 +55,13 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
 
         return out
 
-    def generate_samples(self,n_samples_per_nr=5, nrs=[0,1,2]):
-        """ 
-        Similar to fwd. only skip encoding part...
-        """
+    def generate_samples(self):
         outlist=[]
-        for i in nrs:
+        
+        #TODO this could be a separate config entry
+        n_samples_per_nr=config.n_generate_samples
+
+        for i in config.target_numbers:
             rnd_input=torch.randn((n_samples_per_nr,self._reparam_nodes[1]))
             target=torch.full((n_samples_per_nr, 1), i, dtype=torch.float32)
             rnd_input_cat=torch.cat([rnd_input,target], dim=1)

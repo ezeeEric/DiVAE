@@ -11,7 +11,7 @@ from models.autoencoder import AutoEncoder
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
+from DiVAE import config
 
 # Vanilla Variational Autoencoder implementation
 # Adds VAE specific reparameterisation, loss and forward call to AutoEncoder framework
@@ -72,12 +72,9 @@ class VariationalAutoEncoder(AutoEncoder):
         eps = torch.randn_like(mu)
         return mu + eps*torch.exp(0.5 * logvar)
     
-    def generate_samples(self,n_samples=100):
-        """ 
-        Similar to fwd. only skip encoding part...
-        """
+    def generate_samples(self):
         # Draw a rnd var z~N[0,1] and feed it through the decoder
-        rnd_input=torch.randn((n_samples,self._reparam_nodes[1]))
+        rnd_input=torch.randn((config.n_samples,self._reparam_nodes[1]))
         zeta=rnd_input 
         output = self.decoder.decode(zeta)
         output.detach()
