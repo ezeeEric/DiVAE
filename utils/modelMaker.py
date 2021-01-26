@@ -99,7 +99,7 @@ class ModelMaker(object):
     def load_model(self,set_eval=True):
         logger.info("Loading Model")
         #attention: model must be defined already
-        self._model.load_state_dict(torch.load(config.infile))
+        self._model.load_state_dict(torch.load(config.input_model))
         #training of model
         if set_eval:
             self._model.eval()

@@ -186,7 +186,7 @@ def run(tuner=None, config=None):
     #TODO move this around
     if config.generate_samples:
         if config.load_model:
-            configString=config.infile.split("/")[-1].replace('.pt','')
+            configString=config.input_model.split("/")[-1].replace('.pt','')
  
         if config.model_type=="DiVAE":  
             from utils.generate_samples import generate_samples_divae
@@ -235,7 +235,7 @@ if __name__=="__main__":
     if not os.path.exists(config.output_path):
         os.mkdir(config.output_path)
     tuner.outpath=config.output_path
-    tuner.infile=config.infile
+    tuner.infile=config.input_model
     
     run(tuner,config)
 

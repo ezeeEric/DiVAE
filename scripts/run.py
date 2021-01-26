@@ -76,7 +76,7 @@ def run(modelMaker=None):
         #TODO needs re-implementation
         # modelMaker.load_model(set_eval=True)
         #        if config.load_model:
-        #   config_string=config.infile.split("/")[-1].replace('.pt','')
+        #   config_string=config.input_model.split("/")[-1].replace('.pt','')
  
         pass
     else:
@@ -99,12 +99,11 @@ def run(modelMaker=None):
         eval_output=modelMaker.evaluate()
         #create plotting infrastructure
         pp=PlotProvider(config_string=config_string,date_tag=date)
-        #TODO is there a neater integration?
+        #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()
         #create plot
         pp.plot(eval_output)
     logger.info("run() finished successfully.")
-
 
 if __name__=="__main__":
     logger.info("Starting main executable.")

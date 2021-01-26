@@ -13,7 +13,6 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 from DiVAE import config
 
-
 class PlotProvider(object):
     def __init__(self,config_string="default",date_tag="000000"):
         self.config_string=config_string
@@ -64,11 +63,10 @@ class PlotProvider(object):
                     dimensions=0)
         
         elif config.data_type.lower()=="calo":
+            
             from utils.helpers import plot_calo_images, plot_calo_image_sequence
             
             if config.model_type=="sVAE":
-                #TODO where to get this from?!
-                input_dimension=dataMgr.get_input_dimensions()
                 plot_calo_image_sequence(
                     input_data=input_container.input_data, 
                     output_data=input_container.output, 
