@@ -71,7 +71,7 @@ class BasicDecoder(Network):
         return x
 
 class SimpleEncoder(Network):
-    def __init__(self,smoothing_distribution=None,n_latent_hierarchy_lvls=4,**kwargs):
+    def __init__(self,smoothing_distribution=None, n_latent_hierarchy_lvls=4,**kwargs):
         super(SimpleEncoder, self).__init__(**kwargs)
         self.smoothing_distribution=smoothing_distribution
 

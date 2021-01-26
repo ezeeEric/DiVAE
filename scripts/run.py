@@ -41,16 +41,10 @@ def run(modelMaker=None):
     date=datetime.datetime.now().strftime("%y%m%d")
 
     config_string="_".join(str(i) for i in [config.model_type,
-                                        config.data_type,
-                                        config.n_train_samples,
-                                        config.n_test_samples,
-                                        config.n_batch_samples,
-                                        config.n_epochs,
-                                        config.learning_rate,
-                                        config.n_latent_hierarchy_lvls,
-                                        config.n_latent_nodes,
-                                        config.activation_fct,
-                                        config.tag])
+                                            config.data_type,
+                                            date,
+                                            config.tag
+                                            ])
     
     if config.data_type=='calo': 
         config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
@@ -92,6 +86,7 @@ def run(modelMaker=None):
             test_loss = modelMaker.fit(epoch=epoch, is_training=False)
     
     #save our trained model
+    #also 
     if config.save_model:
         modelMaker.save_model(config_string)
 
