@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 Vanilla Variational Autoencoder Model
 

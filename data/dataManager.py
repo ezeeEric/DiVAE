@@ -1,7 +1,5 @@
-
-# -*- coding: utf-8 -*-
 """
-TODO description
+Data Manager
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
@@ -17,7 +15,6 @@ from data.loadCaloGAN import loadCalorimeterData
 
 class DataManager(object):
     def __init__(self,train_loader=None,test_loader=None):
-        #
         self._train_loader=train_loader
         self._test_loader=test_loader
 

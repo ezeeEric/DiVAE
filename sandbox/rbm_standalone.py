@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 PyTorch implementation of a restricted Boltzmann machine
 

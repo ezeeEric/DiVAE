@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
 """
-PlotProvider. Work in progress.
+ModelMaker - Interface between run scripts and models.
+
+Provides steering of training/testing/evaluation functionality.
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
@@ -84,8 +85,7 @@ class ModelMaker(object):
     def save_model(self,config_string='test'):
         logger.info("Saving Model")
         f=open(os.path.join(config.output_path,"model_{0}.pt".format(config_string)),'wb')
-        torch.save({"model_state_dict": self._model.state_dict()},f) 
-        # torch.save(self._model,f)
+        torch.save(self._model.state_dict(),f)
         f.close()
         return
     

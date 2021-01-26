@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 Discrete Variational Autoencoder Class Structures
 

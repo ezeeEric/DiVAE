@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 Runscript specifically for sVAE with Calo data. Development, might be merged
 with main script later.

@@ -82,7 +82,7 @@ more clamping in KLD
   main module and imported as global variable.
 
 ## TODOs
-- load and save functionality of model not working after re-factoring. 
+- load and save functionality only load model, not optimiser or other parts 
 - plotting engine could be more streamlined
 - add documentation
 

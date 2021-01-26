@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Discrete Variational Autoencoder Class
 
@@ -282,6 +281,9 @@ class DiVAE(AutoEncoderBase):
                 sampling_mode=config.sampling_mode)
             prior_sample = torch.cat(prior_sample)
             prior_samples.append(prior_sample)
+            print(prior_sample)
+            print(self.prior)
+            exit()
         
         prior_samples=torch.stack(prior_samples)
         output_activations = self.decoder.decode(prior_samples)

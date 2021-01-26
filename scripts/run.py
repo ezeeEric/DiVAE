@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/python3
 """
-Main runscript
+Main executable. The run() method steers data loading, model creation, training
+and evaluation by calling the respective interfaces.
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
@@ -90,11 +91,9 @@ def run(modelMaker=None):
             train_loss = modelMaker.fit(epoch=epoch, is_training=True)
             test_loss = modelMaker.fit(epoch=epoch, is_training=False)
     
-    #TODO improve the save functionality
+    #save our trained model
     if config.save_model:
         modelMaker.save_model(config_string)
-        # if model.type=="DiVAE": 
-        #     modelMaker.save_rbm(config_string)
 
     #sample generation
     if config.generate_samples:
