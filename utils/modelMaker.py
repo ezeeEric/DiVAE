@@ -46,7 +46,8 @@ class ModelMaker(object):
 
         self._default_activation_fct=None
     
-    def init_model(self):
+    def init_model(self,load_from_file=False):
+
         for key, model_class in model_dict.items(): 
             if key.lower()==config.model_type.lower():
                 logger.info("Initialising Model Type {0}".format(config.model_type))
@@ -55,6 +56,10 @@ class ModelMaker(object):
                             input_dimension=self.data_mgr.get_input_dimensions(),
                             train_ds_mean=self.data_mgr.get_train_dataset_mean(),
                             activation_fct=self._default_activation_fct)
+                
+                # #return pre-trained model after loading from file
+                # if load_from_file:
+                #     return self.load_model()
                 return self.model
         logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")
         raise NotImplementedError
@@ -79,14 +84,14 @@ class ModelMaker(object):
     def save_model(self,config_string='test'):
         logger.info("Saving Model")
         f=open(os.path.join(config.output_path,"model_{0}.pt".format(config_string)),'wb')
-        torch.save(self._model.state_dict(),f)
+        torch.save({"model_state_dict": self._model.state_dict()},f) 
+        # torch.save(self._model,f)
         f.close()
         return
     
     def save_rbm(self,config_string='test'):
         logger.info("Saving RBM")
         f=open(os.path.join(config.output_path,"rbm_{0}.pt".format(config_string)),'wb')
-        print(self._model.prior)
         torch.save(self._model.prior,f)
         f.close()
         return
@@ -96,13 +101,12 @@ class ModelMaker(object):
         self.data_mgr=data_mgr
         return
 
-    def load_model(self,set_eval=True):
+    def load_model(self):
         logger.info("Loading Model")
-        #attention: model must be defined already
+        #load_state_dict is a pytorch method (https://pytorch.org/tutorials/beginner/saving_loading_models.html)
         self._model.load_state_dict(torch.load(config.input_model))
-        #training of model
-        if set_eval:
-            self._model.eval()
+        #set evaluation mode for model
+        self._model.eval()
         return
 
     @property
@@ -194,6 +198,7 @@ class ModelMaker(object):
             for _, (input_data, label) in enumerate(data_loader):
                 fwd_output=self._model(input_data)
                 fwd_output.input_data=input_data
+                fwd_output.labels = label
         return fwd_output
 
 if __name__=="__main__":

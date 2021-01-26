@@ -50,7 +50,7 @@ class PlotProvider(object):
             
             #default plot method
             plot_MNIST_output(input_data=input_container.input_data, 
-                output_data=input_container.output,
+                output_data=input_container.output_data,
                 n_samples=config.n_plot_samples, 
                 out_file="{0}/{2}_reco_{1}.png".format(config.output_path,self.config_string,self.date_tag))
             
@@ -63,7 +63,7 @@ class PlotProvider(object):
                     dimensions=0)
         
         elif config.data_type.lower()=="calo":
-            
+
             from utils.helpers import plot_calo_images, plot_calo_image_sequence
             
             if config.model_type=="sVAE":

@@ -112,7 +112,7 @@ def plot_latent_space(zeta, label, out_file="", dimensions=2):
                     ax.legend(loc='upper right', bbox_to_anchor=(1.3,1.))
                 idx+=1
     fig = plt.gcf()
-    fig.savefig(output+".pdf")
+    fig.savefig(out_file+".pdf")
 
 # Make images respond to changes in the norm of other images (e.g. via the
 # "edit axis, curves and images parameters" GUI on Qt), but be careful not to

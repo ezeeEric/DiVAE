@@ -308,7 +308,7 @@ class DiVAE(AutoEncoderBase):
         #TODO data prep
         out.output_activations = output_activations+self._train_bias
         out.output_distribution = Bernoulli(logit=out.output_activations)
-        out.output = torch.sigmoid(out.output_distribution.logits)
+        out.output_data = torch.sigmoid(out.output_distribution.logits)
         
         return out
 

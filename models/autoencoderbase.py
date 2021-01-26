@@ -96,7 +96,7 @@ class AutoEncoderBase(nn.Module):
                 logger.info(par.shape)
             else:
                 logger.info(par)
-
+        
 if __name__=="__main__":
     logger.info("Running autoencoderbase.py directly") 
     logger.info("Success")

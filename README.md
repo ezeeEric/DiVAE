@@ -69,12 +69,23 @@ Sources the virtual environment and appends to `PYTHONPATH`.
 python scripts/rundiVAE.py -c configs/default_divae_mnist.cfg 
 ```
 
+### ...load models
+Set option `input_model` to the desired pickle file containing your model. Watch
+out for additional information stored in that pickle - these are read out in
+successive order. See `modelMaker::load_model()` for implementation details. 
+
 ## Notes
 - In Hierarchical Encoder: probabilities are clamped (clipped)
 more clamping in KLD
 
 - The configuration object config is instantiated in the __init__ file of the
   main module and imported as global variable.
+
+## TODOs
+- load and save functionality of model not working after re-factoring. 
+- plotting engine could be more streamlined
+- add documentation
+
 
 ### References
 [1] Jason Rolfe, Discrete Variational Autoencoders,

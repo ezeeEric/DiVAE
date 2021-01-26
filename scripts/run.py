@@ -53,7 +53,11 @@ def run(modelMaker=None):
     
     if config.data_type=='calo': 
         config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
-
+    
+    # overwrite config string with file name if we load from file
+    if config.load_model:
+        config_string=config.input_model.split("/")[-1].replace('.pt','')
+    
     if config.activation_fct.lower()=="relu":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
     elif config.activation_fct.lower()=="tanh":
@@ -63,7 +67,8 @@ def run(modelMaker=None):
         modelMaker.default_activation_fct=torch.nn.Identity() 
     
     #instantiate the chosen model
-    model=modelMaker.init_model()
+    #loads from file 
+    model=modelMaker.init_model(load_from_file=config.load_model)
     #create the NN infrastructure
     model.create_networks()
     model.print_model_info()
@@ -71,13 +76,14 @@ def run(modelMaker=None):
     #instantiate and register optimisation algorithm
     modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     
-    #if we load a model from a file, we don't need to train
+    #no need to train if we load from file.
     if config.load_model:
-        #TODO needs re-implementation
-        # modelMaker.load_model(set_eval=True)
-        #        if config.load_model:
-        #   config_string=config.input_model.split("/")[-1].replace('.pt','')
- 
+        #return pre-trained model after loading from file
+        #Attention: the order here matters - the model must be initialised and
+        #networks created. Internally, weights and biases of the NN are set to the
+        #pretrained values but need to have been instantiated first.
+        modelMaker.load_model()
+        logger.info("Model loaded from file, skipping training.")
         pass
     else:
         for epoch in range(1, config.n_epochs+1):   
@@ -87,8 +93,8 @@ def run(modelMaker=None):
     #TODO improve the save functionality
     if config.save_model:
         modelMaker.save_model(config_string)
-        if model.type=="DiVAE": 
-            modelMaker.save_rbm(config_string)
+        # if model.type=="DiVAE": 
+        #     modelMaker.save_rbm(config_string)
 
     #sample generation
     if config.generate_samples:
