@@ -88,11 +88,11 @@ class ModelMaker(object):
         torch.save(self._model.state_dict(),f)
         f.close()
         return
-    
-    def save_rbm(self,config_string='test'):
-        logger.info("Saving RBM")
-        f=open(os.path.join(config.output_path,"rbm_{0}.pt".format(config_string)),'wb')
-        torch.save(self._model.prior,f)
+
+    def save_config(self,config_string='test'):
+        logger.info("Saving Config")
+        f=open(os.path.join(config.output_path,"cfg_{0}.pt".format(config_string)),'wb')
+        torch.save(config,f)
         f.close()
         return
 

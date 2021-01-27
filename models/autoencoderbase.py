@@ -91,11 +91,11 @@ class AutoEncoderBase(nn.Module):
         raise NotImplementedError
 
     def print_model_info(self):
-        for par in self.__dict__.items():
+        for key,par in self.__dict__.items():
             if isinstance(par,torch.Tensor):
-                logger.info(par.shape)
+                logger.info("{0}: {1}".format(key, par.shape))
             else:
-                logger.info(par)
+                logger.debug("{0}: {1}".format(key, par))
         
 if __name__=="__main__":
     logger.info("Running autoencoderbase.py directly") 

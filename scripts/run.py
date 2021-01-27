@@ -66,6 +66,7 @@ def run(modelMaker=None):
     model=modelMaker.init_model(load_from_file=config.load_model)
     #create the NN infrastructure
     model.create_networks()
+    #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
 
     #instantiate and register optimisation algorithm
@@ -86,9 +87,10 @@ def run(modelMaker=None):
             test_loss = modelMaker.fit(epoch=epoch, is_training=False)
     
     #save our trained model
-    #also 
+    #also save the current configuration with the same tag for bookkeeping
     if config.save_model:
         modelMaker.save_model(config_string)
+        modelMaker.save_config(config_string)
 
     #sample generation
     if config.generate_samples:

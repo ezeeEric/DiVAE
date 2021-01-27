@@ -77,7 +77,7 @@ class Configaro(object):
 
     def __str__(self):
         configDump=""
-        for key,val in sorted(self.__dict_.items()):
+        for key,val in sorted(self.__dict__.items()):
             configDump+='{0} = {1}\n'.format(key,val)
         return "Configuration:\n{0}".format(configDump)
     
