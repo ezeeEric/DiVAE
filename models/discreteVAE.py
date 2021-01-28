@@ -142,7 +142,7 @@ class DiVAE(AutoEncoderBase):
        
         rbm_bias_left=self.prior.get_visible_bias()
         rbm_bias_right=self.prior.get_hidden_bias()
-        rbm_bias=torch.cat([rbm_bias_left,rbm_bias_right])#self._h
+        rbm_bias=torch.cat([rbm_bias_left,rbm_bias_right])
         
         #zT*bias
         #TODO is it correct to use probabilities here? shouldn't these be the

@@ -54,6 +54,7 @@ class DataManager(object):
     def _set_input_dimensions(self):
         assert self._train_loader is not None, "Trying to retrieve datapoint from empty train loader"
         input_sizes=self._train_loader.get_input_size()
+        dataset[0][0].view(-1).size()[0]
         self._input_dimensions=input_sizes if isinstance(input_sizes,list) else [input_sizes]
         return
 
@@ -88,27 +89,38 @@ class DataManager(object):
 
     def create_dataLoader(self):
         if config.data_type.lower()=="mnist":
-            train_loader,test_loader=loadMNIST(
-                batch_size=config.n_batch_samples,
+            train_dataset,test_dataset=loadMNIST(
                 num_evts_train=config.n_train_samples,
                 num_evts_test=config.n_test_samples, 
                 binarise=config.binarise_dataset)
 
         elif config.data_type.lower()=="calo":
             inFiles={
-                'gamma':    config.gamma,
-                'eplus':    config.eplus,        
-                'piplus':   config.piplus         
+                'gamma':    config.calo_input_gamma,
+                'eplus':    config.calo_input_eplus,        
+                'piplus':   config.calo_input_piplus         
             }
-            train_loader,test_loader=loadCalorimeterData(
+            train_dataset,test_dataset=loadCalorimeterData(
                 inFiles=inFiles,
                 ptype=config.particle_type,
                 layers=config.calo_layers,
-                batch_size=config.n_batch_samples,
                 num_evts_train=config.n_train_samples,
                 num_evts_test=config.n_test_samples, 
                 )
-        
+        #create the DataLoader for the training dataset
+        train_loader=DataLoader(   
+            train_dataset,
+            batch_size=batch_size, 
+            shuffle=True)
+  
+        #set batch size to full test dataset size - limitation only by hardware
+        batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
+        #create the DataLoader for the testing dataset
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=batch_size, 
+            shuffle=False)
+
         logger.debug("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
         logger.debug("{0}: {2} events, {1} batches".format(test_loader,len(test_loader),len(test_loader.dataset)))
         return train_loader,test_loader

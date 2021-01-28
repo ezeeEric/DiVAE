@@ -9,7 +9,6 @@ from sklearn.model_selection import train_test_split
 from torchvision import transforms
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
 
 #class wrapper containing Calorimeter images and returning energy as target
 class CaloImage(object):
@@ -112,22 +111,7 @@ class CaloDataContainer(object):
             dataset=random_split(dataset,[num_evts, len(dataset)-num_evts])[0]
         return dataset
 
-#TODO duplicated wrt to MNIST
-class DataLoaderWithInputSize(DataLoader):
-    def __init__(self, *args, **kwargs):
-        super(DataLoaderWithInputSize,self).__init__(*args, **kwargs)
-        self._input_size=self.set_input_size()
-        
-    def set_input_size(self):
-        sizes=[]
-        for i,_ in enumerate(self.dataset[0][0]):
-            sizes.append(self.dataset[0][0][i].view(-1).size()[0])
-        return sizes
-        
-    def get_input_size(self):
-        return self._input_size
-
-def loadCalorimeterData(inFiles={}, ptype='gamma', layers=['layer_1'], batch_size=-1, num_evts_train=0, num_evts_test=0):
+def loadCalorimeterData(inFiles={}, ptype='gamma', layers=['layer_1'], num_evts_train=0, num_evts_test=0):
     #read in all input files, sorted by jet type
     dataStore={}
     for key,fpath in inFiles.items():        
@@ -139,18 +123,7 @@ def loadCalorimeterData(inFiles={}, ptype='gamma', layers=['layer_1'], batch_siz
     train_dataset=dataStore[ptype].getDataset(train=True,num_evts=num_evts_train)
     test_dataset=dataStore[ptype].getDataset(train=False,num_evts=num_evts_test)
 
-    train_loader=DataLoaderWithInputSize(   
-        train_dataset,
-        batch_size=batch_size, 
-        shuffle=True)
-
-    batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
-    test_loader = DataLoaderWithInputSize(
-        test_dataset,
-        batch_size=batch_size, 
-        shuffle=False)
-
-    return train_loader,test_loader
+    return train_dataset,test_dataset
 
 if __name__=="__main__":
     NUM_EVTS = 100

@@ -20,16 +20,8 @@ class Binarise_Tensor_Threshold(object):
     def __call__(self,indata):
         return torch.where((indata>self.threshold),torch.ones(indata.size()),torch.zeros(indata.size()))
 
-class DataLoaderWithInputSize(DataLoader):
-    def __init__(self, *args, **kwargs):
-        super(DataLoaderWithInputSize,self).__init__(*args, **kwargs)
-        self._input_size=self.dataset[0][0].view(-1).size()[0]
-    
-    def get_input_size(self):
-        return self._input_size
+def loadMNIST(num_evts_train=0, num_evts_test=0, binarise=None):
 
-def loadMNIST(batch_size, num_evts_train=0, num_evts_test=0, binarise=None):
-    
     #this list of functions is applied to our input data in succession
     transform_functions=[transforms.ToTensor()]
 
@@ -67,20 +59,7 @@ def loadMNIST(batch_size, num_evts_train=0, num_evts_test=0, binarise=None):
             test_dataset_full, 
             [num_evts_test, len(test_dataset_full)-num_evts_test])[0]
 
-
-    train_loader=DataLoaderWithInputSize(   
-        train_dataset,
-        batch_size=batch_size, 
-        shuffle=True)
-  
-    #set batch size to full test dataset size - limitation only by hardware
-    batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
-    test_loader = DataLoaderWithInputSize(
-        test_dataset,
-        batch_size=batch_size, 
-        shuffle=False)
-
-    return train_loader,test_loader
+    return train_dataset,test_dataset
 
 if __name__=="__main__":
     NUM_EVTS = 100

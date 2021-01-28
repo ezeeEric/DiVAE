@@ -86,6 +86,14 @@ more clamping in KLD
 - plotting engine could be more streamlined
 - add documentation
 
+## Calo Data
+- The normalisation of the calo data for processing is unclear. Currently, the
+  calo image deposits are normalised to [0,1] in `CaloImage::normalise` but that won't give us a
+  proper reconstructed energy. in `CaloImageContainer::__getitem__` the energy
+  of the whole shower is normalised to [0,1] as well. 
+  
+- 
+
 
 ### References
 [1] Jason Rolfe, Discrete Variational Autoencoders,
