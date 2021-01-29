@@ -18,19 +18,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 def sigmoid_cross_entropy_with_logits(logits, labels):
-        logger.debug("WARNING sigmoid_cross_entropy_with_logits preliminary")
         # this is the equivalent to the tensorflow
-        # sigmoid_cross_entropy_with_logits(): return logits * labels +
-        # tf.nn.softplus(-logits)
-        #z- logits (=output)
-        #x- labels (=input data?)
-        # TODO this implentation follows sigmoid_cross_entropy_with_logits
-        #TODO check https://discuss.pytorch.org/t/equivalent-of-tensorflows-sigmoid-cross-entropy-with-logits-in-pytorch/1985/13
-        #https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits
-        #max(x, 0) - x * z + log(1 + exp(-abs(x)))
-        #TODO check if this changes something in the training
+        # sigmoid_cross_entropy_with_logits(): 
+        # return logits * labels + tf.nn.softplus(-logits)
+        #TODO cross check this implementation
         sp=torch.nn.Softplus()
-        # return torch.max(output_data,torch.zeros(output_data.size()))-output_data*input_data-sp(torch.abs(output_data))
         return logits - logits * labels + sp(-logits)
 
 
@@ -77,22 +69,6 @@ class Bernoulli(Distribution):
         log_prob = - sigmoid_cross_entropy_with_logits(logits=self.logits, labels=samples)
         return log_prob
 
-    def log_prob(self, samples):
-        """
-        Call log_prob_per_var() and then compute the sum of log_prob of all the variables.
-        Args:
-            samples: matrix of size (num_samples * num_vars)
-
-        Returns: 
-            log_p: A vector of log_prob for each sample.
-        """
-        log_p = self.log_prob_per_var(samples)
-        log_p = torch.sum(log_p, 1)
-        print("TEST log_prob!")
-        import sys
-        sys.exit()
-        return log_p
-
     def __repr__(self):
         return "\n".join([str(item) for item in self.__dict__.items()])
 
@@ -104,6 +80,7 @@ class SpikeAndExponentialSmoother(Bernoulli):
         super(SpikeAndExponentialSmoother, self).__init__(**kwargs)
 
     def reparameterise(self):
+        #TODO cross check this
         #this is the approximate posterior probability
         q = torch.sigmoid(self.logits)
         #clip the probabilities 
@@ -113,7 +90,6 @@ class SpikeAndExponentialSmoother(Bernoulli):
         zero_mask = zeros(q.size())
         ones=torch.ones(q.size())
         #calculate ICDF of SpikeAndExponential
-        #TODO cross check this
         interior_log = ((rho+q-ones)/q)*(np.exp(self.beta)-1)+ones
         conditional_log = (1./self.beta)*torch.log(interior_log)
         zeta=torch.where(rho >= 1 - q, conditional_log, zero_mask)
@@ -125,22 +101,15 @@ class SpikeAndExponentialSmoother(Bernoulli):
         Returns: 
             ent: entropy
         """
-        logger.debug("ERROR entropy()")
         z  = torch.sigmoid(x)
-        # sp = torch.nn.Softplus()
         ent=x-x*z+torch.log(1+torch.exp(-x))
-        # ent=x-torch.matmul(x,z)+torch.log(1+torch.exp(-x))
         return ent
 
-def visualiseSmoother(rho,q,samples):
+def visualise_distributions(rho,q,samples):
     import matplotlib.pyplot as plt
-    #TODO make this pretty - 3 plots showing rho,q,samples
-    # samples=samples[torch.nonzero(samples,as_tuple=True)]
     samples=torch.flatten(samples)
     plt.hist(samples.detach().numpy(),bins=100)
     plt.show()
-    # qnonZero=q[torch.nonzero(q,as_tuple=True)]
-    # samples=samples[torch.nonzero(samples,as_tuple=True)]
 
 if __name__=="__main__":
     logger.info("Testing DistUtils Setup") 
@@ -152,6 +121,6 @@ if __name__=="__main__":
     q=sigmoid(qprime)
     rho=torch.rand(q.size())
     samples=smooth.icdf(rho,q)
-    visualiseSmoother(rho,q,samples)
+    visualise_distributions(rho,q,samples)
     logger.info("Success")
     pass

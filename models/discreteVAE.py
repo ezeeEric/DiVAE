@@ -54,7 +54,17 @@ class DiVAE(AutoEncoderBase):
         self._train_bias=self.set_train_bias()
 
     def set_train_bias(self):
-        #TODO where did this definition come from? 
+        """
+        this treatment is a recommendation from the Hinton paper (A Practical Guide to Training Restricted Boltzmann Machines) on how to
+        initialise biases. 
+        It is usually helpful to initialize the bias of visible unit i to
+        log[pi/(1−pi)] 
+        where pi is the proportion of training vectors in which unit i is on. If this is not done, 
+        the early stage of learning will use the hidden units to make i turn on with a probability of approximately pi.
+
+        Returns:
+            
+        """
         clipped_mean=torch.clamp(self._dataset_mean,0.001,0.999).detach()
         return -torch.log(1/clipped_mean-1)
 
@@ -86,7 +96,7 @@ class DiVAE(AutoEncoderBase):
         return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
-        #TODO 
+        #TODO Implement weight decay
         logger.debug("ERROR weight_decay_loss NOT IMPLEMENTED")
         return NotImplementedError
 
@@ -304,7 +314,7 @@ class DiVAE(AutoEncoderBase):
         posterior_samples_concat=torch.cat(out.posterior_samples,1)
         #Step 2: take samples zeta and reconstruct output with decoder
         output_activations = self.decoder.decode(posterior_samples_concat)
-        #TODO data prep
+
         out.output_activations = output_activations+self._train_bias
         out.output_distribution = Bernoulli(logit=out.output_activations)
         out.output_data = torch.sigmoid(out.output_distribution.logits)

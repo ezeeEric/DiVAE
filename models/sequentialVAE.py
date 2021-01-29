@@ -55,12 +55,14 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
                 self._decoder_nodes[i].append(nodepair)
         self.dummy=nn.ModuleList([])
    
-    #TODO this is definitely a hack. The VAE submodules in this class are
+    #TODO this is an outrageous hack. The VAE submodules in this class are
     #somehow not properly registered. This means no nn.module.parameters are broadcasted
-    #to this class, despite each VAE being properly registered.
+    #from this class, despite each VAE being properly registered. Something
+    #Something pytorch. The solution here is to have a dummy variable
+    #registering all parameters "flat", i.e. without hierarchy.
     def flatten_network_dependency(self):
         for key,vae in self._autoencoders.items():
-            self.dummy.einput_datatend(self._autoencoders[key].get_modules())
+            self.dummy.extend(self._autoencoders[key].get_modules())
     
     def create_networks(self):
         logger.debug("Creating Network Structures")
@@ -134,7 +136,4 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             mu=fwd_out.mus[i]
             logvar=fwd_out.logvars[i]
             total_loss+=self._autoencoders[i].loss(input_data, input_data_rec, mu, logvar)
-            #TODO
-            # if self._config.sparse:
-            #     total_loss+=self._config.l1_regularisation_weight*self.l1_norm(ae=self._autoencoders[i],inputs=input_data.view(-1,dim))
         return total_loss

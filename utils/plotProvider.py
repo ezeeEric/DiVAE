@@ -78,14 +78,11 @@ class PlotProvider(object):
         else:
             raise Exception("Data type {0} unknown to PlotProvider".format(config.data_type))
         
-        #TODO 
-        # gif_output, 
-        # plot_latent_space
+        #TODO gif_output, plot_latent_space
         #     gif_frames=[]
         #     for epoch in range(1, config.n_epochs+1):   
         #         test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
         #         if config.create_gif:
-        #             #TODO improve
         #             if config.data_type=='calo':
         #                 gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
         #             else:

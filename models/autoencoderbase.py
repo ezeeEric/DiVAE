@@ -52,6 +52,9 @@ class AutoEncoderBase(nn.Module):
 
         self._activation_fct=activation_fct
 
+        #TODO remove this dependency. It is only needed in the forward call of
+        #the DiscreteVAE model. One solution could be to change the model_class
+        #initialisation to digest **kwargs - flexible number of input args per model
         self._dataset_mean=train_ds_mean[0] if isinstance(train_ds_mean,list) else train_ds_mean
 
         self._output_container=OutputContainer()

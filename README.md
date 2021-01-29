@@ -82,17 +82,28 @@ more clamping in KLD
   main module and imported as global variable.
 
 ## TODOs
+### General
+- various generic NN training routines could improve our results:
+  - batch normalisation
+  - sparsity
+  - weight decay
 - load and save functionality only load model, not optimiser or other parts 
 - plotting engine could be more streamlined
 - add documentation
+- it would be good to visualise the distributions implemented in
+  `distributions.py`. A crude function `visualise_distributions()` is in there
+  already.
+- there are several changes for the evaluation routine, which are not
+  implemented. The posterior distribution for eval should be a Bernoulli and not
+  the ICDF of the Spike-and-exp.
 
-## Calo Data
+### Calo Data
 - The normalisation of the calo data for processing is unclear. Currently, the
   calo image deposits are normalised to [0,1] in `CaloImage::normalise` but that won't give us a
   proper reconstructed energy. in `CaloImageContainer::__getitem__` the energy
   of the whole shower is normalised to [0,1] as well. 
-  
-- 
+- Extend the whole algorithm chain to deal with more than one particle type at a
+  time.
 
 
 ### References

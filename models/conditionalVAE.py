@@ -58,7 +58,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
     def generate_samples(self):
         outlist=[]
         
-        #TODO this could be a separate config entry
+        #how many samples to generate per number
         n_samples_per_nr=config.n_generate_samples
 
         for i in config.target_numbers:
