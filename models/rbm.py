@@ -37,8 +37,8 @@ class Contrastive_Divergence(nn.Module):
 		# random weights and biases for all layers
 		# weights between visible and hidden nodes. 784x128 (that is 28x28 input
 		#size, 128 arbitrary choice)
-		# requires_grad=False : we calculate the weight update ourselves, not
-		# through backpropagation - or so I believe.
+		# if requires_grad=False : we calculate the weight update ourselves, not
+		# through backpropagation
 		require_grad=True
 		#arbitrarily scaled by 0.01 
 		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=require_grad)
@@ -46,12 +46,6 @@ class Contrastive_Divergence(nn.Module):
 		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=require_grad)
 		# #applying a 0 bias to the hidden nodes
 		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=require_grad)
-
-		# self._weights = torch.randn(n_visible, n_hidden) * 0.01
-  		# #all biases initialised to 0.5
-		# self._visible_bias = torch.ones(n_visible) * 0.5
-		# #applying a 0 bias to the hidden nodes
-		# self._hidden_bias = torch.zeros(n_hidden)
 		
 	def sample_from_hidden(self, probabilities_visible):
 		output_hidden = torch.matmul(probabilities_visible, self._weights) + self._hidden_bias
@@ -62,8 +56,8 @@ class Contrastive_Divergence(nn.Module):
 		output_visible = torch.matmul(probabilities_hidden, self._weights.t()) + self._visible_bias
 		probabilities_visible = torch.sigmoid(output_visible)
 		return probabilities_visible
+
 	# Heart of the CD training: Gibbs Sampling
-	#  	
 	def gibbs_sampling(self,output_hidden):
 		
 		for step in range(self.n_gibbs_sampling_steps):
@@ -74,20 +68,13 @@ class Contrastive_Divergence(nn.Module):
 		return probabilities_visible,probabilities_hidden
 
 	def contrastive_divergence_fixed_hid_vis(self, in_data):
-		# logit_list=[k.logits.detach() for k in in_data]
 		rbm_nodes_concat=torch.cat(in_data,dim=1).detach()
-		
 		n_split=rbm_nodes_concat.size()[1]//2
 		positive_samples_left,positive_samples_right=torch.split(rbm_nodes_concat,split_size_or_sections=int(n_split),dim=1)
-		# print(positive_samples_left)
-		# print(positive_samples_right)
-		# # exit()
+
 		output_visible_pos=positive_samples_left
-		
-		# probabilities_hid_pos=torch.sigmoid(positive_samples_left)
-		# probabilities_hidden_pos = self.sample_from_hidden(input_data)
-		# output_hidden_pos = (probabilities_hidden_pos >= torch.rand(self.n_hidden)).float()
 		output_hidden_pos = positive_samples_right
+
 		#TODO use sigmoid() and bernoulli here
 		associations_pos = torch.matmul(output_visible_pos.t(), output_hidden_pos)
 
@@ -112,8 +99,6 @@ class Contrastive_Divergence(nn.Module):
 
 		self.hidden_bias_update *= self.momentum_coefficient
 		self.hidden_bias_update += torch.sum(output_hidden_pos - probabilities_hidden_neg, dim=0)
-
-		# batch_size = input_data.size(0)
 
 		self._weights += self.weights_update * self.learning_rate #/ batch_size
 		self._visible_bias += self.visible_bias_update * self.learning_rate #/ batch_size
@@ -328,9 +313,6 @@ class RBM(nn.Module):
 		""" Use sampler to train rbm. Data is the current batch."""
 		loss = 0    
 		loss=self.sampler.contrastive_divergence_fixed_hid_vis(in_data)
-		# bdata=in_data.view(-1,input_dim)
-		# loss = self.train_sampler(in_data=bdata)
-		# loss /= len(in_data.dataset)
 		logger.info('Epoch {0}. Loss={1:.2f}'.format(epoch,loss))
 		return
 			
@@ -339,10 +321,6 @@ class RBM(nn.Module):
 		#TODO Figure 10 Rolfe
 		return 33.65
 	
-	# def __repr__(self):
-	# 	parameter_string="\n".join([str(par) for par in self.__dict__.items()])
-	# 	return parameter_string
-
 	def energy(self, post_samples):
 		"""Energy Computation for RBM
 		vis*b_vis+hid*b_hid+vis*w*hid
@@ -368,7 +346,6 @@ class RBM(nn.Module):
 
 	def log_prob(self, samples):
 		"""log(exp(-E(z))/Z) = -E(z) - log(Z)"""
-		logger.debug("log_prob")
 		return -self.energy(samples)-self.get_logZ_value()
 
 if __name__=="__main__":

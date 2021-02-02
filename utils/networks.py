@@ -113,15 +113,11 @@ class SimpleEncoder(Network):
         logger.debug("ERROR Encoder::hierarchical_posterior")
         posterior = []
         post_samples = []
-        #TODO switched off hierarchy for now.
-        # import pickle
         for i in range(self.n_latent_hierarchy_lvls):
             qprime=self.encode(x)
-            # pickle.dump(qprime,open( "datasample.pkl", "wb" ))
             sigmoid=torch.nn.Sigmoid()
             q=sigmoid(qprime)
             #returns tensor of size n of random variables drawn from uniform
-
             #dist in [0,1)
             rho=torch.rand(q.size())
             posterior_dist = self.smoothing_distribution # init posterior dist.
@@ -175,10 +171,6 @@ class HierarchicalEncoder(BasicEncoder):
         **kwargs):
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
-        #TODO
-        #batch normalisation
-        #weight decay
-
         self.num_input_nodes=input_dimension
 
         #number of hierarchy levels in encoder. This is the number of latent
@@ -268,9 +260,8 @@ class HierarchicalEncoder(BasicEncoder):
             #feed network and retrieve logit
             logit=current_net(current_input)
             #build the posterior distribution for this hierarchy
-            #TODO make beta steerable
             #TODO this needs a switch: training smoothing, evaluation bernoulli
-            posterior_dist = self.smoothing_distribution(logit=logit,beta=4)
+            posterior_dist = self.smoothing_distribution(logit=logit,beta=config.beta_smoothing_fct)
             #construct the zeta values (reparameterised logits, posterior samples)
             samples=posterior_dist.reparameterise()
             posterior.append(posterior_dist)

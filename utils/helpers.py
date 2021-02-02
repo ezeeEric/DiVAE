@@ -141,7 +141,7 @@ def plot_calo_jet_generated(output_data, n_samples=5, out_file="./output/testCal
 
             reco_image=x_out[i].reshape(shape)
 
-            #TODO this is arbitrary...
+            #TODO this is an arbitrary hack to scale the values for a nice legend...
             minVal=reco_image.min(1,keepdim=True)[0]*15
             minVal=reco_image.min(1,keepdim=True)[0]
 
@@ -156,7 +156,6 @@ def plot_calo_jet_generated(output_data, n_samples=5, out_file="./output/testCal
             images.append(im)
 
         fig = plt.gcf()
-        # fig.subplots_adjust(right=0.8)
         # Find the min and max of all colors for use in setting the color scale.
         vmin = min(image.get_array().min() for image in images)
         vmax = max(image.get_array().max() for image in images)
@@ -197,7 +196,8 @@ def plot_calo_image_sequence(input_data, output_data, input_dimension, layer=0, 
             im=plt.imshow(x[i],aspect="auto",cmap="cool",interpolation="none",norm=LogNorm(None,None))
             images.append(im)
             reco_image=x_out[i].reshape(x[i].shape)
-            #TODO this is arbitrary...
+            
+            #TODO this is an arbitrary hack to scale the values for a nice legend...
             minVal=reco_image.min(1,keepdim=True)[0]*15
             minVal=reco_image.min(1,keepdim=True)[0]
 
@@ -255,7 +255,8 @@ def plot_calo_images(input_data, output_data, layer=0, n_samples=5, out_file="./
             ax1.get_yaxis().set_visible(False)
         
         reco_image=output_data[i].reshape(input_data[i].shape)
-        #TODO this is arbitrary...
+        
+        #TODO this is an arbitrary hack to scale the values for a nice legend...
         minVal=reco_image.min(1,keepdim=True)[0]*5
         minVal=reco_image.min(1,keepdim=True)[0]
 

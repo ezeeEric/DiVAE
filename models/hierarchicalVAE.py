@@ -48,9 +48,16 @@ class HierarchicalVAE(AutoEncoder):
             n_encoder_layer_nodes=self._config.n_encoder_layer_nodes,
             n_encoder_layers=self._config.n_encoder_layers,
             skip_latent_layer=True)
+    
+    
+    def _create_reparameteriser(self):
+        """Create layers fopr reparameterisation specific to this model. I.e.
+hierarchical means mu and variances var for the gaussians learned in each
+hierarchy layer.
 
-    #TODO should this be part of encoder?
-    def _create_reparameteriser(self,act_fct=None):
+        Returns:
+            [type]: [description]
+        """
         logger.debug("ERROR _create_encoder dummy implementation")
         hierarchical_repara_layers=nn.ModuleDict()
         for lvl in range(self._config.n_latent_hierarchy_lvls):

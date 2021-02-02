@@ -52,15 +52,12 @@ class ModelMaker(object):
         for key, model_class in model_dict.items(): 
             if key.lower()==config.model_type.lower():
                 logger.info("Initialising Model Type {0}".format(config.model_type))
-                #TODO change init arguments
+                #TODO change init arguments. Ideally, the model does not carry
+                #specific information about the dataset. 
                 self.model=model_class(
                             input_dimension=self.data_mgr.get_input_dimensions(),
                             train_ds_mean=self.data_mgr.get_train_dataset_mean(),
                             activation_fct=self._default_activation_fct)
-                
-                # #return pre-trained model after loading from file
-                # if load_from_file:
-                #     return self.load_model()
                 return self.model
         logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")
         raise NotImplementedError
