@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 from DiVAE import config
 
 from data.dataManager import DataManager
-
 from utils.plotProvider import PlotProvider
 
 def run(modelMaker=None):
@@ -122,4 +121,3 @@ if __name__=="__main__":
     run(modelMaker)
 
     logger.info("Auf Wiedersehen!")
-

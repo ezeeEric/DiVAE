@@ -40,12 +40,7 @@ class Configaro(object):
         self.name = name
         
         argParser = ArgumentParser(add_help=False)
-        argParser.add_argument( '-c', 
-                '--configFiles', 
-                required=True,
-                help='Configuration file',
-                default=['{0}/configs/example.cfg'.format(os.environ.get('PWD'))],
-                )
+        argParser.add_argument( '-c', '--configFiles', required=True, help='Configuration file', default=['{0}/configs/example.cfg'.format(os.environ.get('PWD'))])
         argParser.add_argument( '-d', '--debug', help='Activate Debug Mode', action='store_true')
         argParser.add_argument( '-h', '--helpMessage', help='Print Help message', action='store_true')
         argParser.add_argument( '-t', '--testRun', help='Set test run mode', action='store_true')
@@ -100,6 +95,7 @@ class Configaro(object):
     #important - this enables us to use dictionary internally but keep cfg.attribute logic
     def __getattr__(self, cfgEntry):
         try:
+            print(self.__dict__)
             return self.__dict__[cfgEntry]
         except KeyError:
             logger.error('Could not locate {0} in __dict__.'.format(cfgEntry))
