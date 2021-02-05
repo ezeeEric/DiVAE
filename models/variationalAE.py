@@ -40,10 +40,10 @@ class VariationalAutoEncoder(AutoEncoder):
     
     #Factory method to create VAEs with set encoder nodes
     @classmethod
-    def init_with_nodelist(cls,dim,cfg,actfct, enc_nodes, rep_nodes, dec_nodes):
+    def init_with_nodelist(cls,dim,cfg,actfct, enc_nodes, rep_nodes, dec_nodes, **kwargs):
         assert enc_nodes is not None and rep_nodes is not None and dec_nodes is not None,\
             "Need defined nodelist for this type of initialisation"
-        vae=cls(input_dimension=dim,config=cfg,activation_fct=actfct)              
+        vae=cls(**kwargs)              
         vae._encoder_nodes=enc_nodes
         vae._reparam_nodes=rep_nodes
         vae._decoder_nodes=dec_nodes

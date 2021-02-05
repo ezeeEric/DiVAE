@@ -62,9 +62,9 @@ class CaloImageContainer(Dataset):
         return images,norm_energy
     
     def get_input_size(self):
-        sizes={}
+        sizes=[]
         for l,img in self._images.items():
-            sizes[l]=img.get_input_size()
+            sizes.append(img.get_input_size())
         return sizes
 
 #handles raw data processing

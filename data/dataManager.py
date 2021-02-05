@@ -5,6 +5,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
+from torch.utils.data import DataLoader
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -51,10 +52,15 @@ class DataManager(object):
     def get_input_dimensions(self):
         return self._input_dimensions
 
+    #TODO rework DataLoader with variable input dimensions. Possibly combine
+    #MNIST and CALO loader into one.
     def _set_input_dimensions(self):
         assert self._train_loader is not None, "Trying to retrieve datapoint from empty train loader"
-        input_sizes=self._train_loader.get_input_size()
-        dataset[0][0].view(-1).size()[0]
+        try:
+            input_sizes=self._train_loader.dataset.get_input_size()
+        except:
+            #TODO HACK MNIST
+            input_sizes=784
         self._input_dimensions=input_sizes if isinstance(input_sizes,list) else [input_sizes]
         return
 
@@ -110,15 +116,15 @@ class DataManager(object):
         #create the DataLoader for the training dataset
         train_loader=DataLoader(   
             train_dataset,
-            batch_size=batch_size, 
+            batch_size=config.n_batch_samples, 
             shuffle=True)
   
         #set batch size to full test dataset size - limitation only by hardware
-        batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
+        batch_size= len(test_dataset) if config.n_test_samples<0 else config.n_test_samples
         #create the DataLoader for the testing dataset
         test_loader = DataLoader(
             test_dataset,
-            batch_size=batch_size, 
+            batch_size=config.n_batch_samples, 
             shuffle=False)
 
         logger.debug("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
