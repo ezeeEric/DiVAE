@@ -12,8 +12,6 @@ import numpy as np
 #needs python3.7
 from contextlib import nullcontext
 
-from data.loadMNIST import loadMNIST
-
 from DiVAE import logging
 # from DiVAE import logging
 logger = logging.getLogger(__name__)

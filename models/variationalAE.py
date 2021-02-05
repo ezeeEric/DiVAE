@@ -74,7 +74,7 @@ class VariationalAutoEncoder(AutoEncoder):
     
     def generate_samples(self):
         # Draw a rnd var z~N[0,1] and feed it through the decoder
-        rnd_input=torch.randn((config.n_train_samples,self._reparam_nodes[1]))
+        rnd_input=torch.randn((config.frac_train_dataset,self._reparam_nodes[1]))
         zeta=rnd_input 
         output = self.decoder.decode(zeta)
         output.detach()

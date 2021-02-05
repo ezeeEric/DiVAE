@@ -11,8 +11,8 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 from DiVAE import config
 
-from data.loadMNIST import loadMNIST
-from data.loadCaloGAN import loadCalorimeterData
+from data.mnist import get_mnist_datasets
+from data.calo import loadCalorimeterData
 
 class DataManager(object):
     def __init__(self,train_loader=None,test_loader=None):
@@ -94,10 +94,13 @@ class DataManager(object):
         return
 
     def create_dataLoader(self):
+        assert abs(config.frac_train_dataset)=<1, "Cfg option frac_train_dataset must be within (0,1]"
+        assert abs(config.frac_test_dataset)=<0.99, "Cfg option frac_test_dataset must be within (0,99]. 0.01 minimum for validation set"
+
         if config.data_type.lower()=="mnist":
-            train_dataset,test_dataset=loadMNIST(
-                num_evts_train=config.n_train_samples,
-                num_evts_test=config.n_test_samples, 
+            train_dataset,test_dataset=get_mnist_datasets(
+                frac_train_dataset=config.frac_train_dataset,
+                frac_test_dataset=config.frac_test_dataset, 
                 binarise=config.binarise_dataset)
 
         elif config.data_type.lower()=="calo":
@@ -110,8 +113,8 @@ class DataManager(object):
                 inFiles=inFiles,
                 ptype=config.particle_type,
                 layers=config.calo_layers,
-                num_evts_train=config.n_train_samples,
-                num_evts_test=config.n_test_samples, 
+                frac_train_dataset=config.frac_train_dataset,
+                frac_test_dataset=config.frac_test_dataset, 
                 )
         #create the DataLoader for the training dataset
         train_loader=DataLoader(   
@@ -120,16 +123,19 @@ class DataManager(object):
             shuffle=True)
   
         #set batch size to full test dataset size - limitation only by hardware
-        batch_size= len(test_dataset) if config.n_test_samples<0 else config.n_test_samples
+        batch_size= len(test_dataset) if abs(config.frac_test_dataset)-1==0 else int(config.frac_test_dataset*len(test_dataset))
+        
         #create the DataLoader for the testing dataset
         test_loader = DataLoader(
             test_dataset,
-            batch_size=config.n_batch_samples, 
+            batch_size=batch_size, 
             shuffle=False)
 
-        logger.debug("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
-        logger.debug("{0}: {2} events, {1} batches".format(test_loader,len(test_loader),len(test_loader.dataset)))
-        return train_loader,test_loader
+        logger.info("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
+        logger.info("{0}: {2} events, {1} batches".format(test_loader,len(test_loader),len(test_loader.dataset)))
+        logger.info("{0}: {2} events, {1} batches".format(test_loader,len(test_loader),len(test_loader.dataset)))
+
+        return train_loader,test_loader,val_loader
     
     def load_from_file(self):
         #To speed up chain. Preprocessing involves loop over data for normalisation.

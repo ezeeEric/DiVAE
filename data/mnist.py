@@ -1,11 +1,13 @@
 """Load up the MNIST data."""
 import torch
+import random
+import numpy as np
+np.random.seed(69)
 
 from torch.utils.data import DataLoader,Sampler,random_split,Dataset
 
 #torchvision contains popular datasets, model architectures for computer vision
 from torchvision import datasets, transforms
-import random
 
 class Binarise_Tensor_Bernoulli(object):
     def __init__(self):
@@ -20,7 +22,7 @@ class Binarise_Tensor_Threshold(object):
     def __call__(self,indata):
         return torch.where((indata>self.threshold),torch.ones(indata.size()),torch.zeros(indata.size()))
 
-def loadMNIST(num_evts_train=0, num_evts_test=0, binarise=None):
+def get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=None):
 
     #this list of functions is applied to our input data in succession
     transform_functions=[transforms.ToTensor()]
@@ -49,27 +51,38 @@ def loadMNIST(num_evts_train=0, num_evts_test=0, binarise=None):
     # allow to restrict dataset size
     train_dataset=train_dataset_full
     test_dataset=test_dataset_full
-    if num_evts_train>0:
+    validation_dataset=None
+
+    if abs(frac_train_dataset)-1<1e-5:
+        #requested a fraction of the dataset only. calculate how many events
+        #that fraction is.
+        num_evts_train=int(abs(frac_train_dataset)*len(train_dataset_full))
         train_dataset=random_split(
             train_dataset_full, 
-            [num_evts_train, len(train_dataset_full)-num_evts_train])[0]
+            [num_evts_train, len(train_dataset_full)-num_evts_train])
 
-    if num_evts_test>0:
-         test_dataset=random_split(
+        #we have split the dataset in two, but only want the first chunk
+        train_dataset=train_dataset[0]
+
+    if abs(frac_test_dataset)-1<1e-5:
+        #requested a fraction of the dataset only. calculate how many events
+        #that fraction is.
+        num_evts_test=int(abs(frac_test_dataset)*len(test_dataset_full))
+
+        test_dataset, validation_dataset =random_split(
             test_dataset_full, 
-            [num_evts_test, len(test_dataset_full)-num_evts_test])[0]
+            [num_evts_test, len(test_dataset_full)-num_evts_test])
 
-    return train_dataset,test_dataset
+    return train_dataset,test_dataset,validation_dataset
 
 if __name__=="__main__":
-    NUM_EVTS = 100
-    n_batch_samples = 20
-    n_epochs = 100
-    learning_rate = 1e-3
-    LATENT_DIMS = 32
     load_binarised_MNIST="threshold"
-    train_loader,test_loader=loadMNIST(batch_size=n_batch_samples,num_evts_train=NUM_EVTS,num_evts_test=NUM_EVTS,binarise=load_binarised_MNIST)
-    for batch_idx, (input_data, label) in enumerate(test_loader):
-        print(batch_idx,(len(input_data), label)) 
+    train_dataset,test_dataset,validation_dataset=get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=load_binarised_MNIST)
+    print(len(train_dataset))
+    print(len(test_dataset))
+    print(len(validation_dataset))
+    
+    # for batch_idx, (input_data, label) in enumerate(test_loader):
+        # print(batch_idx,(len(input_data), label)) 
     # from helpers import plot_MNIST_output
     # plot_MNIST_output(input_data,input_data,output="./output/testbinarising.png")
