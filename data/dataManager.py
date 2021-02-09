@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 from DiVAE import config
 
 from data.mnist import get_mnist_datasets
-from data.calo import loadCalorimeterData
+from data.calo import get_calo_datasets
 
 class DataManager(object):
     def __init__(self,train_loader=None,test_loader=None):
@@ -98,7 +98,7 @@ class DataManager(object):
         assert abs(config.frac_test_dataset)=<0.99, "Cfg option frac_test_dataset must be within (0,99]. 0.01 minimum for validation set"
 
         if config.data_type.lower()=="mnist":
-            train_dataset,test_dataset=get_mnist_datasets(
+            train_dataset,test_dataset,val_dataset=get_mnist_datasets(
                 frac_train_dataset=config.frac_train_dataset,
                 frac_test_dataset=config.frac_test_dataset, 
                 binarise=config.binarise_dataset)
@@ -109,7 +109,7 @@ class DataManager(object):
                 'eplus':    config.calo_input_eplus,        
                 'piplus':   config.calo_input_piplus         
             }
-            train_dataset,test_dataset=loadCalorimeterData(
+            train_dataset,test_dataset,val_dataset=get_calo_datasets(
                 inFiles=inFiles,
                 ptype=config.particle_type,
                 layers=config.calo_layers,
@@ -121,14 +121,17 @@ class DataManager(object):
             train_dataset,
             batch_size=config.n_batch_samples, 
             shuffle=True)
-  
-        #set batch size to full test dataset size - limitation only by hardware
-        batch_size= len(test_dataset) if abs(config.frac_test_dataset)-1==0 else int(config.frac_test_dataset*len(test_dataset))
-        
-        #create the DataLoader for the testing dataset
+
+        #create the DataLoader for the testing/validation datasets
+        #set batch size to full test/val dataset size - limitation only by hardware
         test_loader = DataLoader(
             test_dataset,
-            batch_size=batch_size, 
+            batch_size=len(test_dataset), 
+            shuffle=False)
+        
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=len(val_dataset), 
             shuffle=False)
 
         logger.info("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))

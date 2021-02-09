@@ -81,8 +81,3 @@ if __name__=="__main__":
     print(len(train_dataset))
     print(len(test_dataset))
     print(len(validation_dataset))
-    
-    # for batch_idx, (input_data, label) in enumerate(test_loader):
-        # print(batch_idx,(len(input_data), label)) 
-    # from helpers import plot_MNIST_output
-    # plot_MNIST_output(input_data,input_data,output="./output/testbinarising.png")
