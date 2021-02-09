@@ -34,7 +34,7 @@ class CaloImage(object):
     def _get_image(self,idx):
         return self.normalise(self._image[idx])
     
-    def get_input_size(self):
+    def get_flattened_input_size(self):
         return self._input_size
     
     def get_input_dimension(self):
@@ -95,13 +95,13 @@ class CaloImageContainer(Dataset):
             images=[img._get_image(rnd_idx) for l, img in self._images.items()]
         return images, (norm_true_energy, norm_overflow_energy)
     
-    def get_input_size(self):
+    def get_flattened_input_sizes(self):
         sizes=[]
         for l,img in self._images.items():
-            sizes.append(img.get_input_size())
+            sizes.append(img.get_flattened_input_size())
         return sizes
     
-    def get_input_dimension(self):
+    def get_input_dimensions(self):
         dim=[]
         for l,img in self._images.items():
             dim.append(img.get_input_dimension())
@@ -158,10 +158,11 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
     val_idx_list=idx_list[(num_evts_train+num_evts_test):num_evts_total]
 
+
     train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list,label="train")
     test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list,label="test")
     val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list,label="val")
-    
+
     return train_dataset,test_dataset,val_dataset
 
 if __name__=="__main__":
@@ -216,10 +217,7 @@ if __name__=="__main__":
         print("Batch Idx: ", batch_idx)
         print("Number of images per event: ",len(input_data))
         print("Image shapes: ")
-        print("Flat size:", train_dataset.get_input_size() )
-        print("Shape:", train_dataset.get_input_dimension())
-        # for x in input_data:
-        #     print(x.get_input_size())
-        #     print(x.get_input_dimension())
+        print("Flat size:", train_dataset.get_flattened_input_sizes() )
+        print("Shape:", train_dataset.get_input_dimensions())
         print(label[0], label[1])
         exit()

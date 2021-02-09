@@ -34,6 +34,7 @@ def run(modelMaker=None):
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
     dataMgr.pre_processing()
+
     #add dataMgr instance to modelMaker namespace
     modelMaker.register_dataManager(dataMgr)
 

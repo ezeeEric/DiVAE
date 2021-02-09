@@ -4,7 +4,7 @@ import random
 import numpy as np
 np.random.seed(69)
 
-from torch.utils.data import DataLoader,Sampler,random_split,Dataset
+from torch.utils.data import random_split,Dataset,Subset
 
 #torchvision contains popular datasets, model architectures for computer vision
 from torchvision import datasets, transforms
@@ -21,6 +21,20 @@ class Binarise_Tensor_Threshold(object):
         
     def __call__(self,indata):
         return torch.where((indata>self.threshold),torch.ones(indata.size()),torch.zeros(indata.size()))
+
+#inherits from Subset class and adds two homebaked functions
+class MNISTImageContainer(Subset):
+    def __init__(self, subset=None):
+        self.dataset=subset.dataset
+        self.indices=subset.indices
+
+    def get_flattened_input_sizes(self):
+        #return flattened size of MNIST dataset example (784)
+        return [self.dataset[0][0].view(-1).size()[0]]
+    
+    def get_input_dimensions(self):
+        #return dimension of MNIST dataset example (28x28)
+        return [self.dataset[0][0].squeeze().shape]
 
 def get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=None):
 
@@ -73,6 +87,10 @@ def get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=Non
             test_dataset_full, 
             [num_evts_test, len(test_dataset_full)-num_evts_test])
 
+    train_dataset=MNISTImageContainer(subset=train_dataset)
+    test_dataset=MNISTImageContainer(subset=test_dataset)
+    validation_dataset=MNISTImageContainer(subset=validation_dataset)
+
     return train_dataset,test_dataset,validation_dataset
 
 if __name__=="__main__":
@@ -81,3 +99,6 @@ if __name__=="__main__":
     print(len(train_dataset))
     print(len(test_dataset))
     print(len(validation_dataset))
+
+    print(train_dataset.get_flattened_input_sizes())
+    print(train_dataset.get_input_dimensions())

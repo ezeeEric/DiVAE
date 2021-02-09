@@ -24,7 +24,7 @@ class VariationalAutoEncoder(AutoEncoder):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        enc_node_list=[self._input_dimension]+self._config.encoder_hidden_nodes
+        enc_node_list=[self._flat_input_size]+self._config.encoder_hidden_nodes
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
@@ -32,7 +32,7 @@ class VariationalAutoEncoder(AutoEncoder):
         
         self._reparam_nodes=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
         
-        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -83,7 +83,7 @@ class VariationalAutoEncoder(AutoEncoder):
     def loss(self, input_data, fwd_out):
         logger.debug("VAE Loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, self._input_dimension), reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, self._flat_input_size), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         kl_loss = 0.5 * torch.sum(1 + fwd_out.logvar - fwd_out.mu.pow(2) - torch.exp(fwd_out.logvar))
@@ -93,7 +93,7 @@ class VariationalAutoEncoder(AutoEncoder):
         #see definition for explanation
         out=self._output_container.clear()
 
-        z = self.encoder.encode(input_data.view(-1, self._input_dimension))
+        z = self.encoder.encode(input_data.view(-1, self._flat_input_size))
         out.mu = self._reparam_layers['mu'](z)
         out.logvar = self._reparam_layers['var'](z)
         out.zetas = self.reparameterize(out.mu, out.logvar)

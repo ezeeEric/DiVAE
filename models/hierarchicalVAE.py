@@ -26,7 +26,7 @@ class HierarchicalVAE(AutoEncoder):
         self._reparamNodes=(self._config.n_encoder_layer_nodes,self._latent_dimensions)  
 
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -42,7 +42,7 @@ class HierarchicalVAE(AutoEncoder):
     def _create_encoder(self,act_fct=None):
         logger.debug("_create_encoder")
         return HierarchicalEncoder(
-            input_dimension=self._input_dimension,
+            input_dimension=self._flat_input_size,
             n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls,
             n_latent_nodes=self._latent_dimensions,
             n_encoder_layer_nodes=self._config.n_encoder_layer_nodes,
@@ -75,7 +75,7 @@ hierarchy layer.
         output_data, mu_list, logvar_list
         logger.debug("loss")
         # Autoencoding term
-        auto_loss = nn.functional.binary_cross_entropy(out.output_data, input_data.view(-1, self._input_dimension), reduction='sum')
+        auto_loss = nn.functional.binary_cross_entropy(out.output_data, input_data.view(-1, self._flat_input_size), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         mu=torch.cat(out.mu_list,axis=1)
@@ -91,7 +91,7 @@ hierarchy layer.
         out.mu_list=[]
         out.logvar_list=[]
 
-        data=input_data.view(-1, self._input_dimension)
+        data=input_data.view(-1, self._flat_input_size)
         lvl=0
         for hierarchy in self.encoder._networks:
             indata=torch.cat([data,*zeta_list],axis=1)

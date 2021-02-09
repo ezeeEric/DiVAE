@@ -38,7 +38,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         input_enc=0
         input_dec=0
 
-        for i,dim in enumerate(self._input_dimension):
+        for i,dim in enumerate(self._flat_input_size):
             self._reparam_nodes[i]=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
 
             #define network structure
@@ -48,7 +48,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             #for each new calo layer, add input dimension
             input_enc+=dim
             #for each new calo layer, add input dimension
-            input_dec+=self._latent_dimensions if i==0 else self._input_dimension[i-1]
+            input_dec+=self._latent_dimensions if i==0 else self._flat_input_size[i-1]
 
             enc_node_list=[input_enc]+self._config.encoder_hidden_nodes
 
@@ -75,7 +75,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
     def create_networks(self):
         logger.debug("Creating Network Structures")
 
-        for i,dim in enumerate(self._input_dimension):
+        for i,dim in enumerate(self._flat_input_size):
             self._autoencoders[i]=VariationalAutoEncoder.init_with_nodelist(dim=dim,
                                                         cfg=self._config,
                                                         actfct=self._activation_fct,
@@ -95,7 +95,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         out.mus=[]
         out.logvars=[]
 
-        for i,dim in enumerate(self._input_dimension):
+        for i,dim in enumerate(self._flat_input_size):
             current_vae=self._autoencoders[i]
             #every input is concatenation of previous inputs
             # input_data_transformed=input_data[i].view(-1, dim) if i==0 else torch.cat([input_data_transformed,input_data[i].view(-1, dim)],dim=-1)
@@ -117,7 +117,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
     def generate_samples(self):
 
         outputs=[]
-        for i,dim in enumerate(self._input_dimension):
+        for i,dim in enumerate(self._flat_input_size):
             rnd_input=torch.randn((config.frac_train_dataset,self._latent_dimensions))
             rnd_input_cat=torch.cat([rnd_input]+ outputs, dim=1)
             output = self._autoencoders[i].decoder.decode(rnd_input_cat)
@@ -139,7 +139,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
 
         
         total_loss=0
-        for i,dim in enumerate(self._input_dimension):
+        for i,dim in enumerate(self._flat_input_size):
             #fwd out contains lists with each member being the output for one layer.
             #hence need to construct single OutputContainer object for each VAE
             #layer.
