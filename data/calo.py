@@ -1,4 +1,5 @@
 """Load up the MNIST data."""
+from copy import deepcopy
 import numpy as np
 import torch
 import h5py
@@ -42,11 +43,10 @@ class CaloImage(object):
 #contains images for all layers and the energy
 class CaloImageContainer(Dataset):
     
-    def __init__(self, particle_type=None, rawData=None, layer_subset=[]):
+    def __init__(self, particle_type=None, input_data=None, layer_subset=[]):
         self._particle_type=particle_type
-        self._raw_data=rawData #hdf5 format
 
-        self._dataset_size=len(self._raw_data["layer_0"])
+        self._dataset_size=len(input_data["layer_0"])
         #dictionary of all calo images - keys are layer names
         self._images=None
         #true energy of the jets per event (same for all layers)
@@ -59,20 +59,19 @@ class CaloImageContainer(Dataset):
         #only use selected layers
         self._layer_subset=layer_subset
 
+        #this will be used to steer train/test/val splitting
+        self._indices = None
+    
+    def create_subset(self, idx_list, label):
+        assert isinstance(idx_list,list), "Indices must be list"
+        subset=deepcopy(self)
+        subset._indices=idx_list
+        subset._event_label=label
+        return subset
+
     def __len__(self):
-        return len(self._true_energies)
+        return len(self._indices) if self._indices else self._dataset_size
 
-    def __getattr__(self, item):
-        """Only gets invoked if item doesn't exist in namespace.
-
-        Args:
-            item (): Requested output item
-        """
-        try:
-            return self.__dict__[item]
-        except:
-            raise
- 
     #pytorch dataloader needs this method
     def __getitem__(self,idx):
         #TODO this is divided by 100, because the CaloGAN dataset restricts
@@ -108,80 +107,55 @@ class CaloImageContainer(Dataset):
         """
         return self._dataset_size
 
-    def process_data(self):
+    def process_data(self, input_data):
         calo_images={}
-        for key, item in self._raw_data.items():
+        for key, item in input_data.items():
             #do not process energies here
             if key.lower() in ["energy","overflow"]: continue
-            ds=self._raw_data[key][:]
+            ds=input_data[key][:]
             #convert df to CaloImage
             calo_images[key]=CaloImage(image=torch.Tensor(ds),layer=key)
 
         self._images=calo_images
-        self._true_energies=self._raw_data["energy"][:]
-        self._overflow_energies=self._raw_data["overflow"][:]
-
-#Container for individual splits in train, test, val. This is necessary to work with random_split
-#which creates Dataset.Subset instances, which lose all attributes of the
-#initial class.
-#TODO Is there a more elegant solution to this?
-class CaloImageSubContainer(CaloImageContainer):
-
-    def __init__(self, calo_subset=None, event_label=None):
-        self.dataset=calo_subset.dataset
-        self.indices=calo_subset.indices
-        
-        self._event_label=event_label     
-
-    def __getitem__(self, idx):
-        return self.dataset[self.indices[idx]]
-
-    def __len__(self):
-        return len(self.indices)
-
-    def __getattr__(self,name):
-        try:
-            return self[name]
-        except:
-            if isinstance(self.dataset,CaloImageContainer):
-                return self.dataset.__getattr__(name)
-            elif isinstance(self.dataset.dataset,CaloImageContainer):
-                return self.dataset.dataset.__getattr__(name)
-            else:
-                raise AttributeError()
+        self._true_energies=input_data["energy"][:]
+        self._overflow_energies=input_data["overflow"][:]
 
 def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac_train_dataset=0.6, frac_test_dataset=0.2):
     
     #read in all input files for all jet types and layers
     dataStore={}
     for key,fpath in inFiles.items():     
+        in_data=h5py.File(fpath,'r')
         #for each particle_type, create a Container instance for our needs   
         dataStore[key]=CaloImageContainer(  particle_type=key,
-                                            rawData=h5py.File(fpath,'r'),
+                                            input_data=in_data,
                                             layer_subset=layer_subset)
         #convert image dataframes to tensors and get energies
-        dataStore[key].process_data()
+        dataStore[key].process_data(input_data=in_data)
 
     assert len(particle_type)==1, "Currently only datasets for one particle type at a time\
          can be retrieved. Requested {0}".format(particle_type)
     ptype=particle_type[0]
+    #let's split our datasets
+    #get total num evts
     num_evts_total=dataStore[ptype].get_dataset_size()
+    #create a sequential list of indices
+    idx_list=[i for i in range(0,num_evts_total)]
+    #randomly shuffle the list
+    np.random.shuffle(idx_list)
+    #compute number of split evts from fraction
     num_evts_train=int(frac_train_dataset*num_evts_total)
-
-    #split in train and test
-    train_subset,test_val_subset=random_split(dataStore[ptype],
-                            [num_evts_train,num_evts_total-num_evts_train])
-    #split in test and val
-    num_evts_test_val=len(test_val_subset)
     num_evts_test=int(frac_test_dataset*num_evts_total)
-    test_subset,val_subset=random_split(test_val_subset,
-                            [num_evts_test,num_evts_test_val-num_evts_test])
-    
-    #create a container for each dataset to avoid working on pytorch Subsets.
-    train_dataset=CaloImageSubContainer(train_subset, event_label="train")
-    test_dataset=CaloImageSubContainer(test_subset, event_label="test")
-    val_dataset=CaloImageSubContainer(val_subset, event_label="val")
 
+    #create lists of split indices
+    train_idx_list=idx_list[:num_evts_train]
+    test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
+    val_idx_list=idx_list[(num_evts_train+num_evts_test):num_evts_total]
+
+    train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list,label="train")
+    test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list,label="test")
+    val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list,label="val")
+    
     return train_dataset,test_dataset,val_dataset
 
 if __name__=="__main__":
@@ -197,6 +171,10 @@ if __name__=="__main__":
                                                     frac_train_dataset=0.6,
                                                     frac_test_dataset=0.2
                                                     )
+    print(len(train_dataset))
+    print(len(test_dataset))
+    print(len(val_dataset))
+    
     from torch.utils.data import DataLoader
     train_loader=DataLoader(   
     train_dataset,
