@@ -136,6 +136,7 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     assert len(particle_type)==1, "Currently only datasets for one particle type at a time\
          can be retrieved. Requested {0}".format(particle_type)
     ptype=particle_type[0]
+    
     #let's split our datasets
     #get total num evts
     num_evts_total=dataStore[ptype].get_dataset_size()
@@ -179,7 +180,32 @@ if __name__=="__main__":
     train_loader=DataLoader(   
     train_dataset,
     batch_size=10, 
-    shuffle=True)                                       
+    shuffle=True)       
+    test_loader=DataLoader(   
+    test_dataset,
+    batch_size=10, 
+    shuffle=True)                                    
+    val_loader=DataLoader(   
+    val_dataset,
+    batch_size=10, 
+    shuffle=True)  
+
+    # train_energy_list=[]
+    # test_energy_list=[]
+    # val_energy_list=[]
+
+
+    # for batch_idx, (input_data, label) in enumerate(train_loader):
+    #     train_energy_list.append(label)
+    # for batch_idx, (input_data, label) in enumerate(test_loader):
+    #     test_energy_list.append(label)
+    # for batch_idx, (input_data, label) in enumerate(val_loader):
+    #     val_energy_list.append(label)
+    
+    # for (energy,overflow) in test_energy_list:
+    #     for (e2,o2) in test_energy_list:
+    #         if torch.all(torch.eq(energy,e2)):
+    #             print("Oh SHit")
 
     for batch_idx, (input_data, label) in enumerate(train_loader):
         print("Batch Idx: ", batch_idx)
