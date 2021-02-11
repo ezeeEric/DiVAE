@@ -69,9 +69,9 @@ class PlotProvider(object):
             if config.model_type=="sVAE":
                 plot_calo_image_sequence(
                     input_data=input_container.input_data, 
-                    output_data=input_container.output, 
+                    output_data=input_container.outputs, 
                     input_dimension=self.data_dimensions, 
-                    output="{0}/{2}_{1}.png".format(config.output_path,self.config_string,self.date_tag))
+                    out_file="{0}/{2}_{1}.png".format(config.output_path,self.config_string,self.date_tag))
             else:
                 test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
                 plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))

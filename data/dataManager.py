@@ -76,6 +76,7 @@ class DataManager(object):
         
         in_sizes=self.get_flat_input_size()
         imgPerLayer={}	
+        
         #create an entry for each layer
         for i in range(0,len(in_sizes)):
             imgPerLayer[i]=[]	
@@ -84,11 +85,10 @@ class DataManager(object):
             #loop over all layers
             for l,d in enumerate(data):	
                 imgPerLayer[l].append(d.view(-1,in_sizes[l]))
-        
         means=[]
         for l, imgList in imgPerLayer.items():
             means.append(torch.mean(torch.stack(imgList),dim=0))
-        
+
         self._train_dataset_mean=means
 
     def pre_processing(self):

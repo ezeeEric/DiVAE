@@ -74,7 +74,7 @@ class VariationalAutoEncoder(AutoEncoder):
     
     def generate_samples(self):
         # Draw a rnd var z~N[0,1] and feed it through the decoder
-        rnd_input=torch.randn((config.frac_train_dataset,self._reparam_nodes[1]))
+        rnd_input=torch.randn((config.n_generate_samples,self._reparam_nodes[1]))
         zeta=rnd_input 
         output = self.decoder.decode(zeta)
         output.detach()
@@ -83,7 +83,7 @@ class VariationalAutoEncoder(AutoEncoder):
     def loss(self, input_data, fwd_out):
         logger.debug("VAE Loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, self._flat_input_size), reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data, reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         kl_loss = 0.5 * torch.sum(1 + fwd_out.logvar - fwd_out.mu.pow(2) - torch.exp(fwd_out.logvar))
