@@ -7,11 +7,15 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch
 import torch.nn as nn
+from copy import copy
 
 from utils.distributions import SpikeAndExponentialSmoother
-from copy import copy
-import logging
+
+#logging module with handmade settings.
+from DiVAE import logging
 logger = logging.getLogger(__name__)
+from DiVAE import config
+
 
 #Base Class
 class Network(nn.Module):
@@ -171,6 +175,7 @@ class HierarchicalEncoder(BasicEncoder):
         **kwargs):
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
+        #TODO this assumes MNIST dataset without sequential layers
         self.num_input_nodes=input_dimension
 
         #number of hierarchy levels in encoder. This is the number of latent

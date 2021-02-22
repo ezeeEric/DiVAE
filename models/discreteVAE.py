@@ -24,7 +24,7 @@ class DiVAE(AutoEncoderBase):
         
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -78,7 +78,7 @@ class DiVAE(AutoEncoderBase):
     def _create_encoder(self):
         logger.debug("ERROR _create_encoder dummy implementation")
         return HierarchicalEncoder(
-            input_dimension=self._input_dimension,
+            input_dimension=self._flat_input_size,
             n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
             n_latent_nodes=self.n_latent_nodes,
             n_encoder_layer_nodes=self.n_encoder_layer_nodes,
@@ -107,7 +107,7 @@ class DiVAE(AutoEncoderBase):
         kl_loss=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
 
         #2) AE loss
-        ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._input_dimension))
+        ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
         #loss is the sum of all variables (pixels) per sample (event in batch)
         ae_loss=torch.sum(ae_loss_matrix,1)
 
@@ -308,7 +308,7 @@ class DiVAE(AutoEncoderBase):
         out=self._output_container.clear()
 
         #TODO data prep - study if this does good things
-        input_data_centered=input_data.view(-1, self._input_dimension)-self._dataset_mean
+        input_data_centered=input_data.view(-1, self._flat_input_size)-self._dataset_mean
         #Step 1: Feed data through encoder 
         out.posterior_distributions, out.posterior_samples = self.encoder.hierarchical_posterior(input_data_centered)
         posterior_samples_concat=torch.cat(out.posterior_samples,1)

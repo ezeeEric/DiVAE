@@ -22,16 +22,16 @@ from utils.helpers import OutputContainer
 
 # Base Class for Autoencoder models
 class AutoEncoderBase(nn.Module):
-    def __init__(self, input_dimension, train_ds_mean, activation_fct,  **kwargs):
+    def __init__(self, flat_input_size, train_ds_mean, activation_fct,  **kwargs):
         """
         """
 
         super(AutoEncoderBase,self).__init__(**kwargs)
         #sanity checks
-        if isinstance(input_dimension,list):
-            assert len(input_dimension)>0, "Input dimension not defined, needed for model structure"
+        if isinstance(flat_input_size,list):
+            assert len(flat_input_size)>0, "Input dimension not defined, needed for model structure"
         else:
-            assert input_dimension>0, "Input dimension not defined, needed for model structure"
+            assert flat_input_size>0, "Input dimension not defined, needed for model structure"
         assert config is not None, "Config not defined"
         assert config.n_latent_nodes is not None and config.n_latent_nodes>0, "Latent dimension must be >0"
         
@@ -44,11 +44,11 @@ class AutoEncoderBase(nn.Module):
         # number of nodes in latent layer
         self._latent_dimensions=config.n_latent_nodes
         
-        if len(input_dimension)>1:
+        if len(flat_input_size)>1:
             logger.warning("Received multiple input dimension numbers. Assuming multiple inputs.")
-            self._input_dimension=input_dimension
+            self._flat_input_size=flat_input_size
         else:
-            self._input_dimension=input_dimension[0]
+            self._flat_input_size=flat_input_size[0]
 
         self._activation_fct=activation_fct
 

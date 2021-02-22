@@ -361,8 +361,8 @@ if __name__=="__main__":
 	do_train=False
 	config_string="_".join(map(str,[N_EVENTS_TRAIN,n_epochs,N_GIBBS_SAMPLING_STEPS]))
 
-	from data.loadMNIST import loadMNIST
-	train_loader,test_loader=loadMNIST(
+	from data.mnist import get_mnist_datasets
+	train_loader,test_loader=get_mnist_datasets(
 			batch_size=n_batch_samples,
 			num_evts_train=N_EVENTS_TRAIN,
 			num_evts_test=N_EVENTS_TEST,

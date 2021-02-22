@@ -42,8 +42,8 @@ class SparseAutoEncoder(AutoEncoder):
         total_loss=0
         l1_regularisation=0
         
-        reconstruction_loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._input_dimension), reduction='sum')
-        l1_regularisation=self.l1_norm(input_data.view(-1,self._input_dimension))
+        reconstruction_loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._flat_input_size), reduction='sum')
+        l1_regularisation=self.l1_norm(input_data.view(-1,self._flat_input_size))
         
         total_loss=reconstruction_loss+self.regularisation_weight*l1_regularisation
         
