@@ -96,7 +96,7 @@ more clamping in KLD
 - there are several changes for the evaluation routine, which are not
   implemented. The posterior distribution for eval should be a Bernoulli and not
   the ICDF of the Spike-and-exp.
-
+- rework DataLoader with variable input dimensions. Possibly combine MNIST and CALO loader into one.
 ### Calo Data
 - The normalisation of the calo data for processing is unclear. Currently, the
   calo image deposits are normalised to [0,1] in `CaloImage::normalise` but that won't give us a

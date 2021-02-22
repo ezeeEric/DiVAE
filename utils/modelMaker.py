@@ -12,8 +12,6 @@ import numpy as np
 #needs python3.7
 from contextlib import nullcontext
 
-from data.loadMNIST import loadMNIST
-
 from DiVAE import logging
 # from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -55,7 +53,7 @@ class ModelMaker(object):
                 #TODO change init arguments. Ideally, the model does not carry
                 #specific information about the dataset. 
                 self.model=model_class(
-                            input_dimension=self.data_mgr.get_input_dimensions(),
+                            flat_input_size=self.data_mgr.get_flat_input_size(),
                             train_ds_mean=self.data_mgr.get_train_dataset_mean(),
                             activation_fct=self._default_activation_fct)
                 return self.model

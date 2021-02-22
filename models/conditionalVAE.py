@@ -22,7 +22,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        enc_node_list=[self._input_dimension+1]+self._config.encoder_hidden_nodes
+        enc_node_list=[self._flat_input_size+1]+self._config.encoder_hidden_nodes
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
@@ -30,7 +30,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         
         self._reparam_nodes=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
         
-        dec_node_list=[self._latent_dimensions+1]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[self._latent_dimensions+1]+self._config.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -41,7 +41,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         #see definition for explanation
         out=self._output_container.clear()
 
-        input_data_transformed=input_data.view(-1, self._input_dimension)
+        input_data_transformed=input_data.view(-1, self._flat_input_size)
         label_unsqueezed=label.unsqueeze(-1)
 
         input_data_cat=torch.cat([input_data_transformed,label_unsqueezed],dim=1)

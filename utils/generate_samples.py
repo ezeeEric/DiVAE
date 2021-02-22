@@ -35,35 +35,3 @@ def generate_samples_svae(model, outstring=""):
 
 if __name__=="__main__":
     logger.info("Testing RBM Setup")
-
-    # n_batch_samples = 32
-    # VISIBLE_UNITS = 784  # 28 x 28 images
-    # HIDDEN_UNITS = 128
-    # N_GIBBS_SAMPLING_STEPS = 10
-    # n_epochs = 6
-    # N_EVENTS_TRAIN=-1
-    # N_EVENTS_TEST=-1
-    # do_train=False
-    # config_string="_".join(map(str,[N_EVENTS_TRAIN,n_epochs,N_GIBBS_SAMPLING_STEPS]))
-
-    # from data.loadMNIST import loadMNIST
-    # train_loader,test_loader=loadMNIST(
-    # 		batch_size=n_batch_samples,
-    # 		num_evts_train=N_EVENTS_TRAIN,
-    # 		num_evts_test=N_EVENTS_TEST,
-    # 		binarise="threshold")
-    
-    # rbm = RBM(n_visible=VISIBLE_UNITS, n_hidden=HIDDEN_UNITS, n_gibbs_sampling_steps=N_GIBBS_SAMPLING_STEPS)
-
-    # f=open("./output/divae_mnist/model_DiVAE_mnist_500_-1_100_1_0.001_4_100_RELU_default_201104.pt",'rb')
-    # model=torch.load(f)
-    # print(model)
-    # f.close()
-    # # ########## EXTRACT FEATURES ##########
-    # logger.info("Sampling from RBM")
-    # for batch_idx, (input_data, label) in enumerate(test_loader):
-    # 	y=rbm.get_samples(input_data.view(-1,VISIBLE_UNITS))
-    # 	break
-    # from utils.helpers import plot_MNIST_output
-
-    # plot_MNIST_output(input_data,y, n_samples=5, output="./output/rbm_test_200827_wdecay_{0}.png".format(config_string))

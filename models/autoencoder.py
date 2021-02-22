@@ -25,13 +25,13 @@ class AutoEncoder(AutoEncoderBase):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        enc_node_list=[self._input_dimension]+self._config.encoder_hidden_nodes+[self._latent_dimensions]
+        enc_node_list=[self._flat_input_size]+self._config.encoder_hidden_nodes+[self._latent_dimensions]
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
             self._encoder_nodes.append(nodepair)
        
-        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -58,13 +58,13 @@ class AutoEncoder(AutoEncoderBase):
         #see definition for einput_dataplanation
         out=self._output_container.clear()
         
-        out.zeta = self.encoder.encode(input_data.view(-1,self._input_dimension))
+        out.zeta = self.encoder.encode(input_data.view(-1,self._flat_input_size))
         out.output_data = self.decoder.decode(zeta)
 
         return out
     
     def loss(self, input_data, fwd_out):
-        loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._input_dimension), reduction='sum')
+        loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._flat_input_size), reduction='sum')
         return loss
 
 if __name__=="__main__":
