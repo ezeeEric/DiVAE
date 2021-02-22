@@ -4,26 +4,27 @@ Main executable. The run() method steers data loading, model creation, training
 and evaluation by calling the respective interfaces.
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
+Modified by : Abhi (abhishek@myumanitoba.ca)
 """
 
-#external libraries
-import os,sys
-import pickle
+# System imports
+import os
 import datetime
-import gif
 
+# ML imports
 import torch
-torch.manual_seed(1)
-import numpy as np
-import matplotlib.pyplot as plt
 
-#self defined imports
+# Package imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 from DiVAE import config
 
+
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
+from utils.modelMaker import ModelMaker
+
+torch.manual_seed(1)
 
 def run(modelMaker=None):
 
@@ -114,7 +115,6 @@ if __name__=="__main__":
         os.mkdir(config.output_path)
     
     #create model handling object
-    from utils.modelMaker import ModelMaker
     modelMaker=ModelMaker()
 
     #run the ting

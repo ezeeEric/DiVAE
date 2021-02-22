@@ -5,6 +5,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
+from torch.utils.data import DataLoader, random_split, Dataset
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -107,14 +108,16 @@ class DataManager(object):
                 num_evts_train=config.n_train_samples,
                 num_evts_test=config.n_test_samples, 
                 )
+            
+        #set batch size to full test dataset size - limitation only by hardware
+        batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
+        
         #create the DataLoader for the training dataset
         train_loader=DataLoader(   
             train_dataset,
             batch_size=batch_size, 
             shuffle=True)
-  
-        #set batch size to full test dataset size - limitation only by hardware
-        batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
+
         #create the DataLoader for the testing dataset
         test_loader = DataLoader(
             test_dataset,

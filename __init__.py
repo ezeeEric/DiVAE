@@ -16,7 +16,7 @@ logging.addLevelName( logging.WARNING, "\033[1;93m{0}\033[1;0m".format('WARN '))
 logging.addLevelName( logging.ERROR,   "\033[1;91m{0}\033[1;0m".format('ERROR'))
 
 #add user defined level
-logging.addLevelName( 9 ,              "\033[1;92m%{0}\033[1;0m".format('NOTIMPLEMENTED'))
+logging.addLevelName(9, "\033[1;92m%{0}\033[1;0m".format('NOTIMPLEMENTED'))
 
 BOLD = "\033[1m"
 RESET = "\033[0m"
