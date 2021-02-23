@@ -1,4 +1,5 @@
 alabaster==0.7.12
+antlr4-python3-runtime==4.8
 Babel==2.9.0
 cached-property==1.5.2
 certifi==2020.12.5
@@ -7,21 +8,26 @@ cycler==0.10.0
 docutils==0.16
 gif==3.0.0
 h5py==3.1.0
+hydra-core==1.0.6
 idna==2.10
 imagesize==1.2.0
+importlib-resources==5.1.0
 Jinja2==2.11.2
 joblib==1.0.0
 kiwisolver==1.3.1
 MarkupSafe==1.1.1
 matplotlib==3.3.3
 numpy==1.19.4
+omegaconf==2.0.6
 packaging==20.8
 pandas==1.1.5
 Pillow==8.0.1
 Pygments==2.7.3
+Pyment==0.3.3
 pyparsing==2.4.7
 python-dateutil==2.8.1
 pytz==2020.4
+PyYAML==5.4.1
 requests==2.25.0
 scikit-learn==0.23.2
 scipy==1.5.4
@@ -29,6 +35,8 @@ six==1.15.0
 sklearn==0.0
 snowballstemmer==2.0.0
 Sphinx==3.3.1
+sphinx-autodoc-typehints==1.11.1
+sphinx-rtd-theme==0.5.0
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==1.0.3
@@ -40,3 +48,4 @@ torch==1.7.1
 torchvision==0.8.2
 typing-extensions==3.7.4.3
 urllib3==1.26.2
+zipp==3.4.0
