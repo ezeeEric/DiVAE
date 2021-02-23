@@ -155,9 +155,7 @@ class SimpleDecoder(Network):
         logger.debug("Decoder::decode")  
         nr_layers=len(self._layers)
         for idx,layer in enumerate(self._layers):
-            # print(idx, layer)
             if idx==nr_layers-1:
-
                 x_prime=self._output_activation_fct(layer(zeta))
             else:
                 zeta=self._activation_fct(layer(zeta))
