@@ -9,9 +9,9 @@ output_path: ./output/divae_mnist/
 testRun: False
 user: drdre
 
-
 defaults:
   - model: divae
   - data: mnist
+# - calo: calo_layers
   - engine: divae_training
   - task

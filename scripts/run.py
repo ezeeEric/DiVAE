@@ -46,7 +46,7 @@ def main(cfg=None):
     
     #create model handling object
     from utils.modelMaker import ModelMaker
-    modelMaker=ModelMaker()
+    modelMaker=ModelMaker(cfg=config)
 
     #run the ting
     run(modelMaker)
@@ -60,7 +60,6 @@ def run(modelMaker=None):
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
     dataMgr.pre_processing()
-    exit()
 
     #add dataMgr instance to modelMaker namespace
     modelMaker.register_dataManager(dataMgr)
@@ -68,26 +67,25 @@ def run(modelMaker=None):
     #set parameters relevant for this run
     date=datetime.datetime.now().strftime("%y%m%d")
 
-    config_string="_".join(str(i) for i in [config.model_type,
+    config_string="_".join(str(i) for i in [config.model.model_type,
                                             config.data.data_type,
                                             date,
                                             config.tag
                                             ])
     if config.data.data_type=='calo': 
-        config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
-    
+        config_string+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
     # overwrite config string with file name if we load from file
     if config.load_model:
         config_string=config.input_model.split("/")[-1].replace('.pt','')
     
-    if config.activation_fct.lower()=="relu":
+    if config.model.activation_fct.lower()=="relu":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
-    elif config.activation_fct.lower()=="tanh":
+    elif config.model.activation_fct.lower()=="tanh":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
     else:
         logger.warning("Setting identity as default activation fct")
         modelMaker.default_activation_fct=torch.nn.Identity() 
-    
+
     #instantiate the chosen model
     #loads from file 
     model=modelMaker.init_model(load_from_file=config.load_model)
@@ -97,8 +95,9 @@ def run(modelMaker=None):
     model.print_model_info()
 
     #instantiate and register optimisation algorithm
-    modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    
+    modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
+    exit()
+
     #no need to train if we load from file.
     if config.load_model:
         #return pre-trained model after loading from file

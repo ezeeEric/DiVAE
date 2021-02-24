@@ -58,7 +58,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
                 nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
                 self._encoder_nodes[i].append(nodepair)
             
-            dec_node_list=[input_dec]+self._config.decoder_hidden_nodes+[dim]
+            dec_node_list=[input_dec]+self._config.model.decoder_hidden_nodes+[dim]
 
             for num_nodes in range(0,len(dec_node_list)-1):
                 nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])

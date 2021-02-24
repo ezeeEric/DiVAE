@@ -31,7 +31,7 @@ class AutoEncoder(AutoEncoderBase):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
             self._encoder_nodes.append(nodepair)
        
-        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._flat_input_size]
+        dec_node_list=[self._latent_dimensions]+self._config.model.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])

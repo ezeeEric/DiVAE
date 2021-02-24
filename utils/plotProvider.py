@@ -56,7 +56,7 @@ class PlotProvider(object):
             
             #for visualisation purposes: plot latent spaces representation for certain models.
             #See method for details.
-            if not config.model_type=="cVAE" and not config.model_type=="DiVAE":
+            if not config.model.model_type=="cVAE" and not config.model.model_type=="DiVAE":
                 plot_latent_space(zeta=input_container.zetas,
                     label=input_container.labels, 
                     out_file="{0}/{2}_latSpace_{1}".format(config.output_path,self.config_string,self.date_tag),
@@ -66,7 +66,7 @@ class PlotProvider(object):
 
             from utils.helpers import plot_calo_images, plot_calo_image_sequence
             
-            if config.model_type=="sVAE":
+            if config.model.model_type=="sVAE":
                 plot_calo_image_sequence(
                     input_data=input_container.input_data, 
                     output_data=input_container.outputs, 

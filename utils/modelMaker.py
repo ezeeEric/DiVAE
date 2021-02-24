@@ -15,7 +15,7 @@ from contextlib import nullcontext
 from DiVAE import logging
 # from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
+# from DiVAE import self._config
 
 #import defined models
 from models.autoencoder import AutoEncoder
@@ -37,7 +37,9 @@ model_dict={
 }
 
 class ModelMaker(object):
-    def __init__(self):
+    def __init__(self, cfg=None):
+        self._config=cfg
+
         self._model=None
         self._optimiser=None
 
@@ -48,14 +50,15 @@ class ModelMaker(object):
     def init_model(self,load_from_file=False):
 
         for key, model_class in model_dict.items(): 
-            if key.lower()==config.model_type.lower():
-                logger.info("Initialising Model Type {0}".format(config.model_type))
+            if key.lower()==self._config.model.model_type.lower():
+                logger.info("Initialising Model Type {0}".format(self._config.model.model_type))
                 #TODO change init arguments. Ideally, the model does not carry
                 #specific information about the dataset. 
                 self.model=model_class(
                             flat_input_size=self.data_mgr.get_flat_input_size(),
                             train_ds_mean=self.data_mgr.get_train_dataset_mean(),
-                            activation_fct=self._default_activation_fct)
+                            activation_fct=self._default_activation_fct,
+                            cfg=self._config)
                 return self.model
         logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")
         raise NotImplementedError
@@ -77,17 +80,17 @@ class ModelMaker(object):
     def default_activation_fct(self, act_fct):
         self._default_activation_fct=act_fct
 
-    def save_model(self,config_string='test'):
+    def save_model(self,cfg_string='test'):
         logger.info("Saving Model")
-        f=open(os.path.join(config.output_path,"model_{0}.pt".format(config_string)),'wb')
+        f=open(os.path.join(self._config.output_path,"model_{0}.pt".format(cfg_string)),'wb')
         torch.save(self._model.state_dict(),f)
         f.close()
         return
 
-    def save_config(self,config_string='test'):
-        logger.info("Saving Config")
-        f=open(os.path.join(config.output_path,"cfg_{0}.pt".format(config_string)),'wb')
-        torch.save(config,f)
+    def save_config(self,cfg_string='test'):
+        logger.info("Saving self._config")
+        f=open(os.path.join(self._config.output_path,"cfg_{0}.pt".format(cfg_string)),'wb')
+        torch.save(self._config,f)
         f.close()
         return
 
@@ -99,7 +102,7 @@ class ModelMaker(object):
     def load_model(self):
         logger.info("Loading Model")
         #load_state_dict is a pytorch method (https://pytorch.org/tutorials/beginner/saving_loading_models.html)
-        self._model.load_state_dict(torch.load(config.input_model))
+        self._model.load_state_dict(torch.load(self._config.input_model))
         #set evaluation mode for model
         self._model.eval()
         return
@@ -119,7 +122,7 @@ class ModelMaker(object):
         #sampling_mode
         #nrs
         #generate the samples. Each model has its own specific settings which
-        #are read in from the config in the individual model files.
+        #are read in from the self._config in the individual model files.
         output=self._model.generate_samples()
         #remove gradients and history, convert output to leaves so we can do
         #with it what we like (numpy operations for example).

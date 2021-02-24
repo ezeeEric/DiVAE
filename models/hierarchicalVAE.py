@@ -23,10 +23,10 @@ class HierarchicalVAE(AutoEncoder):
    
         self._model_type="HiVAE"
 
-        self._reparamNodes=(self._config.n_encoder_layer_nodes,self._latent_dimensions)  
+        self._reparamNodes=(self._config.model.n_encoder_layer_nodes,self._latent_dimensions)  
 
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._flat_input_size]
+        dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+self._config.model.decoder_hidden_nodes+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -43,10 +43,10 @@ class HierarchicalVAE(AutoEncoder):
         logger.debug("_create_encoder")
         return HierarchicalEncoder(
             input_dimension=self._flat_input_size,
-            n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls,
+            n_latent_hierarchy_lvls=self._config.model.n_latent_hierarchy_lvls,
             n_latent_nodes=self._latent_dimensions,
-            n_encoder_layer_nodes=self._config.n_encoder_layer_nodes,
-            n_encoder_layers=self._config.n_encoder_layers,
+            n_encoder_layer_nodes=self._config.model.n_encoder_layer_nodes,
+            n_encoder_layers=self._config.model.n_encoder_layers,
             skip_latent_layer=True)
     
     
@@ -60,7 +60,7 @@ hierarchy layer.
         """
         logger.debug("ERROR _create_encoder dummy implementation")
         hierarchical_repara_layers=nn.ModuleDict()
-        for lvl in range(self._config.n_latent_hierarchy_lvls):
+        for lvl in range(self._config.model.n_latent_hierarchy_lvls):
             hierarchical_repara_layers['mu_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
             hierarchical_repara_layers['var_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
         return hierarchical_repara_layers

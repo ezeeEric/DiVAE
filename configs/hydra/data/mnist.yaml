@@ -1,5 +1,7 @@
 # @package _group_
 data_type: mnist
+#TODO where to put this - proper mnist/calo data split
+calo_layers: layer_0,layer_1,layer_2
 particle_type: gamma
 binarise_dataset: threshold
 calo_input_eplus: /Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5

@@ -53,7 +53,7 @@ def load_data(config=None):
         train_loader,test_loader=loadCalorimeterData(
             inFiles=inFiles,
             ptype=config.particle_type,
-            layers=config.calo_layers,
+            layers=config.data.calo_layers,
             batch_size=config.engine.n_batch_samples,
             num_evts_train=config.n_train_samples,
             num_evts_test=config.n_test_samples, 
@@ -96,45 +96,45 @@ def run(tuner=None, config=None):
 
     #set model properties
     model=None
-    activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
+    activation_fct=torch.nn.ReLU() if config.model.activation_fct.lower()=="relu" else None    
     
-    configString="_".join(str(i) for i in [config.model_type,
+    configString="_".join(str(i) for i in [config.model.model_type,
                                         config.data.data_type,
                                         config.n_train_samples,
                                         config.n_test_samples,
                                         config.engine.n_batch_samples,
                                         config.n_epochs,
-                                        config.learning_rate,
-                                        config.n_latent_hierarchy_lvls,
-                                        config.n_latent_nodes,
-                                        config.activation_fct,
+                                        config.engine.learning_rate,
+                                        config.model.n_latent_hierarchy_lvls,
+                                        config.model.n_latent_nodes,
+                                        config.model.activation_fct,
                                         config.tag])
     
     date=datetime.datetime.now().strftime("%y%m%d")
 
     if config.data.data_type=='calo': 
-        configString+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
+        configString+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
 
     #TODO wrap all these in a container class
-    if config.model_type=="AE":
+    if config.model.model_type=="AE":
         model = AutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
     
-    elif config.model_type=="sparseAE":
+    elif config.model.model_type=="sparseAE":
         model = SparseAutoEncoder(input_dimension=input_dimension,config=config, activation_fct=activation_fct)
         
-    elif config.model_type=="VAE":
+    elif config.model.model_type=="VAE":
         model = VariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
     
-    elif config.model_type=="cVAE":
+    elif config.model.model_type=="cVAE":
         model = ConditionalVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
     
-    elif config.model_type=="sVAE":
+    elif config.model.model_type=="sVAE":
         model = SequentialVariationalAutoEncoder(input_dimension=input_dimension,config=config,activation_fct=activation_fct)
 
-    elif config.model_type=="HiVAE":
+    elif config.model.model_type=="HiVAE":
         model = HierarchicalVAE(input_dimension=input_dimension, activation_fct=activation_fct, config=config)
 
-    elif config.model_type=="DiVAE":
+    elif config.model.model_type=="DiVAE":
         activation_fct=torch.nn.Tanh() 
         model = DiVAE(input_dimension=input_dimension, config=config, activation_fct=activation_fct)
     else:
@@ -146,10 +146,10 @@ def run(tuner=None, config=None):
     # model.set_input_dimension(input_dimension)
 
     #TODO avoid this if statement
-    if config.model_type=="DiVAE": model.set_train_bias()
+    if config.model.model_type=="DiVAE": model.set_train_bias()
 
     model.print_model_info()
-    optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
 
     tuner.register_model(model)
     tuner.register_optimiser(optimiser)
@@ -188,27 +188,27 @@ def run(tuner=None, config=None):
         if config.load_model:
             configString=config.input_model.split("/")[-1].replace('.pt','')
  
-        if config.model_type=="DiVAE":  
+        if config.model.model_type=="DiVAE":  
             from utils.generate_samples import generate_samples_divae
             generate_samples_divae(tuner._model, configString)
 
         #TODO split this up in plotting and generation routine and have one
         #common function for all generative models. 
-        elif config.model_type=="VAE": 
+        elif config.model.model_type=="VAE": 
             from utils.generate_samples import generate_samples_vae
             generate_samples_vae(tuner._model, configString)
 
-        elif config.model_type=="cVAE": 
+        elif config.model.model_type=="cVAE": 
             from utils.generate_samples import generate_samples_cvae
             generate_samples_cvae(tuner._model, configString)
         
-        elif config.model_type=="sVAE": 
+        elif config.model.model_type=="sVAE": 
             from utils.generate_samples import generate_samples_svae
             generate_samples_svae(tuner._model, configString)
 
     if config.create_plots:
         if config.data.data_type=='calo':
-            if config.model_type=="sVAE":
+            if config.model.model_type=="sVAE":
                 test_loss, input_data, output_data, zetas, labels   = tuner.test()
                 plot_calo_image_sequence(input_data, output_data, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
             else:
@@ -216,7 +216,7 @@ def run(tuner=None, config=None):
                 plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         else:
             test_loss, input_data, output_data, zetas, labels  = tuner.test()
-            if not config.model_type=="cVAE" and not config.model_type=="DiVAE":
+            if not config.model.model_type=="cVAE" and not config.model.model_type=="DiVAE":
                 plot_latent_space(zetas, labels, output="{0}/{2}_latSpace_{1}".format(config.output_path,configString,date),dimensions=0)
             plot_MNIST_output(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
 

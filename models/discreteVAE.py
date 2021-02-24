@@ -24,7 +24,10 @@ class DiVAE(AutoEncoderBase):
         
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._flat_input_size]
+        #TODO hydra: is there a built-in feature for list comprehension?
+        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
+
+        dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -32,23 +35,23 @@ class DiVAE(AutoEncoderBase):
 
         #TODO change names globally
         #TODO one wd factor for both SimpleDecoder and encoder
-        self.weight_decay_factor=self._config.weight_decay_factor
+        self.weight_decay_factor=self._config.engine.weight_decay_factor
         
         #ENCODER SPECIFICS
         #number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
-        self.n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls
+        self.n_latent_hierarchy_lvls=self._config.model.n_latent_hierarchy_lvls
 
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy.
-        self.n_latent_nodes=self._config.n_latent_nodes
+        self.n_latent_nodes=self._config.model.n_latent_nodes
         
         # number of layers in encoder before latent layer. These layers map
         #input to the latent layer. 
-        self.n_encoder_layers=self._config.n_encoder_layers
+        self.n_encoder_layers=self._config.model.n_encoder_layers
 
         #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. 
-        self.n_encoder_layer_nodes=self._config.n_encoder_layer_nodes
+        self.n_encoder_layer_nodes=self._config.model.n_encoder_layer_nodes
 
         #added to output activation of last decoder layer in forward call
         self._train_bias=self.set_train_bias()
@@ -92,7 +95,7 @@ class DiVAE(AutoEncoderBase):
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_nodes_per_layer=self._config.n_latent_hierarchy_lvls*self._latent_dimensions//2
+        num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
         return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):

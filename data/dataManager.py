@@ -124,7 +124,7 @@ class DataManager(object):
             train_dataset,test_dataset,val_dataset=get_calo_datasets(
                 inFiles=inFiles,
                 particle_type=[self._config.particle_type],
-                layer_subset=self._config.calo_layers,
+                layer_subset=self._config.data.calo_layers,
                 frac_train_dataset=self._config.data.frac_train_dataset,
                 frac_test_dataset=self._config.data.frac_test_dataset, 
                 )
