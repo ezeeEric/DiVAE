@@ -1,2 +1,4 @@
 defaults:
-  - hierarchy: db2
+  - db1: db1
+  - db1: db2
+  

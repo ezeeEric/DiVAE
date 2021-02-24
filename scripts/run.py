@@ -20,16 +20,42 @@ import matplotlib.pyplot as plt
 #self defined imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
+# from DiVAE import config
 
 from data.dataManager import DataManager
 
 from utils.plotProvider import PlotProvider
 
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
+@hydra.main(config_path="../configs/hydra", config_name="config")
+def main(cfg=None):
+    #TODO hydra update: set global variable for package
+    # config=cfg
+    global config
+    config = cfg
+
+    #TODO hydra update: output path not needed anymore
+    config.output_path=os.getcwd()
+
+    #check if output path exists, create if necessary
+    # if not os.path.exists(config.output_path):
+    #     print(os.getcwd())
+    #     os.mkdir(config.output_path)
+    
+    #create model handling object
+    from utils.modelMaker import ModelMaker
+    modelMaker=ModelMaker()
+
+    #run the ting
+    run(modelMaker)
+
+
 def run(modelMaker=None):
 
     #container for our Dataloaders
-    dataMgr=DataManager()
+    dataMgr=DataManager(cfg=config)
     #initialise data loaders
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
@@ -46,7 +72,7 @@ def run(modelMaker=None):
                                             date,
                                             config.tag
                                             ])
-    
+    exit()
     if config.data_type=='calo': 
         config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
     
@@ -111,16 +137,7 @@ def run(modelMaker=None):
 if __name__=="__main__":
     logger.info("Starting main executable.")
 
-    #check if output path exists, create if necessary
-    if not os.path.exists(config.output_path):
-        os.mkdir(config.output_path)
-    
-    #create model handling object
-    from utils.modelMaker import ModelMaker
-    modelMaker=ModelMaker()
-
-    #run the ting
-    run(modelMaker)
+    main()
 
     logger.info("Auf Wiedersehen!")
 

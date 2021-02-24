@@ -27,10 +27,15 @@ logger.info("Willkommen!")
 logger.info("Loading configuration.")
 
 #global definition of configuration object
-from utils.configaro import Configaro
-config=Configaro()
+# from utils.configaro import Configaro
+# config=Configaro()
 
-#set debug logging mode if requested
-if config.debug:
-    logging.getLogger().setLevel(logging.DEBUG)
-    logger.debug("Logging in debug mode.")
+# update for hydra
+config=None
+
+
+
+# #set debug logging mode if requested
+# if config.debug:
+#     logging.getLogger().setLevel(logging.DEBUG)
+#     logger.debug("Logging in debug mode.")
