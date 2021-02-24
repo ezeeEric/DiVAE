@@ -14,9 +14,6 @@ import torch.nn as nn
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
-
-# from DiVAE import config
 
 from utils.helpers import OutputContainer
 

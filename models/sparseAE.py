@@ -12,7 +12,6 @@ from models.autoencoder import AutoEncoder
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
 
 # Vanilla Autoencoder implementation
 class SparseAutoEncoder(AutoEncoder):

@@ -9,9 +9,7 @@ import os
 import numpy as np
 
 from DiVAE import logging
-# from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
 
 class PlotProvider(object):
     def __init__(self,config_string="default",date_tag="000000", cfg=None):

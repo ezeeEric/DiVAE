@@ -11,7 +11,6 @@ from models.variationalAE import VariationalAutoEncoder
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
 
 class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
 

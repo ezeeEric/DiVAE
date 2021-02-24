@@ -14,8 +14,6 @@ from utils.distributions import SpikeAndExponentialSmoother
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-# from DiVAE import config
-
 
 #Base Class
 class Network(nn.Module):

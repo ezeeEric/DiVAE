@@ -18,7 +18,6 @@ from utils.helpers import OutputContainer
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
 
 class SequentialVariationalAutoEncoder(AutoEncoder):
 

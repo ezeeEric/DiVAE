@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 #self defined imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-# from DiVAE import config
 
 from data.dataManager import DataManager
 

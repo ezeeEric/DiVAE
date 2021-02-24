@@ -11,7 +11,6 @@ from models.autoencoder import AutoEncoder
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
 
 # Vanilla Variational Autoencoder implementation
 # Adds VAE specific reparameterisation, loss and forward call to AutoEncoder framework

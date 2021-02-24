@@ -15,7 +15,7 @@ from utils.distributions import Bernoulli
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
+
 
 class DiVAE(AutoEncoderBase):
     def __init__(self, **kwargs):
