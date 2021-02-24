@@ -1,5 +1,7 @@
 # @package _group_
 data_type: mnist
+frac_test_dataset: 0.5
+frac_train_dataset: 0.01
 #TODO where to put this - proper mnist/calo data split
 calo_layers: layer_0,layer_1,layer_2
 particle_type: gamma
@@ -7,7 +9,5 @@ binarise_dataset: threshold
 calo_input_eplus: /Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5
 calo_input_gamma: /Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5
 calo_input_piplus: /Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5
-frac_test_dataset: 0.5
-frac_train_dataset: 0.01
 pre_processed_input_file: /Users/drdre/inputz/MNIST/preprocessed/full.pkl
 mnist_input: /Users/drdre/inputz/
