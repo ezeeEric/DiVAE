@@ -24,6 +24,7 @@ class DiVAE(AutoEncoderBase):
         
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
+        
         #TODO hydra: is there a built-in feature for list comprehension?
         dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
 

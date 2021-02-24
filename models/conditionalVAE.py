@@ -21,15 +21,21 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        enc_node_list=[self._flat_input_size+1]+self._config.encoder_hidden_nodes
+        #TODO hydra: is there a built-in feature for list comprehension?
+        enc_hidden_nodes=[int(i) for i in self._config.model.encoder_hidden_nodes.split(",")]
+
+        enc_node_list=[self._flat_input_size+1]+enc_hidden_nodes
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
             self._encoder_nodes.append(nodepair)
         
-        self._reparam_nodes=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
+        self._reparam_nodes=(enc_hidden_nodes[-1],self._latent_dimensions)
         
-        dec_node_list=[self._latent_dimensions+1]+self._config.model.decoder_hidden_nodes+[self._flat_input_size]
+        #TODO hydra: is there a built-in feature for list comprehension?
+        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
+
+        dec_node_list=[self._latent_dimensions+1]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -58,9 +64,11 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         outlist=[]
         
         #how many samples to generate per number
-        n_samples_per_nr=config.n_generate_samples
-
-        for i in config.target_numbers:
+        n_samples_per_nr=int(self._config.n_generate_samples)
+        
+        #TODO hydra list comprehension
+        target_nrs=[int(i) for i in self._config.model.target_numbers.split(",")]
+        for i in target_nrs:
             rnd_input=torch.randn((n_samples_per_nr,self._reparam_nodes[1]))
             target=torch.full((n_samples_per_nr, 1), i, dtype=torch.float32)
             rnd_input_cat=torch.cat([rnd_input,target], dim=1)

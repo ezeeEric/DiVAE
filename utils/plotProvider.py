@@ -56,8 +56,9 @@ class PlotProvider(object):
             
             #for visualisation purposes: plot latent spaces representation for certain models.
             #See method for details.
-            if not self._config.model.model_type=="cVAE" and not self._config.model.model_type=="DiVAE":
-                plot_latent_space(zeta=input_container.zetas,
+            #TODO this is a hacky switch
+            if not self._config.model.model_type=="cVAE" and not self._config.model.model_type=="DiVAE" and not self._config.model.model_type=="HiVAE":
+                plot_latent_space(zeta=input_container.zeta,
                     label=input_container.labels, 
                     out_file="{0}/{2}_latSpace_{1}".format(self._config.output_path,self.config_string,self.date_tag),
                     dimensions=0)

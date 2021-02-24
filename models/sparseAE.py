@@ -19,7 +19,7 @@ class SparseAutoEncoder(AutoEncoder):
     def __init__(self, **kwargs):
         super(SparseAutoEncoder,self).__init__(**kwargs)
         self._model_type="AE"
-        self.regularisation_weight=self._config.l1_regularisation_weight
+        self.regularisation_weight=self._config.model.l1_regularisation_weight
     
     def l1_norm(self, inputs):
         l1_norm = 0

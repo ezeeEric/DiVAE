@@ -16,42 +16,31 @@ import torch
 torch.manual_seed(1)
 import numpy as np
 import matplotlib.pyplot as plt
+import hydra
+from omegaconf import OmegaConf
 
 #self defined imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
-
 from utils.plotProvider import PlotProvider
 
-import hydra
-from omegaconf import DictConfig, OmegaConf
 
-@hydra.main(config_path="../configs/hydra", config_name="config")
+@hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
-    #TODO hydra update: set global variable for package
-    # config=cfg
-    global config
-    config = cfg
 
     #TODO hydra update: output path not needed anymore
-    config.output_path=os.getcwd()
-
-    #check if output path exists, create if necessary
-    # if not os.path.exists(config.output_path):
-    #     print(os.getcwd())
-    #     os.mkdir(config.output_path)
-    
+    cfg.output_path=os.getcwd()
+    print(OmegaConf.to_yaml(cfg))
     #create model handling object
     from utils.modelMaker import ModelMaker
-    modelMaker=ModelMaker(cfg=config)
+    modelMaker=ModelMaker(cfg=cfg)
 
     #run the ting
-    run(modelMaker)
+    run(modelMaker, config=cfg)
 
-
-def run(modelMaker=None):
+def run(modelMaker=None, config=None):
 
     #container for our Dataloaders
     dataMgr=DataManager(cfg=config)

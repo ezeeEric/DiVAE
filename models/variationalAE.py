@@ -23,15 +23,21 @@ class VariationalAutoEncoder(AutoEncoder):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        enc_node_list=[self._flat_input_size]+self._config.encoder_hidden_nodes
+        #TODO hydra: is there a built-in feature for list comprehension?
+        enc_hidden_nodes=[int(i) for i in self._config.model.encoder_hidden_nodes.split(",")]
+
+        enc_node_list=[self._flat_input_size]+enc_hidden_nodes
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
             self._encoder_nodes.append(nodepair)
         
-        self._reparam_nodes=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
-        
-        dec_node_list=[self._latent_dimensions]+self._config.model.decoder_hidden_nodes+[self._flat_input_size]
+        self._reparam_nodes=(enc_hidden_nodes[-1],self._latent_dimensions)
+       
+        #TODO hydra: is there a built-in feature for list comprehension?
+        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
+
+        dec_node_list=[self._latent_dimensions]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -73,7 +79,7 @@ class VariationalAutoEncoder(AutoEncoder):
     
     def generate_samples(self):
         # Draw a rnd var z~N[0,1] and feed it through the decoder
-        rnd_input=torch.randn((config.n_generate_samples,self._reparam_nodes[1]))
+        rnd_input=torch.randn((self._config.n_generate_samples,self._reparam_nodes[1]))
         zeta=rnd_input 
         output = self.decoder.decode(zeta)
         output.detach()
@@ -82,7 +88,7 @@ class VariationalAutoEncoder(AutoEncoder):
     def loss(self, input_data, fwd_out):
         logger.debug("VAE Loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data, reduction='sum')
+        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, self._flat_input_size), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         kl_loss = 0.5 * torch.sum(1 + fwd_out.logvar - fwd_out.mu.pow(2) - torch.exp(fwd_out.logvar))
@@ -95,8 +101,8 @@ class VariationalAutoEncoder(AutoEncoder):
         z = self.encoder.encode(input_data.view(-1, self._flat_input_size))
         out.mu = self._reparam_layers['mu'](z)
         out.logvar = self._reparam_layers['var'](z)
-        out.zetas = self.reparameterize(out.mu, out.logvar)
-        out.output_data = self.decoder.decode(out.zetas)
+        out.zeta = self.reparameterize(out.mu, out.logvar)
+        out.output_data = self.decoder.decode(out.zeta)
 
         return out
 
