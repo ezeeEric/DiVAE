@@ -14,13 +14,16 @@ from utils.distributions import SpikeAndExponentialSmoother
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
+# from DiVAE import config
 
 
 #Base Class
 class Network(nn.Module):
-    def __init__(self, node_sequence=None, activation_fct=None, create_module_list=True,**kwargs):
+    def __init__(self, node_sequence=None, activation_fct=None, create_module_list=True, cfg=None, **kwargs):
         super(Network, self).__init__(**kwargs)
+        
+        self._config=cfg
+        
         self._layers=nn.ModuleList([]) if create_module_list else None
         self._node_sequence=node_sequence
         self._activation_fct=activation_fct
@@ -264,7 +267,7 @@ class HierarchicalEncoder(BasicEncoder):
             logit=current_net(current_input)
             #build the posterior distribution for this hierarchy
             #TODO this needs a switch: training smoothing, evaluation bernoulli
-            posterior_dist = self.smoothing_distribution(logit=logit,beta=config.beta_smoothing_fct)
+            posterior_dist = self.smoothing_distribution(logit=logit,beta=self._config.model.beta_smoothing_fct)
             #construct the zeta values (reparameterised logits, posterior samples)
             samples=posterior_dist.reparameterise()
             posterior.append(posterior_dist)

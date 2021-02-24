@@ -79,7 +79,7 @@ def run(tuner=None, config=None):
     activation_fct=torch.nn.ReLU() if config.model.activation_fct.lower()=="relu" else None    
     configString="_".join(str(i) for i in [config.model.model_type,config.data.data_type,config.n_train_samples,
                                         config.n_test_samples,config.engine.n_batch_samples,
-                                        config.n_epochs,config.engine.learning_rate,
+                                        config.engine.n_epochs,config.engine.learning_rate,
                                         config.model.n_latent_hierarchy_lvls,
                                         config.model.n_latent_nodes,
                                         config.model.activation_fct,
@@ -125,7 +125,7 @@ def run(tuner=None, config=None):
     if not config.load_model:
         gif_frames=[]
         logger.debug("Start Epoch Loop")
-        for epoch in range(1, config.n_epochs+1):   
+        for epoch in range(1, config.engine.n_epochs+1):   
             train_loss = tuner.train(epoch)       
             test_loss, input_data, output_data, zetas, labels  = tuner.test()
 
@@ -134,7 +134,7 @@ def run(tuner=None, config=None):
                 if config.data.data_type=='calo':
                     gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/200810_reco_{1}.png".format(config.output_path,configString),do_gif=True))
                 else:
-                    gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
+                    gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.engine.n_epochs, train_loss=train_loss,test_loss=test_loss))
             
             if model.type=="DiVAE" and config.sample_from_prior:
                 random_samples=model.generate_samples()

@@ -86,12 +86,13 @@ class DiVAE(AutoEncoderBase):
             n_latent_nodes=self.n_latent_nodes,
             n_encoder_layer_nodes=self.n_encoder_layer_nodes,
             n_encoder_layers=self.n_encoder_layers,
-            skip_latent_layer=False)
+            skip_latent_layer=False,
+            cfg=self._config)
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
         #Identity output_activation_fct, as this sigmoid is called manually in forward()
-        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Identity())
+        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Identity(), cfg=self._config)
 
     def _create_prior(self):
         logger.debug("_create_prior")
@@ -287,11 +288,11 @@ class DiVAE(AutoEncoderBase):
     def generate_samples(self):
         prior_samples=[]
         #how many samples (i.e. digits) to look at
-        for i in range(0,config.n_generate_samples):
+        for i in range(0,self._config.n_generate_samples):
             prior_sample = self.prior.get_samples(
                 n_latent_nodes=self.n_latent_nodes,
-                n_gibbs_sampling_steps=config.n_gibbs_sampling_steps, 
-                sampling_mode=config.sampling_mode)
+                n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps, 
+                sampling_mode=self._config.engine.sampling_mode)
             prior_sample = torch.cat(prior_sample)
             prior_samples.append(prior_sample)
         

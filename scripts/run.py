@@ -96,7 +96,6 @@ def run(modelMaker=None):
 
     #instantiate and register optimisation algorithm
     modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
-    exit()
 
     #no need to train if we load from file.
     if config.load_model:
@@ -108,7 +107,7 @@ def run(modelMaker=None):
         logger.info("Model loaded from file, skipping training.")
         pass
     else:
-        for epoch in range(1, config.n_epochs+1):   
+        for epoch in range(1, config.engine.n_epochs+1):   
             train_loss = modelMaker.fit(epoch=epoch, is_training=True)
             test_loss = modelMaker.fit(epoch=epoch, is_training=False)
     
@@ -126,7 +125,7 @@ def run(modelMaker=None):
         #call a forward method derivative - for output object.
         eval_output=modelMaker.evaluate()
         #create plotting infrastructure
-        pp=PlotProvider(config_string=config_string,date_tag=date)
+        pp=PlotProvider(config_string=config_string,date_tag=date, cfg=config)
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()
         #create plot
