@@ -8,3 +8,4 @@ calo_input_piplus: /Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5
 frac_test_dataset: 0.5
 frac_train_dataset: 0.01
 pre_processed_input_file: /Users/drdre/inputz/MNIST/preprocessed/full.pkl
+mnist_input: /Users/drdre/inputz/

@@ -60,6 +60,7 @@ def run(modelMaker=None):
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
     dataMgr.pre_processing()
+    exit()
 
     #add dataMgr instance to modelMaker namespace
     modelMaker.register_dataManager(dataMgr)
@@ -68,12 +69,11 @@ def run(modelMaker=None):
     date=datetime.datetime.now().strftime("%y%m%d")
 
     config_string="_".join(str(i) for i in [config.model_type,
-                                            config.data_type,
+                                            config.data.data_type,
                                             date,
                                             config.tag
                                             ])
-    exit()
-    if config.data_type=='calo': 
+    if config.data.data_type=='calo': 
         config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
     
     # overwrite config string with file name if we load from file

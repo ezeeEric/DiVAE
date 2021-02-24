@@ -45,7 +45,7 @@ class PlotProvider(object):
         #the container with our output objects to plot
         input_container.print()
 
-        if config.data_type.lower()=="mnist":
+        if config.data.data_type.lower()=="mnist":
             from utils.helpers import plot_MNIST_output, plot_latent_space
             
             #default plot method
@@ -62,7 +62,7 @@ class PlotProvider(object):
                     out_file="{0}/{2}_latSpace_{1}".format(config.output_path,self.config_string,self.date_tag),
                     dimensions=0)
         
-        elif config.data_type.lower()=="calo":
+        elif config.data.data_type.lower()=="calo":
 
             from utils.helpers import plot_calo_images, plot_calo_image_sequence
             
@@ -76,14 +76,14 @@ class PlotProvider(object):
                 test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
                 plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date))
         else:
-            raise Exception("Data type {0} unknown to PlotProvider".format(config.data_type))
+            raise Exception("Data type {0} unknown to PlotProvider".format(config.data.data_type))
         
         #TODO gif_output, plot_latent_space
         #     gif_frames=[]
         #     for epoch in range(1, config.n_epochs+1):   
         #         test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
         #         if config.create_gif:
-        #             if config.data_type=='calo':
+        #             if config.data.data_type=='calo':
         #                 gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
         #             else:
         #                 gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))

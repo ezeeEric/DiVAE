@@ -36,14 +36,14 @@ def load_data(config=None):
     logger.debug("Loading Data")
 
     train_loader,test_loader=None,None
-    if config.data_type.lower()=="mnist":
+    if config.data.data_type.lower()=="mnist":
         train_loader,test_loader=loadMNIST(
-            batch_size=config.n_batch_samples,
+            batch_size=config.engine.n_batch_samples,
             num_evts_train=config.n_train_samples,
             num_evts_test=config.n_test_samples, 
-            binarise=config.binarise_dataset)
+            binarise=config.data.binarise_dataset)
 
-    elif config.data_type.lower()=="calo":
+    elif config.data.data_type.lower()=="calo":
         #TODO move to config
         inFiles={
             'gamma':    '/Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5',
@@ -54,7 +54,7 @@ def load_data(config=None):
             inFiles=inFiles,
             ptype=config.particle_type,
             layers=config.calo_layers,
-            batch_size=config.n_batch_samples,
+            batch_size=config.engine.n_batch_samples,
             num_evts_train=config.n_train_samples,
             num_evts_test=config.n_test_samples, 
             )
@@ -99,10 +99,10 @@ def run(tuner=None, config=None):
     activation_fct=torch.nn.ReLU() if config.activation_fct.lower()=="relu" else None    
     
     configString="_".join(str(i) for i in [config.model_type,
-                                        config.data_type,
+                                        config.data.data_type,
                                         config.n_train_samples,
                                         config.n_test_samples,
-                                        config.n_batch_samples,
+                                        config.engine.n_batch_samples,
                                         config.n_epochs,
                                         config.learning_rate,
                                         config.n_latent_hierarchy_lvls,
@@ -112,7 +112,7 @@ def run(tuner=None, config=None):
     
     date=datetime.datetime.now().strftime("%y%m%d")
 
-    if config.data_type=='calo': 
+    if config.data.data_type=='calo': 
         configString+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
 
     #TODO wrap all these in a container class
@@ -163,7 +163,7 @@ def run(tuner=None, config=None):
 
             if config.create_gif:
                 #TODO improve
-                if config.data_type=='calo':
+                if config.data.data_type=='calo':
                     gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(config.output_path,configString,date),do_gif=True))
                 else:
                     gif_frames.append(gif_output(input_data, output_data, epoch=epoch, max_epochs=config.n_epochs, train_loss=train_loss,test_loss=test_loss))
@@ -207,7 +207,7 @@ def run(tuner=None, config=None):
             generate_samples_svae(tuner._model, configString)
 
     if config.create_plots:
-        if config.data_type=='calo':
+        if config.data.data_type=='calo':
             if config.model_type=="sVAE":
                 test_loss, input_data, output_data, zetas, labels   = tuner.test()
                 plot_calo_image_sequence(input_data, output_data, input_dimension, output="{0}/{2}_{1}.png".format(config.output_path,configString,date))
