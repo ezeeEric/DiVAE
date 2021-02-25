@@ -3,6 +3,10 @@ model_type: sparseAE
 l1_regularisation_weight: 100
 #TODO hydra: this is duplicated... how to use hierarchy properly?
 activation_fct: RELU
-encoder_hidden_nodes: 512,256
-decoder_hidden_nodes: 256,512
+encoder_hidden_nodes: 
+  - 512
+  -	256
+decoder_hidden_nodes: 
+  - 256
+  - 512
 n_latent_nodes: 16

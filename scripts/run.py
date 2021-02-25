@@ -33,6 +33,7 @@ def main(cfg=None):
     #TODO hydra update: output path not needed anymore
     cfg.output_path=os.getcwd()
     print(OmegaConf.to_yaml(cfg))
+    # exit()
     #create model handling object
     from utils.modelMaker import ModelMaker
     modelMaker=ModelMaker(cfg=cfg)

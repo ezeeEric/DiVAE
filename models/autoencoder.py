@@ -25,18 +25,14 @@ class AutoEncoder(AutoEncoderBase):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        #TODO hydra: is there a built-in feature for list comprehension?
-        enc_hidden_nodes=[int(i) for i in self._config.model.encoder_hidden_nodes.split(",")]
-
+        enc_hidden_nodes=list(self._config.model.encoder_hidden_nodes)
         enc_node_list=[self._flat_input_size]+enc_hidden_nodes+[self._latent_dimensions]
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
             self._encoder_nodes.append(nodepair)
         
-        #TODO hydra: is there a built-in feature for list comprehension?
-        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
-
+        dec_hidden_node_list=list(self._config.model.decoder_hidden_nodes)
         dec_node_list=[self._latent_dimensions]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
