@@ -7,8 +7,6 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 import torch
 from torch.utils.data import DataLoader
 
-from DiVAE import logging
-logger = logging.getLogger(__name__)
 from DiVAE import config
 
 from data.mnist import get_mnist_datasets
@@ -128,7 +126,7 @@ class DataManager(object):
                 )
             
         #set batch size to full test dataset size - limitation only by hardware
-        batch_size= len(test_dataset) if num_evts_test<0 else num_evts_test
+        batch_size= len(test_dataset) # if num_evts_test<0 else num_evts_test
         
         #create the DataLoader for the training dataset
         train_loader=DataLoader(   

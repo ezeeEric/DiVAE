@@ -4,7 +4,6 @@ Main executable. The run() method steers data loading, model creation, training
 and evaluation by calling the respective interfaces.
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
-Modified by : Abhi (abhishek@myumanitoba.ca)
 """
 
 # System imports
@@ -14,15 +13,21 @@ import datetime
 # ML imports
 import torch
 
-# Package imports
-from DiVAE import logging
-logger = logging.getLogger(__name__)
+# Local imports
 from DiVAE import config
 
+# Weights and Biases
+import wandb
+wandb.init(project="divae", entity="qvae")
 
+# Local imports
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
 from utils.modelMaker import ModelMaker
+
+# Logging for testing
+from DiVAE import logging
+logger = logging.getLogger(__name__)
 
 torch.manual_seed(1)
 
@@ -57,7 +62,7 @@ def run(modelMaker=None):
     if config.activation_fct.lower()=="relu":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
     elif config.activation_fct.lower()=="tanh":
-        modelMaker.default_activation_fct=torch.nn.ReLU() 
+        modelMaker.default_activation_fct=torch.nn.Tanh() 
     else:
         logger.warning("Setting identity as default activation fct")
         modelMaker.default_activation_fct=torch.nn.Identity() 
@@ -69,6 +74,9 @@ def run(modelMaker=None):
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
+    
+    # Log metrics with wandb
+    wandb.watch(model)
 
     #instantiate and register optimisation algorithm
     modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)

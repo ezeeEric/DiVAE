@@ -50,7 +50,6 @@ class Configaro(object):
         if self.defaultArgs.debug:
             logging.root.setLevel( logging.DEBUG )
         
-        #strict does not allow for duplicated entries!
         self.cfgParser = ConfigParser()
         #set case sensitive cfg file
         self.cfgParser.optionxform = str

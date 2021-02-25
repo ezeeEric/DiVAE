@@ -12,10 +12,13 @@ import numpy as np
 #needs python3.7
 #from contextlib import nullcontext
 
+# Logging for testing
 from DiVAE import logging
-# from DiVAE import logging
 logger = logging.getLogger(__name__)
+
 from DiVAE import config
+
+import wandb
 
 #import defined models
 from models.autoencoder import AutoEncoder
@@ -40,9 +43,7 @@ class ModelMaker(object):
     def __init__(self):
         self._model=None
         self._optimiser=None
-
         self.data_mgr=None
-
         self._default_activation_fct=None
     
     def init_model(self,load_from_file=False):
@@ -58,7 +59,6 @@ class ModelMaker(object):
                             activation_fct=self._default_activation_fct)
                 return self.model
         logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")
-        raise NotImplementedError
 
     @property
     def model(self):
@@ -81,6 +81,8 @@ class ModelMaker(object):
         logger.info("Saving Model")
         f=open(os.path.join(config.output_path,"model_{0}.pt".format(config_string)),'wb')
         torch.save(self._model.state_dict(),f)
+        # Save model to wandb
+        torch.save(self._model.state_dict(), os.path.join(wandb.run.dir, 'model.pt'))
         f.close()
         return
 
@@ -142,25 +144,16 @@ class ModelMaker(object):
         #structure like below.
         if is_training:
             self._model.train()
-            #context=nullcontext()
             data_loader=self.data_mgr.train_loader
         else:
             self._model.eval()            
-            #context=torch.no_grad()
             data_loader=self.data_mgr.test_loader
 
         total_loss = 0
         with torch.set_grad_enabled(is_training):
             for batch_idx, (input_data, label) in enumerate(data_loader):
-                #set gradients to zero before backprop. Needed in pytorch because
-                #the default is to sum up gradients for successive backprop. steps.
-                #that is useful for RNNs but not here.
                 self._optimiser.zero_grad()
-                #forward call
-                #output is a namespace with members as added in the forward call
-                #and subsequently used in loss()
                 fwd_output=self._model(input_data)
-                #loss call
                 batch_loss = self._model.loss(input_data,fwd_output)
                 
                 if is_training:
@@ -169,7 +162,6 @@ class ModelMaker(object):
                 
                 total_loss += batch_loss.item()
 
-                # Output logging
                 if is_training and batch_idx % 100 == 0:
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(
                                             epoch,
@@ -180,13 +172,15 @@ class ModelMaker(object):
         
         outstring="Train" if is_training else "Test"
         total_loss /= len(data_loader.dataset)
+        
+        # wandb logging
+        wandb.log({"total_loss": total_loss})
+        
         logger.info("Total Loss ({0}):\t {1:.4f}".format(outstring,total_loss))
         return total_loss
     
     def evaluate(self):
-        #similar to test call of fit() method but returning values
-        self._model.eval()
-        #do plots on test dataset           
+        self._model.eval()      
         data_loader=self.data_mgr.test_loader
 
         with torch.no_grad():
@@ -200,5 +194,3 @@ if __name__=="__main__":
     logger.info("Willkommen!")
     mm=ModelMaker()
     logger.info("Success!")
-
-

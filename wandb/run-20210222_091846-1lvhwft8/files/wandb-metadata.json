@@ -1,0 +1,27 @@
+{
+    "os": "Linux-4.15.0-129-generic-x86_64-with-debian-buster-sid",
+    "python": "3.6.10",
+    "heartbeatAt": "2021-02-22T17:18:49.052854",
+    "startedAt": "2021-02-22T17:18:46.959518",
+    "docker": null,
+    "gpu": "GeForce RTX 2080 Ti",
+    "gpu_count": 8,
+    "cpu_count": 64,
+    "cuda": null,
+    "args": [
+        "-c",
+        "configs/general_eric.cfg,configs/mnist/default_divae_mnist.cfg,configs/task.cfg"
+    ],
+    "state": "running",
+    "codePath": "scripts/run.py",
+    "program": "scripts/run.py",
+    "git": {
+        "remote": "https://github.com/ezeeEric/DiVAE.git",
+        "commit": "f4ab87b609994878ab72b3e5758646bdcce401cd"
+    },
+    "email": "abhishek@myumanitoba.ca",
+    "root": "/home/akajal/DiVAE",
+    "host": "triumf-ml1",
+    "username": "akajal",
+    "executable": "/opt/conda/bin/python3.6m"
+}

@@ -12,7 +12,7 @@ from utils.networks import HierarchicalEncoder,BasicDecoder
 from models.rbm import RBM
 from utils.distributions import Bernoulli
 
-#logging module with handmade settings.
+#logging module with handmade settings. (for testing)
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 from DiVAE import config

@@ -1,0 +1,1 @@
+{"format": "torch", "nodes": [{"name": "_activation_fct", "id": 140676055909432, "class_name": "ReLU()", "parameters": [], "output_shape": [[400, 200]], "num_parameters": []}], "edges": []}
