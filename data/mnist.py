@@ -36,7 +36,7 @@ class MNISTImageContainer(Subset):
         #return dimension of MNIST dataset example (28x28)
         return [self.dataset[0][0].squeeze().shape]
 
-def get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=None):
+def get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=None, input_path=""):
 
     #this list of functions is applied to our input data in succession
     transform_functions=[transforms.ToTensor()]
@@ -51,13 +51,13 @@ def get_mnist_datasets(frac_train_dataset=1, frac_test_dataset=0.9, binarise=Non
         transform_functions.append(Binarise_Tensor_Threshold(0.5))
 
     train_dataset_full=datasets.MNIST(
-                        root='./data/', 
+                        root=input_path, 
                         train=True, 
                         download=True, 
                         transform=transforms.Compose(transform_functions)
                     )
     test_dataset_full=datasets.MNIST(
-                        root='./data/', 
+                        root=input_path, 
                         train=False, 
                         transform=transforms.Compose(transform_functions)
                     )

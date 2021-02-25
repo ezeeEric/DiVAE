@@ -14,15 +14,12 @@ import torch.nn as nn
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
-
-from DiVAE import config
 
 from utils.helpers import OutputContainer
 
 # Base Class for Autoencoder models
 class AutoEncoderBase(nn.Module):
-    def __init__(self, flat_input_size, train_ds_mean, activation_fct,  **kwargs):
+    def __init__(self, flat_input_size, train_ds_mean, activation_fct, cfg, **kwargs):
         """
         """
 
@@ -32,17 +29,18 @@ class AutoEncoderBase(nn.Module):
             assert len(flat_input_size)>0, "Input dimension not defined, needed for model structure"
         else:
             assert flat_input_size>0, "Input dimension not defined, needed for model structure"
-        assert config is not None, "Config not defined"
-        assert config.n_latent_nodes is not None and config.n_latent_nodes>0, "Latent dimension must be >0"
-        
+        # assert config is not None, "Config not defined"
+        # assert config.model.n_latent_nodes is not None and config.model.n_latent_nodes>0, "Latent dimension must be >0"
+
         self._model_type=None
         """a short tag identifying the einput_dataact model, such as AE, VAE, diVAE...
         """
 
         # the main configuration namespace returned by configaro
-        self._config=config
+        self._config=cfg
+
         # number of nodes in latent layer
-        self._latent_dimensions=config.n_latent_nodes
+        self._latent_dimensions=self._config.model.n_latent_nodes
         
         if len(flat_input_size)>1:
             logger.warning("Received multiple input dimension numbers. Assuming multiple inputs.")
@@ -78,6 +76,9 @@ class AutoEncoderBase(nn.Module):
     def _create_decoder(self):
         raise NotImplementedError
     
+    def generate_samples(self):
+        raise NotImplementedError
+
     def __repr__(self):
         parameter_string="\n".join([str(par.shape) if isinstance(par,torch.Tensor) else str(par)  for par in self.__dict__.items()])
         return parameter_string

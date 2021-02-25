@@ -93,27 +93,27 @@ class ModelTuner(object):
 
 			#each of the architectures implement slightly different forward
 			#calls and loss functions
-			if self._config.model_type=='AE':
+			if self._config.model.model_type=='AE':
 				outputData, zeta = self._model(input_data)
 				train_loss = self._model.loss(input_data,outputData)
 
-			elif self._config.model_type=='VAE':
+			elif self._config.model.model_type=='VAE':
 				outputData, mu, logvar, zeta = self._model(input_data)
 				train_loss = self._model.loss(input_data, outputData, mu, logvar)	
 			
-			elif self._config.model_type=='cVAE':
+			elif self._config.model.model_type=='cVAE':
 				outputData, mu, logvar, zeta = self._model(input_data,label)
 				train_loss = self._model.loss(input_data, outputData, mu, logvar)	
 				
-			elif self._config.model_type=='sVAE':
+			elif self._config.model.model_type=='sVAE':
 				outputData, mu, logvar = self._model(input_data,label)
 				train_loss = self._model.loss(input_data, outputData, mu, logvar)	
 
-			elif self._config.model_type=='HiVAE':
+			elif self._config.model.model_type=='HiVAE':
 				outputData, mu_list, logvar_list, zeta_list = self._model(input_data)
 				train_loss = self._model.loss(input_data, outputData, mu_list, logvar_list)	
 
-			elif self._config.model_type=='DiVAE':
+			elif self._config.model.model_type=='DiVAE':
 				outputData, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(input_data)
 				train_loss = self._model.loss(input_data, outputData, output_activations, output_distribution, posterior_distribution, posterior_samples)
@@ -145,7 +145,7 @@ class ModelTuner(object):
 
 		with torch.no_grad():
 			for batch_idx, (input_data, label) in enumerate(self.test_loader):
-				if self._config.model_type=='AE':
+				if self._config.model.model_type=='AE':
 					outputData, zeta = self._model(input_data)
 					test_loss += self._model.loss(input_data,outputData)
 					
@@ -153,7 +153,7 @@ class ModelTuner(object):
 					zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
 					label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
 				
-				elif self._config.model_type=='VAE':
+				elif self._config.model.model_type=='VAE':
 					outputData, mu, logvar, zeta = self._model(input_data)
 					test_loss += self._model.loss(input_data, outputData, mu, logvar)
 					
@@ -161,22 +161,22 @@ class ModelTuner(object):
 					zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
 					label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
 				
-				elif self._config.model_type=='cVAE':
+				elif self._config.model.model_type=='cVAE':
 					outputData, mu, logvar, zeta = self._model(input_data,label)
 					test_loss += self._model.loss(input_data, outputData, mu, logvar)	
 				
-				elif self._config.model_type=='sVAE':
+				elif self._config.model.model_type=='sVAE':
 					outputData, mu, logvar = self._model(input_data,label)
 					test_loss += self._model.loss(input_data, outputData, mu, logvar)	
 				
-				elif self._config.model_type=='HiVAE':
+				elif self._config.model.model_type=='HiVAE':
 					outputData, mu_list, logvar_list, zeta_hierarchy_list = self._model(input_data)
 					test_loss += self._model.loss(input_data, outputData, mu_list, logvar_list)
 					for zeta in zeta_hierarchy_list:
 						zeta_list=zeta.detach().numpy() if zeta_list is None else np.append(zeta_list,zeta.detach().numpy(),axis=0) 
 					label_list=label.detach().numpy() if label_list is None else np.append(label_list,label.detach().numpy(),axis=0) 
 				
-				elif self._config.model_type=='DiVAE':
+				elif self._config.model.model_type=='DiVAE':
 					outputData, output_activations, output_distribution,\
 						 posterior_distribution, posterior_samples = self._model(input_data)
 					# test_loss += self._model.loss(input_data, outputData, output_activations, output_distribution, posterior_distribution, posterior_samples)

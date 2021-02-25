@@ -12,15 +12,20 @@ import datetime
 
 # ML imports
 import torch
-
-# Local imports
-from DiVAE import config
+torch.manual_seed(1)
+import numpy as np
+import matplotlib.pyplot as plt
+import hydra
+from omegaconf import OmegaConf
 
 # Weights and Biases
 import wandb
 wandb.init(project="divae", entity="qvae")
 
-# Local imports
+#self defined imports
+from DiVAE import logging
+logger = logging.getLogger(__name__)
+
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
 from utils.modelMaker import ModelMaker
@@ -31,10 +36,24 @@ logger = logging.getLogger(__name__)
 
 torch.manual_seed(1)
 
-def run(modelMaker=None):
+
+@hydra.main(config_path="../configs", config_name="config")
+def main(cfg=None):
+
+    #TODO hydra update: output path not needed anymore
+    cfg.output_path=os.getcwd()
+    print(OmegaConf.to_yaml(cfg))
+    #create model handling object
+    from utils.modelMaker import ModelMaker
+    modelMaker=ModelMaker(cfg=cfg)
+
+    #run the ting
+    run(modelMaker, config=cfg)
+
+def run(modelMaker=None, config=None):
 
     #container for our Dataloaders
-    dataMgr=DataManager()
+    dataMgr=DataManager(cfg=config)
     #initialise data loaders
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
@@ -46,27 +65,30 @@ def run(modelMaker=None):
     #set parameters relevant for this run
     date=datetime.datetime.now().strftime("%y%m%d")
 
-    config_string="_".join(str(i) for i in [config.model_type,
-                                            config.data_type,
+    config_string="_".join(str(i) for i in [config.model.model_type,
+                                            config.data.data_type,
                                             date,
                                             config.tag
                                             ])
-    
-    if config.data_type=='calo': 
-        config_string+="_nlayers_{0}_{1}".format(len(config.calo_layers),config.particle_type)
-    
+    if config.data.data_type=='calo': 
+        config_string+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
     # overwrite config string with file name if we load from file
     if config.load_model:
         config_string=config.input_model.split("/")[-1].replace('.pt','')
     
-    if config.activation_fct.lower()=="relu":
+    if config.model.activation_fct.lower()=="relu":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
+<<<<<<< HEAD
     elif config.activation_fct.lower()=="tanh":
         modelMaker.default_activation_fct=torch.nn.Tanh() 
+=======
+    elif config.model.activation_fct.lower()=="tanh":
+        modelMaker.default_activation_fct=torch.nn.ReLU() 
+>>>>>>> c45666b7d346811be652ca6dff961e6966529e6d
     else:
         logger.warning("Setting identity as default activation fct")
         modelMaker.default_activation_fct=torch.nn.Identity() 
-    
+
     #instantiate the chosen model
     #loads from file 
     model=modelMaker.init_model(load_from_file=config.load_model)
@@ -79,8 +101,8 @@ def run(modelMaker=None):
     wandb.watch(model)
 
     #instantiate and register optimisation algorithm
-    modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    
+    modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
+
     #no need to train if we load from file.
     if config.load_model:
         #return pre-trained model after loading from file
@@ -91,7 +113,7 @@ def run(modelMaker=None):
         logger.info("Model loaded from file, skipping training.")
         pass
     else:
-        for epoch in range(1, config.n_epochs+1):   
+        for epoch in range(1, config.engine.n_epochs+1):   
             train_loss = modelMaker.fit(epoch=epoch, is_training=True)
             test_loss = modelMaker.fit(epoch=epoch, is_training=False)
     
@@ -109,7 +131,7 @@ def run(modelMaker=None):
         #call a forward method derivative - for output object.
         eval_output=modelMaker.evaluate()
         #create plotting infrastructure
-        pp=PlotProvider(config_string=config_string,date_tag=date)
+        pp=PlotProvider(config_string=config_string,date_tag=date, cfg=config)
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()
         #create plot
@@ -119,6 +141,7 @@ def run(modelMaker=None):
 if __name__=="__main__":
     logger.info("Starting main executable.")
 
+<<<<<<< HEAD
     #check if output path exists, create if necessary
     if not os.path.exists(config.output_path):
         os.mkdir(config.output_path)
@@ -128,5 +151,8 @@ if __name__=="__main__":
 
     #run the ting
     run(modelMaker)
+=======
+    main()
+>>>>>>> c45666b7d346811be652ca6dff961e6966529e6d
 
     logger.info("Auf Wiedersehen!")

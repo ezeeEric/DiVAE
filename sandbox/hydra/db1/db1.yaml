@@ -1,0 +1,8 @@
+db1:
+  user: edrechsl
+  myopt1: 1,2,3
+  myopt2: devs
+  loompa: 10                  # Simple value
+  zippity: ${db1.loompa}     # Value interpolation
+  do: "oompa ${db1.loompa}"  # String interpolation
+  waldo: ???                  # Missing value, must be populated prior to access

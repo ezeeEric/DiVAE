@@ -1,0 +1,6 @@
+# @package _group_
+model_type: VAE
+activation_fct: RELU
+encoder_hidden_nodes: 512,256
+decoder_hidden_nodes: 256,512
+n_latent_nodes: 16
