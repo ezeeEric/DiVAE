@@ -18,7 +18,6 @@ from utils.helpers import OutputContainer
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
 
 class SequentialVariationalAutoEncoder(AutoEncoder):
 
@@ -38,6 +37,8 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         input_enc=0
         input_dec=0
 
+        # input_sizes=self._flat_input_size if isinstance(self._flat_input_size,list) else [self._flat_input_size]
+
         for i,dim in enumerate(self._flat_input_size):
             self._reparam_nodes[i]=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
 
@@ -56,13 +57,13 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
                 nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
                 self._encoder_nodes[i].append(nodepair)
             
-            dec_node_list=[input_dec]+self._config.decoder_hidden_nodes+[dim]
+            dec_node_list=[input_dec]+self._config.model.decoder_hidden_nodes+[dim]
 
             for num_nodes in range(0,len(dec_node_list)-1):
                 nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
                 self._decoder_nodes[i].append(nodepair)
         self.dummy=nn.ModuleList([])
-   
+
     #TODO this is an outrageous hack. The VAE submodules in this class are
     #somehow not properly registered. This means no nn.module.parameters are broadcasted
     #from this class, despite each VAE being properly registered. Something
@@ -117,8 +118,8 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
     def generate_samples(self):
 
         outputs=[]
-        for i,dim in enumerate(self._flat_input_size):
-            rnd_input=torch.randn((config.frac_train_dataset,self._latent_dimensions))
+        for i,it_dim in enumerate(self._flat_input_size):
+            rnd_input=torch.randn((config.n_generate_samples,self._latent_dimensions))
             rnd_input_cat=torch.cat([rnd_input]+ outputs, dim=1)
             output = self._autoencoders[i].decoder.decode(rnd_input_cat)
             output.detach()
@@ -137,7 +138,6 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
 
     def loss(self, input_data, fwd_out):
 
-        
         total_loss=0
         for i,dim in enumerate(self._flat_input_size):
             #fwd out contains lists with each member being the output for one layer.
@@ -151,11 +151,6 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
                 mu=fwd_out.mus[i],
                 logvar=fwd_out.logvars[i]
             )
-            print(tmp_out)
-
-            input_data=input_data[i]
-            input_data_rec=fwd_out.outputs[i]
-            mu=fwd_out.mus[i]
-            logvar=fwd_out.logvars[i]
-            total_loss+=self._autoencoders[i].loss(input_data, tmp_out)
+            in_data=input_data[i].view(-1, dim)
+            total_loss+=self._autoencoders[i].loss(in_data, tmp_out)
         return total_loss

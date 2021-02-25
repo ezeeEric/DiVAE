@@ -29,13 +29,13 @@ class AutoEncoderBase(nn.Module):
         else:
             assert input_dimension>0, "Input dimension not defined, needed for model structure"
         assert config is not None, "Config not defined"
-        assert config.n_latent_nodes is not None and config.n_latent_nodes>0, "Latent dimension must be >0"
+        assert config.model.n_latent_nodes is not None and config.model.n_latent_nodes>0, "Latent dimension must be >0"
         
         self._model_type=None
         self._config=config
-        self._latent_dimensions=config.n_latent_nodes
+        self._latent_dimensions=config.model.n_latent_nodes
         logger.warning("Taking all input dimensions for sVAE. Only first for other models.")
-        self._input_dimension=input_dimension if self._config.model_type=="sVAE" else input_dimension[0]
+        self._input_dimension=input_dimension if self._config.model.model_type=="sVAE" else input_dimension[0]
         self._activation_fct=activation_fct
         self._dataset_mean=None
 
@@ -85,7 +85,7 @@ class AutoEncoder(AutoEncoderBase):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
             self._encoder_nodes.append(nodepair)
        
-        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[self._latent_dimensions]+self._config.model.decoder_hidden_nodes+[self._input_dimension]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -134,7 +134,7 @@ class VariationalAutoEncoder(AutoEncoder):
         
         self._reparam_nodes=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
         
-        dec_node_list=[self._latent_dimensions]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[self._latent_dimensions]+self._config.model.decoder_hidden_nodes+[self._input_dimension]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -216,10 +216,10 @@ class HierarchicalVAE(AutoEncoder):
    
         self._model_type="HiVAE"
 
-        self._reparamNodes=(self._config.n_encoder_layer_nodes,self._latent_dimensions)  
+        self._reparamNodes=(self._config.model.n_encoder_layer_nodes,self._latent_dimensions)  
 
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+self._config.model.decoder_hidden_nodes+[self._input_dimension]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -236,17 +236,17 @@ class HierarchicalVAE(AutoEncoder):
         logger.debug("_create_encoder")
         return HierarchicalEncoder(
             input_dimension=self._input_dimension,
-            n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls,
+            n_latent_hierarchy_lvls=self._config.model.n_latent_hierarchy_lvls,
             n_latent_nodes=self._latent_dimensions,
-            n_encoder_layer_nodes=self._config.n_encoder_layer_nodes,
-            n_encoder_layers=self._config.n_encoder_layers,
+            n_encoder_layer_nodes=self._config.model.n_encoder_layer_nodes,
+            n_encoder_layers=self._config.model.n_encoder_layers,
             skip_latent_layer=True)
 
     #TODO should this be part of encoder?
     def _create_reparameteriser(self,act_fct=None):
         logger.debug("ERROR _create_encoder dummy implementation")
         hierarchical_repara_layers=nn.ModuleDict()
-        for lvl in range(self._config.n_latent_hierarchy_lvls):
+        for lvl in range(self._config.model.n_latent_hierarchy_lvls):
             hierarchical_repara_layers['mu_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
             hierarchical_repara_layers['var_'+str(lvl)]=nn.Linear(self._reparamNodes[0],self._reparamNodes[1])
         return hierarchical_repara_layers
@@ -303,7 +303,7 @@ class DiVAE(AutoEncoderBase):
         # self._decoder_nodes=[(self._latent_dimensions,128),]
         #TODO can this be done through inheritance?
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._input_dimension]
+        dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+self._config.model.decoder_hidden_nodes+[self._input_dimension]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -311,29 +311,29 @@ class DiVAE(AutoEncoderBase):
 
         #TODO change names globally
         #TODO one wd factor for both SimpleDecoder and encoder
-        self.weight_decay_factor=self._config.weight_decay_factor
+        self.weight_decay_factor=self._config.engine.weight_decay_factor
         
         #ENCODER SPECIFICS
     
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hierarchy level an output layer is formed.
-        self.n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls
+        self.n_latent_hierarchy_lvls=self._config.model.n_latent_hierarchy_lvls
 
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy. Also number of input nodes to the SimpleDecoder, first layer
-        self.n_latent_nodes=self._config.n_latent_nodes
+        self.n_latent_nodes=self._config.model.n_latent_nodes
 
         #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. These layers map
         #input to the latent layer. 
-        self.n_encoder_layer_nodes=self._config.n_encoder_layer_nodes
+        self.n_encoder_layer_nodes=self._config.model.n_encoder_layer_nodes
         
         #TODO this could be solved more elegantly. FOr example replace
         #"skip_latent layer" with something actually useful 
         # assert self.n_latent_nodes==self.n_encoder_layer_nodes, "Number of nodes in last det encoder layer must be the same as num latent unit"
 
         # number of deterministic layers in each conditional p(z_i | z_{k<i})
-        self.n_encoder_layers=self._config.n_encoder_layers
+        self.n_encoder_layers=self._config.model.n_encoder_layers
 
         self._train_bias=None
 
@@ -372,7 +372,7 @@ class DiVAE(AutoEncoderBase):
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_nodes_per_layer=self._config.n_latent_hierarchy_lvls*self._latent_dimensions//2
+        num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
         return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):

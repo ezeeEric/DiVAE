@@ -15,7 +15,7 @@ from utils.distributions import Bernoulli
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-from DiVAE import config
+
 
 class DiVAE(AutoEncoderBase):
     def __init__(self, **kwargs):
@@ -24,7 +24,11 @@ class DiVAE(AutoEncoderBase):
         
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
-        dec_node_list=[(int(self._latent_dimensions*self._config.n_latent_hierarchy_lvls))]+self._config.decoder_hidden_nodes+[self._flat_input_size]
+        
+        #TODO hydra: is there a built-in feature for list comprehension?
+        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
+
+        dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -32,23 +36,23 @@ class DiVAE(AutoEncoderBase):
 
         #TODO change names globally
         #TODO one wd factor for both SimpleDecoder and encoder
-        self.weight_decay_factor=self._config.weight_decay_factor
+        self.weight_decay_factor=self._config.engine.weight_decay_factor
         
         #ENCODER SPECIFICS
         #number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
-        self.n_latent_hierarchy_lvls=self._config.n_latent_hierarchy_lvls
+        self.n_latent_hierarchy_lvls=self._config.model.n_latent_hierarchy_lvls
 
         #number of latent nodes in the prior - output nodes for each level of
         #the hierarchy.
-        self.n_latent_nodes=self._config.n_latent_nodes
+        self.n_latent_nodes=self._config.model.n_latent_nodes
         
         # number of layers in encoder before latent layer. These layers map
         #input to the latent layer. 
-        self.n_encoder_layers=self._config.n_encoder_layers
+        self.n_encoder_layers=self._config.model.n_encoder_layers
 
         #each hierarchy has NN with n_encoder_layers_enc layers
         #number of deterministic nodes in each encoding layer. 
-        self.n_encoder_layer_nodes=self._config.n_encoder_layer_nodes
+        self.n_encoder_layer_nodes=self._config.model.n_encoder_layer_nodes
 
         #added to output activation of last decoder layer in forward call
         self._train_bias=self.set_train_bias()
@@ -83,16 +87,17 @@ class DiVAE(AutoEncoderBase):
             n_latent_nodes=self.n_latent_nodes,
             n_encoder_layer_nodes=self.n_encoder_layer_nodes,
             n_encoder_layers=self.n_encoder_layers,
-            skip_latent_layer=False)
+            skip_latent_layer=False,
+            cfg=self._config)
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
         #Identity output_activation_fct, as this sigmoid is called manually in forward()
-        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Identity())
+        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Identity(), cfg=self._config)
 
     def _create_prior(self):
         logger.debug("_create_prior")
-        num_rbm_nodes_per_layer=self._config.n_latent_hierarchy_lvls*self._latent_dimensions//2
+        num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
         return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
@@ -284,11 +289,11 @@ class DiVAE(AutoEncoderBase):
     def generate_samples(self):
         prior_samples=[]
         #how many samples (i.e. digits) to look at
-        for i in range(0,config.n_generate_samples):
+        for i in range(0,self._config.n_generate_samples):
             prior_sample = self.prior.get_samples(
                 n_latent_nodes=self.n_latent_nodes,
-                n_gibbs_sampling_steps=config.n_gibbs_sampling_steps, 
-                sampling_mode=config.sampling_mode)
+                n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps, 
+                sampling_mode=self._config.engine.sampling_mode)
             prior_sample = torch.cat(prior_sample)
             prior_samples.append(prior_sample)
         

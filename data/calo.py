@@ -90,15 +90,20 @@ class CaloImageContainer(Dataset):
         #if we request a subset of the calorimeter layers only
         if len(self._layer_subset)>0:
             for l in self._layer_subset:
-                images.append(self._images[l]._get_image(rnd_idx))
+                if len(l)>0:
+                    images.append(self._images[l]._get_image(rnd_idx))
         else:
             images=[img._get_image(rnd_idx) for l, img in self._images.items()]
         return images, (norm_true_energy, norm_overflow_energy)
     
     def get_flattened_input_sizes(self):
         sizes=[]
-        for l,img in self._images.items():
-            sizes.append(img.get_flattened_input_size())
+        
+        layers=self._layer_subset if len(self._layer_subset)>0 else self._images.keys()
+        for l in layers:
+            #TODO remove this if once working with HYDRA
+            if len(l)>0:
+                sizes.append(self._images[l].get_flattened_input_size())
         return sizes
     
     def get_input_dimensions(self):
@@ -157,7 +162,6 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     train_idx_list=idx_list[:num_evts_train]
     test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
     val_idx_list=idx_list[(num_evts_train+num_evts_test):num_evts_total]
-
 
     train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list,label="train")
     test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list,label="test")

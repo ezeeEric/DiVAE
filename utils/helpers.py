@@ -230,7 +230,7 @@ def plot_calo_image_sequence(input_data, output_data, input_dimension, layer=0, 
             im.callbacksSM.connect('changed', update)
         fig.suptitle('Geant4 vs. sVAE Calorimeter shower')
         # plt.tight_layout()
-        fig.savefig(output.replace(".png","_{0}.png".format(i)))
+        fig.savefig(out_file.replace(".png","_{0}.png".format(i)))
 
 @gif.frame
 def plot_calo_images(input_data, output_data, layer=0, n_samples=5, out_file="./output/testCalo.png", do_gif=False):
