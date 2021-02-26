@@ -6,7 +6,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
-from models.variationalAE import VariationalAutoEncoder
+from models.models.variationalAE import VariationalAutoEncoder
 
 #logging module with handmade settings.
 from DiVAE import logging

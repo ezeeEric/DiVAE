@@ -6,7 +6,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 import torch
 from torch import nn
-from models.autoencoder import AutoEncoder
+from models.models.autoencoder import AutoEncoder
 
 from utils.networks import HierarchicalEncoder
 

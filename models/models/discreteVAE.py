@@ -6,10 +6,10 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch
 from torch import nn
-from models.autoencoderbase import AutoEncoderBase
+from models.models.autoencoderbase import AutoEncoderBase
 
 from utils.networks import HierarchicalEncoder,BasicDecoder
-from models.rbm import RBM
+from models.models.rbm import RBM
 from utils.distributions import Bernoulli
 
 #logging module with handmade settings.

@@ -5,7 +5,7 @@ Vanilla Autoencoder Model
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 from torch import nn
-from models.autoencoderbase import AutoEncoderBase
+from models.models.autoencoderbase import AutoEncoderBase
 
 from utils.networks import BasicEncoder,BasicDecoder
 

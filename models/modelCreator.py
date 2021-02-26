@@ -13,13 +13,13 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 #import defined models
-from models.autoencoder import AutoEncoder
-from models.sparseAE import SparseAutoEncoder
-from models.variationalAE import VariationalAutoEncoder
-from models.hierarchicalVAE import HierarchicalVAE
-from models.conditionalVAE import ConditionalVariationalAutoEncoder
-from models.sequentialVAE import SequentialVariationalAutoEncoder
-from models.discreteVAE import DiVAE
+from models.models.autoencoder import AutoEncoder
+from models.models.sparseAE import SparseAutoEncoder
+from models.models.variationalAE import VariationalAutoEncoder
+from models.models.hierarchicalVAE import HierarchicalVAE
+from models.models.conditionalVAE import ConditionalVariationalAutoEncoder
+from models.models.sequentialVAE import SequentialVariationalAutoEncoder
+from models.models.discreteVAE import DiVAE
 
 model_dict={
     "AE": AutoEncoder, 

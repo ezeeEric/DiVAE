@@ -11,8 +11,8 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch
 import torch.nn as nn
-from models.autoencoder import AutoEncoder
-from models.variationalAE import VariationalAutoEncoder
+from models.models.autoencoder import AutoEncoder
+from models.models.variationalAE import VariationalAutoEncoder
 
 from utils.helpers import OutputContainer
 
