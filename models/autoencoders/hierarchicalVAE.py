@@ -6,9 +6,9 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 import torch
 from torch import nn
-from models.models.autoencoder import AutoEncoder
+from models.autoencoders.autoencoder import AutoEncoder
 
-from utils.networks import HierarchicalEncoder
+from models.networks.hierarchicalEncoder import HierarchicalEncoder
 
 #logging module with handmade settings.
 from DiVAE import logging

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
 from engine.engine import Engine
-from models.models.modelCreator import ModelCreator
+from models.modelCreator import ModelCreator
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
