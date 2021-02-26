@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
-
+from engine.engine import Engine
+from models.modelCreator import ModelCreator
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
@@ -33,15 +34,14 @@ def main(cfg=None):
     #TODO hydra update: output path not needed anymore
     cfg.output_path=os.getcwd()
     print(OmegaConf.to_yaml(cfg))
-    # exit()
+
     #create model handling object
-    from utils.modelMaker import ModelMaker
-    modelMaker=ModelMaker(cfg=cfg)
-
+    modelCreator=ModelCreator(cfg=cfg)
+    
     #run the ting
-    run(modelMaker, config=cfg)
+    run(modelCreator, config=cfg)
 
-def run(modelMaker=None, config=None):
+def run(modelCreator=None, config=None):
 
     #container for our Dataloaders
     dataMgr=DataManager(cfg=config)
@@ -49,9 +49,6 @@ def run(modelMaker=None, config=None):
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
     dataMgr.pre_processing()
-
-    #add dataMgr instance to modelMaker namespace
-    modelMaker.register_dataManager(dataMgr)
 
     #set parameters relevant for this run
     date=datetime.datetime.now().strftime("%y%m%d")
@@ -68,23 +65,29 @@ def run(modelMaker=None, config=None):
         config_string=config.input_model.split("/")[-1].replace('.pt','')
     
     if config.model.activation_fct.lower()=="relu":
-        modelMaker.default_activation_fct=torch.nn.ReLU() 
+        modelCreator.default_activation_fct=torch.nn.ReLU() 
     elif config.model.activation_fct.lower()=="tanh":
-        modelMaker.default_activation_fct=torch.nn.ReLU() 
+        modelCreator.default_activation_fct=torch.nn.ReLU() 
     else:
         logger.warning("Setting identity as default activation fct")
-        modelMaker.default_activation_fct=torch.nn.Identity() 
+        modelCreator.default_activation_fct=torch.nn.Identity() 
+
 
     #instantiate the chosen model
     #loads from file 
-    model=modelMaker.init_model(load_from_file=config.load_model)
+    model=modelCreator.init_model(load_from_file=config.load_model,dataMgr=dataMgr)
     #create the NN infrastructure
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
-
+    
+    engine=Engine()
+    #add dataMgr instance to engine namespace
+    engine.data_mgr=dataMgr
     #instantiate and register optimisation algorithm
-    modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
+    engine.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
+    #add the model instance to the engine namespace
+    engine.model = model
 
     #no need to train if we load from file.
     if config.load_model:
@@ -92,33 +95,33 @@ def run(modelMaker=None, config=None):
         #Attention: the order here matters - the model must be initialised and
         #networks created. Internally, weights and biases of the NN are set to the
         #pretrained values but need to have been instantiated first.
-        modelMaker.load_model()
+        modelCreator.load_model()
         logger.info("Model loaded from file, skipping training.")
         pass
     else:
         for epoch in range(1, config.engine.n_epochs+1):   
-            train_loss = modelMaker.fit(epoch=epoch, is_training=True)
-            test_loss = modelMaker.fit(epoch=epoch, is_training=False)
+            train_loss = engine.fit(epoch=epoch, is_training=True)
+            test_loss = engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
     if config.save_model:
-        modelMaker.save_model(config_string)
-        modelMaker.save_config(config_string)
+        modelCreator.save_model(config_string)
 
     #sample generation
     if config.generate_samples:
-        output_generated=modelMaker.generate_samples()
+        output_generated=engine.generate_samples()
 
     if config.create_plots:
         #call a forward method derivative - for output object.
-        eval_output=modelMaker.evaluate()
+        eval_output=engine.evaluate()
         #create plotting infrastructure
         pp=PlotProvider(config_string=config_string,date_tag=date, cfg=config)
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()
         #create plot
         pp.plot(eval_output)
+
     logger.info("run() finished successfully.")
 
 if __name__=="__main__":
