@@ -27,9 +27,7 @@ class HierarchicalVAE(AutoEncoder):
 
         self._decoder_nodes=[]
 
-        #TODO hydra: is there a built-in feature for list comprehension?
-        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
-
+        dec_hidden_node_list=list(self._config.model.decoder_hidden_nodes)
         dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):

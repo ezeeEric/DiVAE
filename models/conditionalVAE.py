@@ -21,9 +21,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         self._encoder_nodes=[]
         self._decoder_nodes=[]
         
-        #TODO hydra: is there a built-in feature for list comprehension?
-        enc_hidden_nodes=[int(i) for i in self._config.model.encoder_hidden_nodes.split(",")]
-
+        enc_hidden_nodes=list(self._config.model.encoder_hidden_nodes)
         enc_node_list=[self._flat_input_size+1]+enc_hidden_nodes
 
         for num_nodes in range(0,len(enc_node_list)-1):
@@ -32,9 +30,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         
         self._reparam_nodes=(enc_hidden_nodes[-1],self._latent_dimensions)
         
-        #TODO hydra: is there a built-in feature for list comprehension?
-        dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
-
+        dec_hidden_node_list=list(self._config.model.decoder_hidden_nodes)
         dec_node_list=[self._latent_dimensions+1]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
@@ -66,8 +62,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         #how many samples to generate per number
         n_samples_per_nr=int(self._config.n_generate_samples)
         
-        #TODO hydra list comprehension
-        target_nrs=[int(i) for i in self._config.model.target_numbers.split(",")]
+        target_nrs=list(self._config.model.target_numbers)
         for i in target_nrs:
             rnd_input=torch.randn((n_samples_per_nr,self._reparam_nodes[1]))
             target=torch.full((n_samples_per_nr, 1), i, dtype=torch.float32)
