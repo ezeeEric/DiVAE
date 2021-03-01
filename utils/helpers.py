@@ -1,5 +1,3 @@
-
-
 """
 Unsorted helper functions
 

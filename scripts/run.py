@@ -20,7 +20,6 @@ from omegaconf import OmegaConf
 
 # Weights and Biases
 import wandb
-wandb.init(project="divae", entity="qvae")
 
 #self defined imports
 from DiVAE import logging
@@ -36,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 torch.manual_seed(1)
 
-
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
 
@@ -48,7 +46,10 @@ def main(cfg=None):
     modelMaker=ModelMaker(cfg=cfg)
 
     #run the ting
+    wandb.init(entity="qvae", project="divae", config=cfg)
+    print(cfg)
     run(modelMaker, config=cfg)
+    
 
 def run(modelMaker=None, config=None):
 
@@ -77,14 +78,10 @@ def run(modelMaker=None, config=None):
         config_string=config.input_model.split("/")[-1].replace('.pt','')
     
     if config.model.activation_fct.lower()=="relu":
-        modelMaker.default_activation_fct=torch.nn.ReLU() 
-<<<<<<< HEAD
-    elif config.activation_fct.lower()=="tanh":
-        modelMaker.default_activation_fct=torch.nn.Tanh() 
-=======
+        modelMaker.default_activation_fct=torch.nn.ReLU()
     elif config.model.activation_fct.lower()=="tanh":
-        modelMaker.default_activation_fct=torch.nn.ReLU() 
->>>>>>> c45666b7d346811be652ca6dff961e6966529e6d
+        modelMaker.default_activation_fct=torch.nn.Tanh() 
+
     else:
         logger.warning("Setting identity as default activation fct")
         modelMaker.default_activation_fct=torch.nn.Identity() 
@@ -140,19 +137,5 @@ def run(modelMaker=None, config=None):
 
 if __name__=="__main__":
     logger.info("Starting main executable.")
-
-<<<<<<< HEAD
-    #check if output path exists, create if necessary
-    if not os.path.exists(config.output_path):
-        os.mkdir(config.output_path)
-    
-    #create model handling object
-    modelMaker=ModelMaker()
-
-    #run the ting
-    run(modelMaker)
-=======
     main()
->>>>>>> c45666b7d346811be652ca6dff961e6966529e6d
-
     logger.info("Auf Wiedersehen!")

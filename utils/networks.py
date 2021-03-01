@@ -3,7 +3,6 @@ Autoencoders
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
-
 import torch
 import torch.nn as nn
 from copy import copy
@@ -39,24 +38,12 @@ class Network(nn.Module):
             self._layers.append(
                 nn.Linear(node[0],node[1])
             )
-        return
+        return 
 
     def get_activation_fct(self):        
         return "{0}".format(self._activation_fct).replace("()","")
 
-#Implements encode()
-class BasicEncoder(Network):
-    def __init__(self,**kwargs):
-        super(BasicEncoder, self).__init__(**kwargs)
 
-    def encode(self, x):
-        logger.debug("encode")
-        for layer in self._layers:
-            if self._activation_fct:
-                x=self._activation_fct(layer(x))
-            else:
-                x=layer(x)
-        return x
 
 #Implements decode()
 class BasicDecoder(Network):
@@ -162,15 +149,7 @@ class SimpleDecoder(Network):
         return x_prime
 
 class HierarchicalEncoder(BasicEncoder):
-    def __init__(self, 
-        activation_fct=nn.Tanh(),
-        input_dimension=784,
-        n_latent_hierarchy_lvls=4,
-        n_latent_nodes=100,
-        n_encoder_layer_nodes=200,
-        n_encoder_layers=2,
-        skip_latent_layer=False, 
-        **kwargs):
+    def __init__(self, activation_fct=nn.Tanh(), input_dimension=784, n_latent_hierarchy_lvls=4, n_latent_nodes=100, n_encoder_layer_nodes=200, n_encoder_layers=2, skip_latent_layer=False, **kwargs):
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
         #TODO this assumes MNIST dataset without sequential layers

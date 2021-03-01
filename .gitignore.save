@@ -7,9 +7,6 @@ __pycache__/
 *.swp
 .vscode/
 output/
-outputs/
-wandb/
-MNIST/
 sources/
 .gif
 venv_divae/
@@ -17,10 +14,13 @@ venv_divae/
 # C extensions
 *.so
 
-# Distribution / packaging
+# Distri
+bution / packaging
 .Python
 build/
-develop-eggs/
+develop
+
+:q-eggs/
 dist/
 downloads/
 eggs/
@@ -38,7 +38,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+# :qPyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest

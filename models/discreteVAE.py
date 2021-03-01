@@ -8,14 +8,13 @@ import torch
 from torch import nn
 from models.autoencoderbase import AutoEncoderBase
 
-from utils.networks import HierarchicalEncoder,BasicDecoder
+from utils.networks import HierarchicalEncoder, BasicDecoder
 from models.rbm import RBM
 from utils.distributions import Bernoulli
 
 #logging module with handmade settings. (for testing)
 from DiVAE import logging
 logger = logging.getLogger(__name__)
-
 
 class DiVAE(AutoEncoderBase):
     def __init__(self, **kwargs):
@@ -27,7 +26,6 @@ class DiVAE(AutoEncoderBase):
         
         #TODO hydra: is there a built-in feature for list comprehension?
         dec_hidden_node_list=[int(i) for i in self._config.model.decoder_hidden_nodes.split(",")]
-
         dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+dec_hidden_node_list+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
@@ -37,6 +35,9 @@ class DiVAE(AutoEncoderBase):
         #TODO change names globally
         #TODO one wd factor for both SimpleDecoder and encoder
         self.weight_decay_factor=self._config.engine.weight_decay_factor
+        
+        # TODO - Model attributes can be directly imported from the config model dict
+        # by iterating over and using (k,v) in dict.items() and using setattr(self, k, v)
         
         #ENCODER SPECIFICS
         #number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
@@ -109,25 +110,72 @@ class DiVAE(AutoEncoderBase):
         logger.debug("loss")
 
         #1) Gradients of KL Divergence     
-        kl_loss=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
-
+        kl_loss_per_sample=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
+        
+        # Bug 1 - KL loss per sample returns an int of 0
+        try:
+            kl_loss = torch.mean(kl_loss_per_sample)
+        except:
+            kl_loss = torch.mean(torch.tensor(float(kl_loss_per_sample)))
+            
         #2) AE loss
         ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
         #loss is the sum of all variables (pixels) per sample (event in batch)
-        ae_loss=torch.sum(ae_loss_matrix,1)
-
+        ae_loss_per_sample = torch.sum(ae_loss_matrix,1)
+        ae_loss = torch.mean(ae_loss_per_sample) 
+        
+        neg_elbo = ae_loss + kl_loss
+        
         #3) weight decay loss
         #TODO add this for encoder, decoder, prior
-
-        #4) final loss
-        neg_elbo_per_sample=ae_loss+kl_loss
-        #the mean of the elbo over all samples is taken as measure for loss
-        neg_elbo=torch.mean(neg_elbo_per_sample)    
-
         #TODO include the weight decay regularisation in the loss to penalise
         #complexity
         loss=neg_elbo#+weight_decay_loss  
-        return loss
+        return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss}
+    
+    def kl_divergence(self, posterior_distribution , posterior_samples):
+        logger.debug("kl_divergence")
+        #posterior_distribution: distribution with logits from each hierarchy level/layer
+        #posterior_samples: reparameterised output of posterior_distribution
+        if len(posterior_distribution)>1 and self.training:
+
+            logit_list=[]
+            samples_marginalised=[]
+            for lvl in range(len(posterior_distribution)):
+
+                current_post_dist=posterior_distribution[lvl]
+                current_post_samples=posterior_samples[lvl]
+
+                logits=torch.clamp(current_post_dist.logits,min=-88,max=88)
+                logit_list.append(logits)
+        
+                #TODO this step is not clear anymore: where was this motivated
+                #in the paper? 
+                if lvl==len(posterior_distribution)-1:
+                    samples_marginalised.append(torch.sigmoid(logits))
+                else:
+                    zero_mask=torch.zeros(current_post_samples.size())
+                    one_mask=torch.ones(current_post_samples.size())
+                    post_sample_marginalised=torch.where(current_post_samples>0.0,one_mask,zero_mask)
+                    samples_marginalised.append(post_sample_marginalised)
+
+            logits_concat=torch.cat(logit_list,1)
+            samples_marginalised_concat=torch.cat(samples_marginalised,1)
+
+            kl_div_posterior_distribution=self.kl_div_posterior_gradient(
+                posterior_logits=logits_concat,
+                posterior_binary_samples=samples_marginalised_concat)
+                
+            kl_div_prior=self.kl_div_prior_gradient(
+                posterior_logits=logits_concat,
+                posterior_binary_samples=samples_marginalised_concat)  #DVAE Eq11 - gradient of prior   
+            kld=kl_div_prior+kl_div_posterior_distribution 
+            return kld
+        else: # either this posterior only has one latent layer or we are not looking at training
+            # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
+            # #the mean-field solution (n_latent_hierarchy_lvls == 1) reduces to log_ratio = 0.
+            # logger.debug("kld for evaluation/training of one layer posterior")
+            return 0
 
     def kl_div_prior_gradient(self, posterior_logits, posterior_binary_samples):
         logger.debug("kl_div_prior_gradient")
@@ -239,50 +287,6 @@ class DiVAE(AutoEncoderBase):
         kld_per_sample = torch.sum(undifferentiated_component * posterior_probs, dim=1)
 
         return kld_per_sample
-
-    def kl_divergence(self, posterior_distribution , posterior_samples):
-        logger.debug("kl_divergence")
-        #posterior_distribution: distribution with logits from each hierarchy level/layer
-        #posterior_samples: reparameterised output of posterior_distribution
-        if len(posterior_distribution)>1 and self.training:
-
-            logit_list=[]
-            samples_marginalised=[]
-            for lvl in range(len(posterior_distribution)):
-
-                current_post_dist=posterior_distribution[lvl]
-                current_post_samples=posterior_samples[lvl]
-
-                logits=torch.clamp(current_post_dist.logits,min=-88,max=88)
-                logit_list.append(logits)
-        
-                #TODO this step is not clear anymore: where was this motivated
-                #in the paper? 
-                if lvl==len(posterior_distribution)-1:
-                    samples_marginalised.append(torch.sigmoid(logits))
-                else:
-                    zero_mask=torch.zeros(current_post_samples.size())
-                    one_mask=torch.ones(current_post_samples.size())
-                    post_sample_marginalised=torch.where(current_post_samples>0.0,one_mask,zero_mask)
-                    samples_marginalised.append(post_sample_marginalised)
-
-            logits_concat=torch.cat(logit_list,1)
-            samples_marginalised_concat=torch.cat(samples_marginalised,1)
-
-            kl_div_posterior_distribution=self.kl_div_posterior_gradient(
-                posterior_logits=logits_concat,
-                posterior_binary_samples=samples_marginalised_concat)
-                
-            kl_div_prior=self.kl_div_prior_gradient(
-                posterior_logits=logits_concat,
-                posterior_binary_samples=samples_marginalised_concat)  #DVAE Eq11 - gradient of prior   
-            kld=kl_div_prior+kl_div_posterior_distribution 
-            return kld
-        else: # either this posterior only has one latent layer or we are not looking at training
-            # #this posterior is not hierarchical - a closed analytical form for the KLD term can be constructed
-            # #the mean-field solution (n_latent_hierarchy_lvls == 1) reduces to log_ratio = 0.
-            # logger.debug("kld for evaluation/training of one layer posterior")
-            return 0
 
     #TODO experimental for now. The sampling technique in the prior is not
     #cross checked with anything.
