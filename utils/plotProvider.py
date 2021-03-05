@@ -6,10 +6,13 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import os
+import torch
 import numpy as np
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
+
+from utils.helpers import plot_MNIST_output, plot_latent_space
 
 class PlotProvider(object):
     def __init__(self,config_string="default",date_tag="000000", cfg=None):
@@ -29,7 +32,19 @@ class PlotProvider(object):
     def data_dimensions(self, dimensions):
         self._data_dimensions=dimensions
 
-    def plot_generative_output(self):
+    def plot_generative_output(self, input_data):
+        #TODO this is a quick hack to use the same plotting function for input
+        #vs output and generated samples
+        n_split=input_data.size()[0]//2
+        in_data_1,in_data_2=torch.split(input_data,split_size_or_sections=int(n_split),dim=0)
+        in_data_1=in_data_1.detach().numpy()
+        in_data_2=in_data_2.detach().numpy()
+        
+        plot_MNIST_output(input_data=in_data_1, 
+            output_data=in_data_2,
+            n_samples=n_split, 
+            out_file="{0}/{2}_{1}_generated.png".format(self._config.output_path,self.config_string,self.date_tag))
+            
         # from utils.helpers import plot_generative_output
         # plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
         # def generate_samples_svae(model, outstring=""):
@@ -46,7 +61,6 @@ class PlotProvider(object):
         input_container.print()
 
         if self._config.data.data_type.lower()=="mnist":
-            from utils.helpers import plot_MNIST_output, plot_latent_space
             
             #default plot method
             plot_MNIST_output(input_data=input_container.input_data, 
