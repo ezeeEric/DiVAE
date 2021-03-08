@@ -25,13 +25,13 @@ def sigmoid_cross_entropy_with_logits(logits, labels):
 
 
 class Bernoulli(Distribution):
-    def __init__(self, logit=None,  beta=1,  **kwargs):
+    def __init__(self, logits=None,  beta=1,  **kwargs):
         super(Bernoulli, self).__init__(**kwargs)
         #this is the raw (no output fct) output data of the latent layer stored
         #in this distribution.
-        assert logit is not None, 'Distributions must be initialised with logit'
+        assert logits is not None, 'Distributions must be initialised with logit'
         assert not beta<=0, 'beta larger 0'
-        self.logits = logit
+        self.logits = logits
         self.beta = beta
 
     def reparameterise(self):
@@ -46,12 +46,12 @@ class Bernoulli(Distribution):
     def entropy(self):
         """
         Computes the entropy of the bernoulli distribution using:
-            x - x * z + log(1 + exp(-x)),  where x is logits, and z=sigmoid(x).
+            q - q * z + log(1 + exp(-x)),  where x is logits, and z=sigmoid(x).
         Returns: 
             ent: entropy
         """
-        x = torch.sigmoid(self.logits)
-        entropy = sigmoid_cross_entropy_with_logits(logits=self.logit_mu, labels=x)
+        q = torch.sigmoid(self.logits)
+        entropy = sigmoid_cross_entropy_with_logits(logits=self.logits, labels=q)
         return entropy
 
     def log_prob_per_var(self, samples):
@@ -102,27 +102,6 @@ class SpikeAndExponentialSmoother(Bernoulli):
         z  = torch.sigmoid(x)
         ent=x-x*z+torch.log(1+torch.exp(-x))
         return ent
-    
-class MixtureExponentialSmoother(Bernoulli):
-    """
-    Mixture of overlapping exponential distributions from DVAE++
-    """
-    def __init__(self,**kwargs):
-        super(MixtureExponentialSmoother, self).__init__(**kwargs)
-        
-    def reparameterize(self):
-        """
-        ICDF of mixture of exponential distributions (Eq. 3, DVAE++)
-        """
-        q = torch.sigmoid(self.logits)
-        q = torch.clamp(q, min=1e-7, max=1.-1e-7)
-        
-        rho = torch.rand(q.size())
-        b = (rho + torch.exp(-self.beta)*(q - rho))/((1. - q) - 1.)
-        c = -(q*torch.exp(-self.beta))/(1. - q)
-        
-        zeta = (-1./self.beta)*(torch.log((-b + torch.sqrt(b**2 - 4*c))/2.))
-        return zeta
 
 def visualise_distributions(rho,q,samples):
     import matplotlib.pyplot as plt

@@ -9,7 +9,7 @@ __pycache__/
 output/
 outputs/
 wandb/
-MNIST/
+data/MNIST/
 sources/
 .gif
 venv_divae/
@@ -138,3 +138,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Data files
+
