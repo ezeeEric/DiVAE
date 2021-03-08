@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 
 from networks.basicEncoder import BasicEncoder
+from utils.distributions import SpikeAndExponentialSmoother
 
 class HierarchicalEncoder(BasicEncoder):
     def __init__(self, activation_fct=nn.Tanh(), input_dimension=784, n_latent_hierarchy_lvls=4, n_latent_nodes=100, n_encoder_layer_nodes=200, n_encoder_layers=2, skip_latent_layer=False, **kwargs):

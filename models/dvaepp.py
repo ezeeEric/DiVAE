@@ -1,1 +1,37 @@
-{'tag': 'default_210203', 'debug': False, 'load_data_from_pkl': 0, 'load_model': 0, 'input_model': 0, 'output_path': '/home/akajal/DiVAE/outputs/2021-02-28/17-24-07', 'model': {'model_type': 'DiVAE', 'activation_fct': 'tanh', 'beta_smoothing_fct': 4, 'decoder_hidden_nodes': '200, 200', 'n_encoder_layer_nodes': 200, 'n_encoder_layers': 2, 'n_latent_hierarchy_lvls': 4, 'n_latent_nodes': 100}, 'data': {'data_type': 'mnist', 'frac_test_dataset': 0.5, 'frac_train_dataset': 0.01, 'calo_layers': 'layer_0,layer_1,layer_2', 'particle_type': 'gamma', 'binarise_dataset': 'threshold', 'calo_input_eplus': '/Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5', 'calo_input_gamma': '/Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5', 'calo_input_piplus': '/Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5', 'pre_processed_input_file': '/Users/drdre/inputz/MNIST/preprocessed/full.pkl', 'mnist_input': '/home/akajal/DiVAE'}, 'engine': {'learning_rate': 0.001, 'n_batch_samples': 400, 'n_epochs': 10, 'n_gibbs_sampling_steps': 100, 'sampling_mode': 'gibbs_flat', 'weight_decay_factor': 0.0001}, 'create_gif': 0, 'create_plots': 1, 'generate_samples': 0, 'n_generate_samples': 10, 'n_plot_samples': 5, 'save_model': 1}
+"""
+DVAE++ PyTorch
+
+Author: Abhi (abhishek@myumanitoba.ca)
+"""
+
+# PyTorch imports
+import torch
+
+# DiVAE imports
+from models.autoencoders.discreteVAE import DiVAE
+from models.priors.rbm import RBM
+
+from utils.distributions import Bernoulli
+
+from networks.hiEncoder import HierarchicalEncoder
+from networks.basicDecoder import BasicDecoder
+
+
+class DiVAEPP(DiVAE):
+    
+    def __init__(self, **kwargs):
+        super(DiVAE, self).__init__(**kwargs)
+        self._model_type = "DiVAEPP"
+        
+    
+            
+        
+        
+            
+        
+            
+        
+    
+    
+
+

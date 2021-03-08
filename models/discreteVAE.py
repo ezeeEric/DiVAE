@@ -36,8 +36,8 @@ class DiVAE(AutoEncoderBase):
         #TODO one wd factor for both SimpleDecoder and encoder
         self.weight_decay_factor=self._config.engine.weight_decay_factor
         
-        # TODO - Model attributes can be directly imported from the config model dict
-        # by iterating over and using (k,v) in dict.items() and using setattr(self, k, v)
+        # TODO - Model attributes may be directly imported from the config model dict
+        # by iterating over and using (k,v) in dict.items() and setattr(self, k, v)
         
         #ENCODER SPECIFICS
         #number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
@@ -99,12 +99,32 @@ class DiVAE(AutoEncoderBase):
     def _create_prior(self):
         logger.debug("_create_prior")
         num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
-        return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
+        return RBM(n_visible=num_rbm_nodes_per_layer, n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
         #TODO Implement weight decay
         logger.debug("ERROR weight_decay_loss NOT IMPLEMENTED")
         return NotImplementedError
+    
+    def forward(self, input_data):
+        logger.debug("forward")
+
+        #see definition for explanation
+        out=self._output_container.clear()
+
+        #TODO data prep - study if this does good things
+        input_data_centered=input_data.view(-1, self._flat_input_size)-self._dataset_mean
+        #Step 1: Feed data through encoder 
+        out.posterior_distributions, out.posterior_samples = self.encoder.hierarchical_posterior(input_data_centered)
+        posterior_samples_concat=torch.cat(out.posterior_samples,1)
+        #Step 2: take samples zeta and reconstruct output with decoder
+        output_activations = self.decoder.decode(posterior_samples_concat)
+
+        out.output_activations = output_activations+self._train_bias
+        out.output_distribution = Bernoulli(logit=out.output_activations)
+        out.output_data = torch.sigmoid(out.output_distribution.logits)
+        
+        return out
 
     def loss(self, input_data, fwd_out):
         logger.debug("loss")
@@ -309,26 +329,6 @@ class DiVAE(AutoEncoderBase):
         output.detach()
 
         return output
-
-    def forward(self, input_data):
-        logger.debug("forward")
-
-        #see definition for explanation
-        out=self._output_container.clear()
-
-        #TODO data prep - study if this does good things
-        input_data_centered=input_data.view(-1, self._flat_input_size)-self._dataset_mean
-        #Step 1: Feed data through encoder 
-        out.posterior_distributions, out.posterior_samples = self.encoder.hierarchical_posterior(input_data_centered)
-        posterior_samples_concat=torch.cat(out.posterior_samples,1)
-        #Step 2: take samples zeta and reconstruct output with decoder
-        output_activations = self.decoder.decode(posterior_samples_concat)
-
-        out.output_activations = output_activations+self._train_bias
-        out.output_distribution = Bernoulli(logit=out.output_activations)
-        out.output_data = torch.sigmoid(out.output_distribution.logits)
-        
-        return out
 
 if __name__=="__main__":
     logger.debug("Testing Model Setup") 

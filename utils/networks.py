@@ -43,7 +43,19 @@ class Network(nn.Module):
     def get_activation_fct(self):        
         return "{0}".format(self._activation_fct).replace("()","")
 
+#Implements encode()
+class BasicEncoder(Network):
+    def __init__(self,**kwargs):
+        super(BasicEncoder, self).__init__(**kwargs)
 
+    def encode(self, x):
+        logger.debug("encode")
+        for layer in self._layers:
+            if self._activation_fct:
+                x=self._activation_fct(layer(x))
+            else:
+                x=layer(x)
+        return x
 
 #Implements decode()
 class BasicDecoder(Network):

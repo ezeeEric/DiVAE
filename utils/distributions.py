@@ -31,7 +31,7 @@ class Bernoulli(Distribution):
         #in this distribution.
         assert logit is not None, 'Distributions must be initialised with logit'
         assert not beta<=0, 'beta larger 0'
-        self.logits=logit
+        self.logits = logit
         self.beta = beta
 
     def reparameterise(self):
@@ -81,14 +81,14 @@ class SpikeAndExponentialSmoother(Bernoulli):
         #TODO cross check this
         #this is the approximate posterior probability
         q = torch.sigmoid(self.logits)
-        #clip the probabilities 
+        #clip the probabilities (used in numerical division)
         q = torch.clamp(q,min=1e-7,max=1.-1e-7)
         #this is a tensor of uniformly sampled random number in [0,1)
         rho=torch.rand(q.size())
         zero_mask = zeros(q.size())
         ones=torch.ones(q.size())
         #calculate ICDF of SpikeAndExponential
-        interior_log = ((rho+q-ones)/q)*(np.exp(self.beta)-1)+ones
+        interior_log = ((rho+q-ones)/q)*(torch.exp(self.beta)-1)+ones
         conditional_log = (1./self.beta)*torch.log(interior_log)
         zeta=torch.where(rho >= 1 - q, conditional_log, zero_mask)
         return zeta
@@ -102,6 +102,27 @@ class SpikeAndExponentialSmoother(Bernoulli):
         z  = torch.sigmoid(x)
         ent=x-x*z+torch.log(1+torch.exp(-x))
         return ent
+    
+class MixtureExponentialSmoother(Bernoulli):
+    """
+    Mixture of overlapping exponential distributions from DVAE++
+    """
+    def __init__(self,**kwargs):
+        super(MixtureExponentialSmoother, self).__init__(**kwargs)
+        
+    def reparameterize(self):
+        """
+        ICDF of mixture of exponential distributions (Eq. 3, DVAE++)
+        """
+        q = torch.sigmoid(self.logits)
+        q = torch.clamp(q, min=1e-7, max=1.-1e-7)
+        
+        rho = torch.rand(q.size())
+        b = (rho + torch.exp(-self.beta)*(q - rho))/((1. - q) - 1.)
+        c = -(q*torch.exp(-self.beta))/(1. - q)
+        
+        zeta = (-1./self.beta)*(torch.log((-b + torch.sqrt(b**2 - 4*c))/2.))
+        return zeta
 
 def visualise_distributions(rho,q,samples):
     import matplotlib.pyplot as plt

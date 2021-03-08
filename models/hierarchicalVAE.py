@@ -1,4 +1,3 @@
-
 """
 Variational Autoencoder Model with hierarchical encoder
 
@@ -52,7 +51,6 @@ class HierarchicalVAE(AutoEncoder):
             n_encoder_layer_nodes=self._config.model.n_encoder_layer_nodes,
             n_encoder_layers=self._config.model.n_encoder_layers,
             skip_latent_layer=True)
-    
     
     def _create_reparameteriser(self):
         """Create layers fopr reparameterisation specific to this model. I.e.
