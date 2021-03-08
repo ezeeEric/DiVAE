@@ -9,4 +9,4 @@ mnist_input: /Users/drdre/inputz/
 
 load_data_from_pkl: 0
 frac_test_dataset: 0.5
-frac_train_dataset: 0.01
+frac_train_dataset: 1

@@ -106,10 +106,6 @@ def run(modelMaker=None, config=None):
         modelMaker.save_model(config_string)
         modelMaker.save_config(config_string)
 
-    #sample generation
-    if config.generate_samples:
-        output_generated=modelMaker.generate_samples()
-
     if config.create_plots:
         #call a forward method derivative - for output object.
         eval_output=modelMaker.evaluate()
@@ -119,6 +115,13 @@ def run(modelMaker=None, config=None):
         pp.data_dimensions=dataMgr.get_input_dimensions()
         #create plot
         pp.plot(eval_output)
+
+        #sample generation
+        if config.generate_samples:
+            output_generated=modelMaker.generate_samples()
+            pp.plot_generative_output(output_generated)
+    
+    
     logger.info("run() finished successfully.")
 
 if __name__=="__main__":
