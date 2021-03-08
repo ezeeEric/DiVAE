@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 from types import SimpleNamespace
 
 class OutputContainer(SimpleNamespace):
-    """ #this is to facilitate a common interface in the ModelMaker fit()
+    """ #this is to facilitate a common interface in the ModelCreator fit()
         #method: instead of having different lengths of output arguments for
         #each model, we return one namespace. The entries of this namespace
         #are used in the model's loss function as parameter.
