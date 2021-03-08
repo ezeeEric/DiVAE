@@ -5,9 +5,9 @@ Vanilla Autoencoder Model
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 from torch import nn
-from models.autoencoderbase import AutoEncoderBase
 
-from utils.networks import BasicEncoder,BasicDecoder
+from models.autoencoders.autoencoderbase import AutoEncoderBase
+from models.networks.basicCoders import BasicEncoder,BasicDecoder
 
 #logging module with handmade settings.
 from DiVAE import logging

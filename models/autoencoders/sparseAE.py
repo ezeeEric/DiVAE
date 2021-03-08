@@ -7,7 +7,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch 
 
-from models.autoencoder import AutoEncoder
+from models.autoencoders.autoencoder import AutoEncoder
 
 #logging module with handmade settings.
 from DiVAE import logging
