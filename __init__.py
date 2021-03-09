@@ -25,17 +25,3 @@ logging.basicConfig( level=logging.INFO, format='{0}[%(asctime)s.%(msecs)03d]{1}
 logger = logging.getLogger(__name__)
 logger.info("Willkommen!")
 logger.info("Loading configuration.")
-
-#global definition of configuration object
-# from utils.configaro import Configaro
-# config=Configaro()
-
-# update for hydra
-# config=None
-
-
-
-# #set debug logging mode if requested
-# if config.debug:
-#     logging.getLogger().setLevel(logging.DEBUG)
-#     logger.debug("Logging in debug mode.")

@@ -1,8 +1,6 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
+######################
+##### Manual Additions
+######################
 .DS_Store
 *.swp
 .vscode/
@@ -10,6 +8,19 @@ output/
 sources/
 .gif
 venv_divae/
+outputs/
+wandb/
+data/MNIST/
+MNIST/
+
+##############################################
+#### Automatically created
+##############################################
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
 # C extensions
 *.so
