@@ -1,10 +1,9 @@
 """
-MixtureExp.py
-
 Mixture of Exponential Distributions
 
 Author: Abhi (abhishek@myumanitoba.ca)
 """
+
 from torch import log, exp
 from torch.distributions.bernoulli import Bernoulli
 
@@ -18,8 +17,7 @@ class MixtureExp(Bernoulli):
         
     def reparameterise(self):
         """
-        ICDF of mixture of exponential distributions (Eq. 3, DVAE++)
-        
+        - ICDF of mixture of exponential distributions (Eq. 3, DVAE++)
         Returns:
             zeta: approximate post samples
         """
@@ -35,7 +33,7 @@ class MixtureExp(Bernoulli):
     
     def log_pdf(self, zeta):
         """
-        Compute log(r(zeta|z = 0)), Note log(r(zeta|z = 0)) = log_pdf(self, 1-zeta)
+        - Compute log(r(zeta|z = 0)), Note log(r(zeta|z = 0)) = log_pdf(self, 1-zeta)
         Args:
             zeta: approximate post samples
         
@@ -46,7 +44,7 @@ class MixtureExp(Bernoulli):
     
     def log_ratio(self, zeta):
         """
-        Compute log_ratio needed for gradients of KL (presented in DVAE++).
+        - Compute log_ratio needed for gradients of KL (presented in DVAE++).
         Args:
             zeta: approximate post samples
         Returns:

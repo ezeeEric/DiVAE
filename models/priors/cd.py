@@ -10,7 +10,6 @@ import torch
 from torch import nn
 from torch.distributions import Distribution, Normal, Uniform
 
-
 # Gibbs Sampler, manual implementation
 class Contrastive_Divergence(nn.Module):
 	def __init__(self, n_visible, n_hidden, learning_rate,momentum_coefficient,n_gibbs_sampling_steps,weight_cost,**kwargs):

@@ -10,6 +10,8 @@ import torch
 from torch import nn
 from torch.distributions import Distribution, Normal, Uniform
 
+from models.priors.cd import Contrastive_Divergence
+
 class RBM(nn.Module):
 	def __init__(self, n_visible, n_hidden, learning_rate=1e-3, n_gibbs_sampling_steps = 1, **kwargs):
 		super(RBM, self).__init__(**kwargs)
