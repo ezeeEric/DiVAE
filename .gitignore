@@ -3,6 +3,7 @@
 ######################
 .DS_Store
 *.swp
+*.save
 .vscode/
 output/
 sources/

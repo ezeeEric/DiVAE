@@ -3,14 +3,14 @@
 Main executable. The run() method steers data loading, model creation, training
 and evaluation by calling the respective interfaces.
 
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
+Author: Abhishek <abhishek@myumanitoba.ca>
+Author: Eric Drechsler <eric.drechsler@cern.ch>
 """
 
 #external libraries
-import os,sys
+import os
 import pickle
 import datetime
-import gif
 
 import torch
 torch.manual_seed(1)
@@ -19,24 +19,29 @@ import matplotlib.pyplot as plt
 import hydra
 from omegaconf import OmegaConf
 
+# Weights and Biases
+import wandb
+
 #self defined imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
+from utils.modelMaker import ModelMaker
 
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
 
-    #TODO hydra update: output path not needed anymore
+    #TODO hydra update: output path not needed anymore. Replace all instances
+    #with current work directory instead. (Hydra sets that automatically)
     cfg.output_path=os.getcwd()
-    print(OmegaConf.to_yaml(cfg))
-    # exit()
+
     #create model handling object
-    from utils.modelMaker import ModelMaker
     modelMaker=ModelMaker(cfg=cfg)
+    wandb.init(entity="qvae", project="divae", config=cfg)  
+    print(OmegaConf.to_yaml(cfg))
 
     #run the ting
     run(modelMaker, config=cfg)
@@ -70,7 +75,7 @@ def run(modelMaker=None, config=None):
     if config.model.activation_fct.lower()=="relu":
         modelMaker.default_activation_fct=torch.nn.ReLU() 
     elif config.model.activation_fct.lower()=="tanh":
-        modelMaker.default_activation_fct=torch.nn.ReLU() 
+        modelMaker.default_activation_fct=torch.nn.Tanh() 
     else:
         logger.warning("Setting identity as default activation fct")
         modelMaker.default_activation_fct=torch.nn.Identity() 
@@ -83,6 +88,9 @@ def run(modelMaker=None, config=None):
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
 
+    # Log metrics with wandb
+    wandb.watch(model)
+    
     #instantiate and register optimisation algorithm
     modelMaker.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
 
