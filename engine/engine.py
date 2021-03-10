@@ -5,8 +5,6 @@ Provides data handling, logging and wandb integration.
 """
 
 import torch
-#needs python3.7
-from contextlib import nullcontext
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -75,15 +73,13 @@ class Engine(object):
         #structure like below.
         if is_training:
             self._model.train()
-            context=nullcontext()
             data_loader=self.data_mgr.train_loader
         else:
             self._model.eval()            
-            context=torch.no_grad()
             data_loader=self.data_mgr.test_loader
 
         total_loss = 0
-        with context:
+        with torch.set_grad_enabled(is_training):
             for batch_idx, (input_data, label) in enumerate(data_loader):
                 #set gradients to zero before backprop. Needed in pytorch because
                 #the default is to sum up gradients for successive backprop. steps.
