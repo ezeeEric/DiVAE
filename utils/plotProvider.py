@@ -88,7 +88,7 @@ class PlotProvider(object):
                     input_dimension=self.data_dimensions, 
                     out_file="{0}/{2}_{1}.png".format(self._config.output_path,self.config_string,self.date_tag))
             else:
-                test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
+                test_loss, input_data, output_data, zetas, labels  = modelCreator.test()
                 plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(self._config.output_path,configString,date))
         else:
             raise Exception("Data type {0} unknown to PlotProvider".format(self._config.data.data_type))
@@ -96,7 +96,7 @@ class PlotProvider(object):
         #TODO gif_output, plot_latent_space
         #     gif_frames=[]
         #     for epoch in range(1, self._config.engine.n_epochs+1):   
-        #         test_loss, input_data, output_data, zetas, labels  = modelMaker.test()
+        #         test_loss, input_data, output_data, zetas, labels  = modelCreator.test()
         #         if self._config.create_gif:
         #             if self._config.data.data_type=='calo':
         #                 gif_frames.append(plot_calo_images(input_data, output_data, output="{0}/{2}_reco_{1}.png".format(self._config.output_path,configString,date),do_gif=True))
