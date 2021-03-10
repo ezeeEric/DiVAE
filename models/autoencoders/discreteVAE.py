@@ -38,6 +38,9 @@ class DiVAE(AutoEncoderBase):
 		#TODO one wd factor for both SimpleDecoder and encoder
 		self.weight_decay_factor=self._config.engine.weight_decay_factor
 		
+        # TODO - Model attributes can be directly imported from the config model dict
+        # by iterating over and using (k,v) in dict.items() and using setattr(self, k, v)
+
 		#ENCODER SPECIFICS
 		#number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
 		self.n_latent_hierarchy_lvls=self._config.model.n_latent_hierarchy_lvls
@@ -119,25 +122,30 @@ class DiVAE(AutoEncoderBase):
 		logger.debug("loss")
 
 		#1) Gradients of KL Divergence     
-		kl_loss=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
+        kl_loss_per_sample=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
+
+        # Bug 1 - KL loss per sample returns an int of 0
+        try:
+            kl_loss = torch.mean(kl_loss_per_sample)
+        except:
+            kl_loss = torch.mean(torch.tensor(float(kl_loss_per_sample)))
 
 		#2) AE loss
 		ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
 		#loss is the sum of all variables (pixels) per sample (event in batch)
-		ae_loss=torch.sum(ae_loss_matrix,1)
+        ae_loss_per_sample = torch.sum(ae_loss_matrix,1)
+        ae_loss = torch.mean(ae_loss_per_sample)
 
 		#3) weight decay loss
 		#TODO add this for encoder, decoder, prior
 
 		#4) final loss
-		neg_elbo_per_sample=ae_loss+kl_loss
-		#the mean of the elbo over all samples is taken as measure for loss
-		neg_elbo=torch.mean(neg_elbo_per_sample)    
+		neg_elbo = ae_loss + kl_loss
 
 		#TODO include the weight decay regularisation in the loss to penalise
 		#complexity
 		loss=neg_elbo#+weight_decay_loss  
-		return loss
+		return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss}
 
 	def kl_div_prior_gradient(self, posterior_logits, posterior_binary_samples):
 		logger.debug("kl_div_prior_gradient")

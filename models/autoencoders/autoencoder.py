@@ -67,7 +67,8 @@ class AutoEncoder(AutoEncoderBase):
     
     def loss(self, input_data, fwd_out):
         loss=self._loss_fct(fwd_out.output_data, input_data.view(-1,self._flat_input_size), reduction='sum')
-        return loss
+        return {"loss":loss}
+
 
 if __name__=="__main__":
     logger.info("Running autoencoder.py directly") 
