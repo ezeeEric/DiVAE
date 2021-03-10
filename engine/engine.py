@@ -6,6 +6,9 @@ Provides data handling, logging and wandb integration.
 
 import torch
 
+# Weights and Biases
+import wandb
+
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
@@ -71,6 +74,7 @@ class Engine(object):
         #set train/eval mode and context. torch.no_grad in eval mode improves
         #memory consumption. nullcontext is necessary to have a neat code
         #structure like below.
+
         if is_training:
             self._model.train()
             data_loader=self.data_mgr.train_loader

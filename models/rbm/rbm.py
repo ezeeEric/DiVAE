@@ -11,14 +11,12 @@ import torch
 from torch import nn
 from torch.distributions import Distribution, Normal, Uniform
 
-import logging
+from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 class RBM(nn.Module):
 	def __init__(self, n_visible, n_hidden, **kwargs):
 		super(RBM, self).__init__(**kwargs)
-
-		self._sampler=None
 
 		self._n_visible=n_visible
 		self._n_hidden=n_hidden
@@ -36,28 +34,31 @@ class RBM(nn.Module):
 		# #applying a 0 bias to the hidden nodes
 		self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=require_grad)
 
-		self.parameters=torch.nn.ParameterDict(
-			{
-				"weights": self._weights ,
-				"vis_bias": self._visible_bias,
-				"hid_bias": self._hidden_bias,
-			})
+		#TODO cross check 
+		# self.parameters=torch.nn.ParameterDict(
+		# 	{
+		# 		"weights": self._weights ,
+		# 		"vis_bias": self._visible_bias,
+		# 		"hid_bias": self._hidden_bias,
+		# 	})
 
-	@property
-	def sampler(self):
-		return self._sampler
+	#TODO these could be properties.
+	def get_visible_bias(self):
+		return self._visible_bias
 
-	@sampler.setter
-	def sampler(self,sampler):
-		self._sampler=sampler
+	def get_hidden_bias(self):
+		return self._hidden_bias
 
-	def train(self, in_data):
+	def get_weights(self):
+		return self._weights
+
+	def run_training(self, in_data):
 		""" Use sampler to train rbm. Each image from the current batch is used
 		as input.
 		"""
 		loss=0
 		for img in in_data:
-			loss+=self.sampler.train(img)
+			loss+=self.sampler.run_training(img)
 		return loss	
 
 	def get_logZ_value(self):

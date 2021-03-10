@@ -20,15 +20,17 @@ from models.autoencoders.hierarchicalVAE import HierarchicalVAE
 from models.autoencoders.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.autoencoders.sequentialVAE import SequentialVariationalAutoEncoder
 from models.autoencoders.discreteVAE import DiVAE
+from models.autoencoders.dvaepp import DiVAEPP
 
-model_dict={
+_MODEL_DICT={
     "AE": AutoEncoder, 
     "sparseAE": SparseAutoEncoder,
     "VAE": VariationalAutoEncoder,
     "cVAE": ConditionalVariationalAutoEncoder,
     "sVAE": SequentialVariationalAutoEncoder,
     "HiVAE": HierarchicalVAE,
-    "DiVAE": DiVAE
+    "DiVAE": DiVAE,
+    "DiVAEpp": DiVAEPP
 }
 
 class ModelCreator(object):
@@ -41,7 +43,7 @@ class ModelCreator(object):
     
     def init_model(self,load_from_file=False, dataMgr=None):
 
-        for key, model_class in model_dict.items(): 
+        for key, model_class in _MODEL_DICT.items(): 
             if key.lower()==self._config.model.model_type.lower():
                 logger.info("Initialising Model Type {0}".format(self._config.model.model_type))
                 
@@ -54,7 +56,7 @@ class ModelCreator(object):
                             cfg=self._config)
 
                 return self.model
-        logger.error("Unknown Model Type. Make sure your model is registered in modelMaker.model_dict.")
+        logger.error("Unknown Model Type. Make sure your model is registered in modelCreator._MODEL_DICT.")
         raise NotImplementedError
 
     @property

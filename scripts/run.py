@@ -28,13 +28,8 @@ logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
 from utils.plotProvider import PlotProvider
-<<<<<<< HEAD
 from engine.engine import Engine
 from models.modelCreator import ModelCreator
-=======
-from utils.modelMaker import ModelMaker
-
->>>>>>> dvaepp_clean
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
@@ -42,13 +37,8 @@ def main(cfg=None):
     #TODO hydra update: output path not needed anymore. Replace all instances
     #with current work directory instead. (Hydra sets that automatically)
     cfg.output_path=os.getcwd()
-<<<<<<< HEAD
-=======
 
-    #create model handling object
-    modelMaker=ModelMaker(cfg=cfg)
     wandb.init(entity="qvae", project="divae", config=cfg)  
->>>>>>> dvaepp_clean
     print(OmegaConf.to_yaml(cfg))
 
     #create model handling object
@@ -83,7 +73,7 @@ def run(modelCreator=None, config=None):
     if config.model.activation_fct.lower()=="relu":
         modelCreator.default_activation_fct=torch.nn.ReLU() 
     elif config.model.activation_fct.lower()=="tanh":
-        modelMaker.default_activation_fct=torch.nn.Tanh() 
+        modelCreator.default_activation_fct=torch.nn.Tanh() 
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
@@ -140,7 +130,8 @@ def run(modelCreator=None, config=None):
 
         #sample generation
         if config.generate_samples:
-            output_generated=modelMaker.generate_samples()
+            #TODO should we move this method call or wrap it to modelCreator.generate_samples()?
+            output_generated=modelCreator.model.generate_samples()
             pp.plot_generative_output(output_generated)
     
     

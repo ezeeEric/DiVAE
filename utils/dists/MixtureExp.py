@@ -3,6 +3,7 @@ Mixture of Exponential Distributions
 
 Author: Abhi (abhishek@myumanitoba.ca)
 """
+import torch
 
 from torch import log, exp
 from torch.distributions.bernoulli import Bernoulli

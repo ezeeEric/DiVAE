@@ -11,7 +11,7 @@ from models.autoencoders.autoencoderbase import AutoEncoderBase
 from models.networks.basicCoders import BasicDecoder
 from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from models.rbm.rbm import RBM
-from models.rbm.samplers.contrastiveDivergence import ContrastiveDivergence
+from models.samplers.contrastiveDivergence import ContrastiveDivergence
 
 from utils.dists.distributions import Bernoulli
 
@@ -38,8 +38,8 @@ class DiVAE(AutoEncoderBase):
 		#TODO one wd factor for both SimpleDecoder and encoder
 		self.weight_decay_factor=self._config.engine.weight_decay_factor
 		
-        # TODO - Model attributes can be directly imported from the config model dict
-        # by iterating over and using (k,v) in dict.items() and using setattr(self, k, v)
+		# TODO - Model attributes can be directly imported from the config model dict
+		# by iterating over and using (k,v) in dict.items() and using setattr(self, k, v)
 
 		#ENCODER SPECIFICS
 		#number of hierarchy levels in encoder. At each hierarchy level an latent layer is formed.
@@ -60,6 +60,12 @@ class DiVAE(AutoEncoderBase):
 		#added to output activation of last decoder layer in forward call
 		self._train_bias=self.set_train_bias()
 
+		#set in _create_networks
+		self.encoder=None
+		self.prior=None
+		self.decoder=None
+		self.sampler=None
+
 	def set_train_bias(self):
 		"""
 		this treatment is a recommendation from the Hinton paper (A Practical Guide to Training Restricted Boltzmann Machines) on how to
@@ -79,11 +85,26 @@ class DiVAE(AutoEncoderBase):
 		logger.debug("Creating Network Structures")
 		self.encoder=self._create_encoder()
 		self.prior=self._create_prior()
+		self.sampler=self._create_sampler()
 		self.decoder=self._create_decoder()
 		return
+
+	def _create_sampler(self):
+		logger.debug("Creating sampling routine")
+		#TODO make this steerable
+		sampler=ContrastiveDivergence( 
+			learning_rate=self._config.engine.learning_rate,
+			momentum_coefficient=self._config.engine.momentum_coefficient,
+			n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps,
+			weight_decay_factor=self._config.engine.weight_decay_factor
+		)
+		#TODO this cyclic dependency needs to be removed. 
+		assert self.prior is not None, "Prior must be defined"
+		sampler.set_rbm_parameters(self.prior)
+		return sampler
 	
 	def _create_encoder(self):
-		logger.debug("ERROR _create_encoder dummy implementation")
+		logger.debug("Creating encoder")
 		return HierarchicalEncoder(
 			input_dimension=self._flat_input_size,
 			n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
@@ -101,17 +122,7 @@ class DiVAE(AutoEncoderBase):
 	def _create_prior(self):
 		logger.debug("_create_prior")
 		num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
-
-		rbm=RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
-		rbm.sampler=ContrastiveDivergence( 
-			learning_rate=self._config.engine.learning_rate,
-			momentum_coefficient=self._config.engine.momentum_coefficient,
-			n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps,
-			weight_decay_factor=self._config.engine.weight_decay_factor
-		)
-		
-		exit()
-		return rbm
+		return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
    
 	def weight_decay_loss(self):
 		#TODO Implement weight decay
@@ -122,20 +133,20 @@ class DiVAE(AutoEncoderBase):
 		logger.debug("loss")
 
 		#1) Gradients of KL Divergence     
-        kl_loss_per_sample=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
+		kl_loss_per_sample=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
 
-        # Bug 1 - KL loss per sample returns an int of 0
+		# Bug 1 - KL loss per sample returns an int of 0
 		# Workaround for logging using wandb
-        try:
-            kl_loss = torch.mean(kl_loss_per_sample)
-        except:
-            kl_loss = torch.mean(torch.tensor(float(kl_loss_per_sample)))
+		try:
+			kl_loss = torch.mean(kl_loss_per_sample)
+		except:
+			kl_loss = torch.mean(torch.tensor(float(kl_loss_per_sample)))
 
 		#2) AE loss
 		ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
 		#loss is the sum of all variables (pixels) per sample (event in batch)
-        ae_loss_per_sample = torch.sum(ae_loss_matrix,1)
-        ae_loss = torch.mean(ae_loss_per_sample)
+		ae_loss_per_sample = torch.sum(ae_loss_matrix,1)
+		ae_loss = torch.mean(ae_loss_per_sample)
 
 		#3) weight decay loss
 		#TODO add this for encoder, decoder, prior
@@ -192,7 +203,7 @@ class DiVAE(AutoEncoderBase):
 
 		#TODO what's the impact of doing gibbs sampling here? Is this the
 		#best possible sampling procedure?
-		rbm_samples=self.prior.get_samples_kld(approx_post_samples=positive_samples_left,n_gibbs_sampling_steps=1)
+		rbm_samples=self.sampler.get_samples_kld(approx_post_samples=positive_samples_left,n_gibbs_sampling_steps=1)
 		negative_samples=rbm_samples.detach()
 		
 		# Ep(z,theta) = -zT*Weights*z - zT*bias
@@ -309,7 +320,7 @@ class DiVAE(AutoEncoderBase):
 		prior_samples=[]
 		#how many samples (i.e. digits) to look at
 		for i in range(0,self._config.n_generate_samples):
-			prior_sample = self.prior.get_samples(
+			prior_sample = self.sampler.get_samples(
 				n_latent_nodes=self.n_latent_nodes,
 				n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps, 
 				sampling_mode=self._config.engine.sampling_mode)
@@ -319,7 +330,7 @@ class DiVAE(AutoEncoderBase):
 		prior_samples=torch.stack(prior_samples)
 		output_activations = self.decoder.decode(prior_samples)
 		output_activations = output_activations+self._train_bias
-		output_distribution = Bernoulli(logit=output_activations)
+		output_distribution = Bernoulli(logits=output_activations)
 		output=torch.sigmoid(output_distribution.logits)
 		output.detach()
 
@@ -340,7 +351,7 @@ class DiVAE(AutoEncoderBase):
 		output_activations = self.decoder.decode(posterior_samples_concat)
 
 		out.output_activations = output_activations+self._train_bias
-		out.output_distribution = Bernoulli(logit=out.output_activations)
+		out.output_distribution = Bernoulli(logits=out.output_activations)
 		out.output_data = torch.sigmoid(out.output_distribution.logits)
 		
 		return out

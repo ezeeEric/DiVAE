@@ -31,7 +31,7 @@ class Bernoulli(Distribution):
         super(Bernoulli, self).__init__(**kwargs)
         #this is the raw (no output fct) output data of the latent layer stored
         #in this distribution.
-        assert logit is not None, 'Distributions must be initialised with logit'
+        assert logits is not None, 'Distributions must be initialised with logit'
         assert not beta<=0, 'beta larger 0'
         self.logits = logits
         self.beta = beta

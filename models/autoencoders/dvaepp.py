@@ -13,14 +13,16 @@ from models.rbm.rbm import RBM
 
 from utils.dists.distributions import Bernoulli
 
-from networks.hiEncoder import HierarchicalEncoder
-from networks.basicDecoder import BasicDecoder
+from models.networks.hierarchicalEncoder import HierarchicalEncoder
+from models.networks.basicCoders import BasicDecoder
 
+from DiVAE import logging
+logger = logging.getLogger(__name__)
 
 class DiVAEPP(DiVAE):
     
     def __init__(self, **kwargs):
-        super(DiVAE, self).__init__(**kwargs)
+        super(DiVAEPP, self).__init__(**kwargs)
         self._model_type = "DiVAEPP"
         
     def _create_encoder(self):
@@ -30,7 +32,7 @@ class DiVAEPP(DiVAE):
         Returns:
             Hierarchical Encoder instance
         """
-        logger.debug("ERROR _create_encoder dummy implementation")
+        logger.debug("")
         return HierarchicalEncoder(
             input_dimension=self._flat_input_size,
             n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
