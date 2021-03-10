@@ -7,25 +7,22 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch
 import torch.nn as nn
-
-from utils.distributions import SpikeAndExponentialSmoother
-
+                  
 from models.networks.basicCoders import BasicEncoder
+from utils.dists.distributions import SpikeAndExponentialSmoother
+from utils.dists.MixtureExp import MixtureExp
+
+_SMOOTHER_DICT = {"SpikeExp" : SpikeAndExponentialSmoother, 
+                  "MixtureExp" : MixtureExp}
+
 
 #logging module with handmade settings.
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 class HierarchicalEncoder(BasicEncoder):
-    def __init__(self, 
-        activation_fct=nn.Tanh(),
-        input_dimension=784,
-        n_latent_hierarchy_lvls=4,
-        n_latent_nodes=100,
-        n_encoder_layer_nodes=200,
-        n_encoder_layers=2,
-        skip_latent_layer=False, 
-        **kwargs):
+    def __init__(self, activation_fct=nn.Tanh(), input_dimension=784, n_latent_hierarchy_lvls=4, n_latent_nodes=100, n_encoder_layer_nodes=200, n_encoder_layers=2, skip_latent_layer=False, smoother="SpikeExp", **kwargs):
+
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
         #TODO this assumes MNIST dataset without sequential layers
@@ -59,7 +56,8 @@ class HierarchicalEncoder(BasicEncoder):
         #are then combined outside this class into one layer.
         self.skip_latent_layer=skip_latent_layer
 
-        self.smoothing_distribution=SpikeAndExponentialSmoother
+        assert smoother in _SMOOTHER_DICT.keys(), "smoother should be one of" + str(_SMOOTHER_DICT.keys())
+        self.smoothing_distribution=_SMOOTHER_DICT[smoother]
         
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
@@ -116,10 +114,11 @@ class HierarchicalEncoder(BasicEncoder):
             #input to this level current_net
             current_input=torch.cat([in_data]+post_samples,dim=-1)
             #feed network and retrieve logit
-            logit=current_net(current_input)
+            logits=current_net(current_input)
             #build the posterior distribution for this hierarchy
             #TODO this needs a switch: training smoothing, evaluation bernoulli
-            posterior_dist = self.smoothing_distribution(logit=logit,beta=self._config.model.beta_smoothing_fct)
+            posterior_dist = self.smoothing_distribution(logits=logits,
+                             beta=self._config.model.beta_smoothing_fct)
             #construct the zeta values (reparameterised logits, posterior samples)
             samples=posterior_dist.reparameterise()
             posterior.append(posterior_dist)

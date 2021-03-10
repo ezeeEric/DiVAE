@@ -11,7 +11,7 @@ import torch
 from models.autoencoders.discreteVAE import DiVAE
 from models.priors.rbm import RBM
 
-from utils.distributions import Bernoulli
+from utils.dists.distributions import Bernoulli
 
 from networks.hiEncoder import HierarchicalEncoder
 from networks.basicDecoder import BasicDecoder

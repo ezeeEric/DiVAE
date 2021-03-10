@@ -13,7 +13,7 @@ from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from models.rbm.rbm import RBM
 from models.rbm.samplers.contrastiveDivergence import ContrastiveDivergence
 
-from utils.distributions import Bernoulli
+from utils.dists.distributions import Bernoulli
 
 #logging module with handmade settings.
 from DiVAE import logging
@@ -125,6 +125,7 @@ class DiVAE(AutoEncoderBase):
         kl_loss_per_sample=self.kl_divergence(fwd_out.posterior_distributions,fwd_out.posterior_samples)
 
         # Bug 1 - KL loss per sample returns an int of 0
+		# Workaround for logging using wandb
         try:
             kl_loss = torch.mean(kl_loss_per_sample)
         except:

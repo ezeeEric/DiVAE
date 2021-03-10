@@ -27,13 +27,13 @@ def sigmoid_cross_entropy_with_logits(logits, labels):
 
 
 class Bernoulli(Distribution):
-    def __init__(self, logit=None,  beta=1,  **kwargs):
+    def __init__(self, logits=None,  beta=1,  **kwargs):
         super(Bernoulli, self).__init__(**kwargs)
         #this is the raw (no output fct) output data of the latent layer stored
         #in this distribution.
         assert logit is not None, 'Distributions must be initialised with logit'
         assert not beta<=0, 'beta larger 0'
-        self.logits=logit
+        self.logits = logits
         self.beta = beta
 
     def reparameterise(self):
@@ -52,8 +52,8 @@ class Bernoulli(Distribution):
         Returns: 
             ent: entropy
         """
-        x = torch.sigmoid(self.logits)
-        entropy = sigmoid_cross_entropy_with_logits(logits=self.logit_mu, labels=x)
+        q = torch.sigmoid(self.logits)
+        entropy = sigmoid_cross_entropy_with_logits(logits=self.logits, labels=x)
         return entropy
 
     def log_prob_per_var(self, samples):
