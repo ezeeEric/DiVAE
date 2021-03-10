@@ -9,7 +9,7 @@ import torch
 
 # DiVAE imports
 from models.autoencoders.discreteVAE import DiVAE
-from models.priors.rbm import RBM
+from models.rbm.rbm import RBM
 
 from utils.dists.distributions import Bernoulli
 
