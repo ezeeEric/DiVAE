@@ -78,7 +78,8 @@ class Engine(object):
             self._model.eval()            
             data_loader=self.data_mgr.test_loader
 
-        total_loss = 0
+        epoch_loss_dict = {}
+
         with torch.set_grad_enabled(is_training):
             for batch_idx, (input_data, label) in enumerate(data_loader):
                 #set gradients to zero before backprop. Needed in pytorch because
@@ -94,14 +95,18 @@ class Engine(object):
                     #TODO hack for conditionalVAE
                     fwd_output=self._model(input_data,label)
 
-                #loss call
-                batch_loss = self._model.loss(input_data,fwd_output)
-                
+                # Compute model-dependent loss
+                batch_loss_dict = self._model.loss(input_data,fwd_output)
+
                 if is_training:
-                    batch_loss.backward()
+                    batch_loss_dict["loss"].backward()
                     self._optimiser.step()
                 
-                total_loss += batch_loss.item()
+                for key in batch_loss_dict.keys():
+                    if key in epoch_loss_dict.keys():
+                        epoch_loss_dict[key] += batch_loss_dict[key].item()
+                    else:
+                        epoch_loss_dict[key] = batch_loss_dict[key].item()
 
                 # Output logging
                 if is_training and batch_idx % 100 == 0:
@@ -110,12 +115,20 @@ class Engine(object):
                                             batch_idx*len(input_data), 
                                             len(data_loader.dataset),
                                             100.*batch_idx/len(data_loader),
-                                            batch_loss.data.item()/len(input_data)))
+                                            batch_loss_dict["loss"].data.item()/len(input_data)))
         
         outstring="Train" if is_training else "Test"
-        total_loss /= len(data_loader.dataset)
-        logger.info("Total Loss ({0}):\t {1:.4f}".format(outstring,total_loss))
-        return total_loss
+        epoch_loss_dict = {key:(value/len(data_loader.dataset)) for key,value in epoch_loss_dict.items()}
+        
+        # wandb logging - training
+        if is_training:
+            wandb.log(epoch_loss_dict)
+        else:
+            epoch_loss_dict_test = {str(key)+"_test":value for key,value in epoch_loss_dict.items()}
+            wandb.log(epoch_loss_dict_test)
+        
+        logger.info("Total Loss ({0}):\t {1:.4f}".format(outstring, epoch_loss_dict["loss"]))
+        return epoch_loss_dict["loss"]
     
     def evaluate(self):
         #similar to test call of fit() method but returning values
