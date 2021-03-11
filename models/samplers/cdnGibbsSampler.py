@@ -1,5 +1,8 @@
 """
-Contrastive Divergence sampling routine
+CDn Gibbs Sampler
+
+Implements Gibbs Sampling/CDn procedure as described in UTML TR 2010–003.
+This is an approximation to the original Contrastive Divergence algorithm.
 """
 
 import torch
@@ -9,9 +12,9 @@ from models.samplers.baseSampler import BaseSampler
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class ContrastiveDivergence(BaseSampler):
+class CDnGibbsSampler(BaseSampler):
 	def __init__(self, **kwargs):
-		super(ContrastiveDivergence, self).__init__(**kwargs)
+		super(CDnGibbsSampler, self).__init__(**kwargs)
 		
 		# #TODO these are the nn.Parameters of the RBM. It's not good design that
 		# #these should be members of this class too. But they are required in the

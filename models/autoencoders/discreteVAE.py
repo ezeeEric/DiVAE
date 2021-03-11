@@ -11,7 +11,7 @@ from models.autoencoders.autoencoderbase import AutoEncoderBase
 from models.networks.basicCoders import BasicDecoder
 from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from models.rbm.rbm import RBM
-from models.samplers.contrastiveDivergence import ContrastiveDivergence
+from models.samplers.cdnGibbsSampler import CDnGibbsSampler
 
 from utils.dists.distributions import Bernoulli
 
@@ -92,7 +92,7 @@ class DiVAE(AutoEncoderBase):
 	def _create_sampler(self):
 		logger.debug("Creating sampling routine")
 		#TODO make this steerable
-		sampler=ContrastiveDivergence( 
+		sampler=CDnGibbsSampler( 
 			learning_rate=self._config.engine.learning_rate,
 			momentum_coefficient=self._config.engine.momentum_coefficient,
 			n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps,
