@@ -10,8 +10,13 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 class ContrastiveDivergence(BaseSampler):
-	def __init__(self, **kwargs):
+	def __init__(self, learning_rate, momentum_coefficient, n_gibbs_sampling_steps, weight_decay_factor, **kwargs):
 		super(ContrastiveDivergence, self).__init__(**kwargs)
+        
+        # Contrastive divergence training parameters
+        self.learning_rate = learning_rate
+        self.momentum_coefficient = momentum_coefficient
+        self.weight_decay_factor = weight_decay_factor
 		
 		# #TODO these are the nn.Parameters of the RBM. It's not good design that
 		# #these should be members of this class too. But they are required in the
@@ -55,13 +60,13 @@ class ContrastiveDivergence(BaseSampler):
 		return probabilities_visible
 
 	# Heart of the CD training: Gibbs Sampling
-	def gibbs_sampling(self,output_hidden):
+	def gibbs_sampling(self, output_hidden):
 		for step in range(self.n_gibbs_sampling_steps):
 			probabilities_visible = self.sample_from_visible(output_hidden)
 			probabilities_hidden = self.sample_from_hidden(probabilities_visible)
 			#When using CDn, only the final update of the hidden nodes should use the probability.
 			output_hidden = (probabilities_hidden >= torch.rand(self.n_hidden)).float()
-		return probabilities_visible,probabilities_hidden
+		return probabilities_visible, probabilities_hidden
 
 	def _contrastive_divergence(self, input_data):
 		## Estimate the positive phase of the CD

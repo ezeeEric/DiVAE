@@ -42,7 +42,7 @@ class RBM(nn.Module):
 		# 		"hid_bias": self._hidden_bias,
 		# 	})
 
-	#TODO these could be properties.
+	#TODO these could be properties
 	def get_visible_bias(self):
 		return self._visible_bias
 
