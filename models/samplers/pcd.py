@@ -24,9 +24,9 @@ class PCD(BaseSampler):
         Output:
             hidden_states sample : Tensor, Dims=(batchSize * nHiddenNodes)
         """
-		hidden_signals = (torch.matmul(visible_states, self._RBM.get_weights())
+		hidden_activations = (torch.matmul(visible_states, self._RBM.get_weights())
                           + self._RBM.get_hidden_bias())
-		hidden_probs = torch.sigmoid(hidden_signals)
+		hidden_probs = torch.sigmoid(hidden_activations)
 		return (hidden_probs >= torch.rand(hidden_probs.size())).float()
         
     def visible_samples(self, hidden_states):
@@ -38,9 +38,9 @@ class PCD(BaseSampler):
         Output:
             visible_states sample : Tensor, Dims=(batchSize * nVisibleNodes)
         """
-		visible_signals = (torch.matmul(hidden_states, self._RBM.get_weights().t()) 
+		visible_activations = (torch.matmul(hidden_states, self._RBM.get_weights().t()) 
                            + self._RBM.get_visible_bias())
-		visible_probs = torch.sigmoid(visible_signals)
+		visible_probs = torch.sigmoid(visible_activations)
 		return (visible_probs >= torch.rand(visible_probs.size())).float()
     
     def block_gibbs_sampling(self):
