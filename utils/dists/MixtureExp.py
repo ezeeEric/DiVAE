@@ -14,7 +14,7 @@ class MixtureExp(Bernoulli):
     """
     def __init__(self, logits=None, beta=None):
         super(MixtureExp, self).__init__(logits=logits)
-        self.beta = beta
+        self.beta = torch.tensor(beta, dtype=torch.float, requires_grad=False)
         
     def reparameterise(self):
         """

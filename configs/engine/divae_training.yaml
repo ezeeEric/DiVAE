@@ -1,8 +1,8 @@
 # @package _group_
 learning_rate: 0.001
-n_batch_samples: 400
-n_epochs: 10
-n_gibbs_sampling_steps: 100
+n_batch_samples: 256
+n_epochs: 100
+n_gibbs_sampling_steps: 40
 sampling_mode: gibbs_flat
 weight_decay_factor: 0.0001
 momentum_coefficient: 0.5

@@ -93,12 +93,14 @@ class Engine(object):
                 #forward call
                 #output is a namespace with members as added in the forward call
                 #and subsequently used in loss()
+                fwd_output=self._model(input_data)
+                """
                 try:
-                    fwd_output=self._model(input_data)
+                    
                 except:
                     #TODO hack for conditionalVAE
                     fwd_output=self._model(input_data,label)
-
+                """
                 # Compute model-dependent loss
                 batch_loss_dict = self._model.loss(input_data,fwd_output)
 
