@@ -58,9 +58,7 @@ class DiVAEPP(DiVAE):
         self.encoder = self._create_encoder()
         self.prior = self._create_prior()
         self.decoder = self._create_decoder()
-        
         self.sampler = self._create_sampler()
-        return
         
     def kl_divergence(self, post_dists, post_samples, is_training=True):
         """
