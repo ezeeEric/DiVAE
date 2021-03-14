@@ -11,7 +11,7 @@ from models.autoencoders.autoencoderbase import AutoEncoderBase
 from models.networks.basicCoders import BasicDecoder
 from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from models.rbm.rbm import RBM
-from models.samplers.contrastiveDivergence import ContrastiveDivergence
+#from models.samplers.contrastiveDivergence import ContrastiveDivergence
 
 from utils.dists.distributions import Bernoulli
 
@@ -92,12 +92,14 @@ class DiVAE(AutoEncoderBase):
 	def _create_sampler(self):
 		logger.debug("Creating sampling routine")
 		#TODO make this steerable
-		sampler=ContrastiveDivergence( 
+		"""
+        sampler=ContrastiveDivergence( 
 			learning_rate=self._config.engine.learning_rate,
 			momentum_coefficient=self._config.engine.momentum_coefficient,
 			n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps,
 			weight_decay_factor=self._config.engine.weight_decay_factor
 		)
+        """
 		#TODO this cyclic dependency needs to be removed. 
 		assert self.prior is not None, "Prior must be defined"
 		sampler.set_rbm_parameters(self.prior)

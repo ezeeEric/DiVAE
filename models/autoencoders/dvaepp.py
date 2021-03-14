@@ -10,6 +10,7 @@ import torch
 # DiVAE imports
 from models.autoencoders.discreteVAE import DiVAE
 from models.rbm.rbm import RBM
+from models.samplers.pcd import PCD
 
 from utils.dists.distributions import Bernoulli
 
@@ -42,6 +43,22 @@ class DiVAEPP(DiVAE):
             skip_latent_layer=False,
             smoother="MixtureExp",
             cfg=self._config)
+    
+    def _create_sampler(self):
+        """
+        - Overrides _create_sampler in discreteVAE.py
+        
+        Returns:
+            PCD Sampler
+        """
+        return PCD(batchSize=32, RBM=self.prior, n_gibbs_sampling_steps=40)
+    
+    def create_networks(self):
+        logger.debug("Creating Network Structures")
+        self.encoder = self._create_encoder()
+        self.prior = self._create_prior()
+        self.decoder = self._create_decoder()
+        self.sampler = self._create_sampler()
         
     def kl_divergence(self, post_dists, post_samples, is_training=True):
         """
@@ -85,7 +102,15 @@ class DiVAEPP(DiVAE):
             cross_entropy = - self.log_prob(samples, is_training)
             
         # Add contribution of the logZ term to the cross entropy
+        rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
+        rbm_vis = rbm_visible_samples.detach()
+        rbm_hid = rbm_hidden_samples.detach()
         
+        batch_energy = (torch.sum(torch.matmul(rbm_vis, torch.matmul(self.prior.get_weights(), rbm_hid.t())), 1) 
+                        + torch.matmul(rbm_vis, self.prior.get_visible_bias())
+                        + torch.matmul(rbm_hid, self.prior.get_hidden_bias()))
+        neg_energy = - torch.mean(batch_energy)
+        cross_entropy = neg_energy + cross_entropy
 
         kl_loss = cross_entropy - entropy
         
@@ -105,17 +130,17 @@ class DiVAEPP(DiVAE):
         """
         num_var_rbm = (self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions)//2
         
-        logit_q1 = logit_q[:, :num_var_rbm]
-        logit_q2 = logit_q[:, num_var_rbm:]
+        logit_q1 = logits[:, :num_var_rbm]
+        logit_q2 = logits[:, num_var_rbm:]
         
         log_ratio_1 = log_ratio[:, :num_var_rbm]
         
         q1 = torch.sigmoid(logit_q1)       
         q2 = torch.sigmoid(logit_q2)
-        q1_pert = torch.sigmoid(logit_q1 + log_ratio1)
+        q1_pert = torch.sigmoid(logit_q1 + log_ratio_1)
         
-        cross_entropy = (-torch.matmul(q1, self.prior.get_visible_bias())-torch.matmul(q2, self.b2) 
-                         -torch.sum(torch.matmul(q1_pert, self.w) * q2, 1, keep_dims=True))
-        
-        cross_entropy = torch.squeeze(cross_entropy, 1)
-        return cross_entropy
+        cross_entropy = (- torch.matmul(q1, self.prior.get_visible_bias())
+                         - torch.matmul(q2, self.prior.get_hidden_bias()) 
+                         - torch.sum(torch.matmul(q1_pert, torch.matmul(self.prior.get_weights(), q2.t())), 1))
+                         
+        return torch.mean(cross_entropy)

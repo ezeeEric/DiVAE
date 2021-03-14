@@ -10,22 +10,28 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 class ContrastiveDivergence(BaseSampler):
-	def __init__(self, **kwargs):
-		super(ContrastiveDivergence, self).__init__(**kwargs)
+    
+    def __init__(self, learning_rate, momentum_coefficient, n_gibbs_sampling_steps, weight_decay_factor, **kwargs):
+        super(ContrastiveDivergence, self).__init__(**kwargs)
+        
+        # Contrastive divergence training parameters
+        self.learning_rate = learning_rate
+        self.momentum_coefficient = momentum_coefficient
+        self.weight_decay_factor = weight_decay_factor
 		
 		# #TODO these are the nn.Parameters of the RBM. It's not good design that
 		# #these should be members of this class too. But they are required in the
 		# #CD training.
-		self.rbm_weights = None
-		self.rbm_visible_bias = None
-		self.rbm_hidden_bias = None
+        self.rbm_weights = None
+        self.rbm_visible_bias = None
+        self.rbm_hidden_bias = None
 
 		# NN training parameters adjusted during CD
-		self.weights_update = None
-		self.visible_bias_update = None
-		self.hidden_bias_update = None
-
-	def set_rbm_parameters(self,rbm):
+        self.weights_update = None
+        self.visible_bias_update = None
+        self.hidden_bias_update = None
+        
+    def set_rbm_parameters(self,rbm):
 		self.rbm_weights = rbm.get_weights()
 		self.rbm_visible_bias = rbm.get_visible_bias()
 		self.rbm_hidden_bias = rbm.get_hidden_bias()
@@ -55,13 +61,13 @@ class ContrastiveDivergence(BaseSampler):
 		return probabilities_visible
 
 	# Heart of the CD training: Gibbs Sampling
-	def gibbs_sampling(self,output_hidden):
+	def gibbs_sampling(self, output_hidden):
 		for step in range(self.n_gibbs_sampling_steps):
 			probabilities_visible = self.sample_from_visible(output_hidden)
 			probabilities_hidden = self.sample_from_hidden(probabilities_visible)
 			#When using CDn, only the final update of the hidden nodes should use the probability.
 			output_hidden = (probabilities_hidden >= torch.rand(self.n_hidden)).float()
-		return probabilities_visible,probabilities_hidden
+		return probabilities_visible, probabilities_hidden
 
 	def _contrastive_divergence(self, input_data):
 		## Estimate the positive phase of the CD

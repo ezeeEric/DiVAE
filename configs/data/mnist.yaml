@@ -6,7 +6,7 @@ binarise_dataset: threshold
 # Automatic download applicable if MNIST files could not be found
 # Use top-level directory path for the repo as mnist_input
 pre_processed_input_file: 0
-mnist_input: /home/akajal/DiVAE
+mnist_input: /fast_scratch/QVAE/data/
 
 load_data_from_pkl: 0
 frac_test_dataset: 0.5
