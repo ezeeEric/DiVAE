@@ -6,8 +6,9 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import torch
 from torch import nn
-from models.autoencoders.autoencoderbase import AutoEncoderBase
+from hydra.utils import instantiate
 
+from models.autoencoders.autoencoderbase import AutoEncoderBase
 from models.networks.basicCoders import BasicDecoder
 from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from models.rbm.rbm import RBM
@@ -97,7 +98,7 @@ class DiVAE(AutoEncoderBase):
             Instance of GibbsSampler.
         """
         assert self.prior is not None, "Prior (RBM) must be defined."
-        return GibbsSampler(RBM=self.prior, n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
+        return instantiate(self._config.test_sampler,RBM=self.prior)
     
     def _create_encoder(self):
         logger.debug("Creating encoder")

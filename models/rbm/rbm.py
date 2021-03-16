@@ -46,6 +46,9 @@ class RBM(nn.Module):
     def weights(self):
         return self._weights
 
+    def __repr__(self):
+        return "RBM: n_vis={0}, n_hid={1}".format(self._n_visible,self._n_hidden)
+
     def get_logZ_value(self):
         #TODO include calculation of this value
         # this hardcoded number is taken from Figure 10 Rolfe

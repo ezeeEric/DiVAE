@@ -10,6 +10,7 @@ output_path: ???
 
 defaults:
   - model: divae
+  - sampler: gibbsSampler 
   - data: mnist
   - engine: divae_training
   - task
