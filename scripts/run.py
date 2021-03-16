@@ -81,7 +81,7 @@ def run(modelCreator=None, config=None):
 
     #instantiate the chosen model
     #loads from file 
-    model=modelCreator.init_model(load_from_file=config.load_model,dataMgr=dataMgr)
+    model=modelCreator.init_model(load_from_file=config.load_model, dataMgr=dataMgr)
     #create the NN infrastructure
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
@@ -130,10 +130,8 @@ def run(modelCreator=None, config=None):
 
         #sample generation
         if config.generate_samples:
-            #TODO should we move this method call or wrap it to modelCreator.generate_samples()?
-            output_generated=modelCreator.model.generate_samples()
+            output_generated=engine.generate_samples()
             pp.plot_generative_output(output_generated)
-    
     
     logger.info("run() finished successfully.")
 

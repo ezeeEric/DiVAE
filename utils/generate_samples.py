@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 def generate_samples_divae(model, outstring=""):
     n_samples=100
-    output=model.generate_samples( n_samples=n_samples, n_gibbs_sampling_steps=100, sampling_mode="gibbs_flat")
+    output=model.generate_samples( n_samples=n_samples, n_gibbs_sampling_steps=100)
     
     from utils.helpers import plot_generative_output
     plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))

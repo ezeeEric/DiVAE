@@ -52,11 +52,6 @@ class Engine(object):
         return
 
     def generate_samples(self):
-        #options handled in model files
-        #n_samples=100
-        #n_gibbs_sampling_steps
-        #sampling_mode
-        #nrs
         #generate the samples. Each model has its own specific settings which
         #are read in from the self._config in the individual model files.
         output=self._model.generate_samples()
@@ -93,12 +88,14 @@ class Engine(object):
                 #forward call
                 #output is a namespace with members as added in the forward call
                 #and subsequently used in loss()
+                fwd_output=self._model(input_data)
+                """
                 try:
-                    fwd_output=self._model(input_data)
+                    
                 except:
                     #TODO hack for conditionalVAE
                     fwd_output=self._model(input_data,label)
-
+                """
                 # Compute model-dependent loss
                 batch_loss_dict = self._model.loss(input_data,fwd_output)
 
