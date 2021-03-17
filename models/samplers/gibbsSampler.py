@@ -16,12 +16,6 @@ class GibbsSampler(BaseSampler):
     def __init__(self, RBM, **kwargs):
         super(GibbsSampler, self).__init__(**kwargs)
         self._RBM = RBM
-    
-    def __repr__(self):
-        outstring=""
-        for key,val in self.__dict__.items():
-            outstring+="{0}: {1}\n".format(key,val)
-        return outstring
 
     def hidden_samples(self, probabilities_visible):
         output_hidden = torch.matmul(probabilities_visible, self._RBM.weights) + self._RBM.hidden_bias

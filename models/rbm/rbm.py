@@ -1,8 +1,6 @@
 
 """
 PyTorch implementation of a restricted Boltzmann machine
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import numpy as np

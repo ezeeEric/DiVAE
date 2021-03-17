@@ -75,6 +75,15 @@ class AutoEncoderBase(nn.Module):
 
     def _create_decoder(self):
         raise NotImplementedError
+
+    def _create_sampler(self):
+        """
+            Define the sampler to be used for sampling from the RBM.
+
+        Returns:
+            Instance of baseSampler.
+        """
+        raise NotImplementedError
     
     def generate_samples(self):
         raise NotImplementedError

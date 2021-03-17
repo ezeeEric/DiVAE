@@ -1,7 +1,5 @@
 """
 Discrete Variational Autoencoder Class
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
@@ -85,21 +83,20 @@ class DiVAE(AutoEncoderBase):
         logger.debug("Creating Network Structures")
         self.encoder=self._create_encoder()
         self.prior=self._create_prior()
-        self.sampler=self._create_sampler()
         self.decoder=self._create_decoder()
-        return
+        self.sampler = self._create_sampler(rbm=self.prior)
 
-    def _create_sampler(self):
+    def _create_sampler(self, rbm=None):
         logger.debug("Creating sampling routine")
         """
             Define the sampler to be used for sampling from the RBM.
 
         Returns:
-            Instance of GibbsSampler.
+            Instance of BaseSampler.
         """
-        assert self.prior is not None, "Prior (RBM) must be defined."
-        return instantiate(self._config.test_sampler,RBM=self.prior)
-    
+        assert rbm is not None, "Prior (RBM) must be defined."
+        return instantiate(self._config.sampler,RBM=self.prior)
+
     def _create_encoder(self):
         logger.debug("Creating encoder")
         return HierarchicalEncoder(
