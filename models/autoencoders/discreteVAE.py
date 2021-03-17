@@ -95,7 +95,7 @@ class DiVAE(AutoEncoderBase):
             Instance of BaseSampler.
         """
         assert rbm is not None, "Prior (RBM) must be defined."
-        return instantiate(self._config.sampler,RBM=self.prior)
+        return instantiate(self._config.sampler,RBM=rbm)
 
     def _create_encoder(self):
         logger.debug("Creating encoder")
