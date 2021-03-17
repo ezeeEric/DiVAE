@@ -194,7 +194,7 @@ class DiVAE(AutoEncoderBase):
         ######
         # NEGATIVE: samples z_i from prior (RBM)
         ####
-        rbm_samples=self.sampler.get_samples(approx_post_samples=positive_samples_left, n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
+        rbm_samples=self.sampler.get_samples(approx_post_samples=positive_samples_left, n_gibbs_sampling_steps=self._config.sampler.n_gibbs_sampling_steps)
         negative_samples=torch.cat(rbm_samples,dim=1).detach()
         
         # Ep(z,theta) = -zT*Weights*z - zT*bias
@@ -312,7 +312,7 @@ class DiVAE(AutoEncoderBase):
             prior_sample = self.sampler.get_samples(
                 approx_post_samples=[], #empty list, as we want to generate samples from random numbers
                 n_latent_nodes=self.n_latent_nodes,
-                n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
+                n_gibbs_sampling_steps=self._config.sampler.n_gibbs_sampling_steps)
             prior_sample = torch.cat(prior_sample).detach()
             prior_samples.append(prior_sample)
         
