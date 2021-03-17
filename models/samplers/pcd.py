@@ -13,8 +13,8 @@ class PCD(BaseSampler):
         super(PCD, self).__init__(**kwargs)
         
         self._RBM = RBM
-        self._MCState = (torch.rand(batchSize, self._RBM.get_visible_bias().size(0)) >= 
-                         torch.rand(batchSize, self._RBM.get_visible_bias().size(0))).float()
+        self._MCState = (torch.rand(batchSize, self._RBM.visible_bias.size(0)) >= 
+                         torch.rand(batchSize, self._RBM.visible_bias.size(0))).float()
         
     def hidden_samples(self, visible_states):
         """
@@ -25,8 +25,8 @@ class PCD(BaseSampler):
         Output:
             hidden_states sample : Tensor, Dims=(batchSize * nHiddenNodes)
         """
-        hidden_activations = (torch.matmul(visible_states, self._RBM.get_weights())
-                          + self._RBM.get_hidden_bias())
+        hidden_activations = (torch.matmul(visible_states, self._RBM.weights)
+                          + self._RBM.hidden_bias)
         hidden_probs = torch.sigmoid(hidden_activations)
         return (hidden_probs >= torch.rand(hidden_probs.size())).float()
         
@@ -39,8 +39,8 @@ class PCD(BaseSampler):
         Output:
             visible_states sample : Tensor, Dims=(batchSize * nVisibleNodes)
         """
-        visible_activations = (torch.matmul(hidden_states, self._RBM.get_weights().t()) 
-                           + self._RBM.get_visible_bias())
+        visible_activations = (torch.matmul(hidden_states, self._RBM.weights.t()) 
+                           + self._RBM.visible_bias)
         visible_probs = torch.sigmoid(visible_activations)
         return (visible_probs >= torch.rand(visible_probs.size())).float()
     

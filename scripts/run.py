@@ -130,10 +130,8 @@ def run(modelCreator=None, config=None):
 
         #sample generation
         if config.generate_samples:
-            #TODO should we move this method call or wrap it to modelCreator.generate_samples()?
-            output_generated=modelCreator.model.generate_samples()
+            output_generated=engine.generate_samples()
             pp.plot_generative_output(output_generated)
-    
     
     logger.info("run() finished successfully.")
 
