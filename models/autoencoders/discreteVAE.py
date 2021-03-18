@@ -338,24 +338,26 @@ class DiVAE(AutoEncoderBase):
 
 		return output
 
-	def forward(self, input_data):
+	def forward(self, x):
 		logger.debug("forward")
 
 		#see definition for explanation
 		out=self._output_container.clear()
-
+        
 		#TODO data prep - study if this does good things
-		input_data_centered=input_data.view(-1, self._flat_input_size)-self._dataset_mean
-		#Step 1: Feed data through encoder 
+		input_data_centered=x.view(-1, self._flat_input_size)-self._dataset_mean
+        
+		#Step 1: Feed data through encoder
 		out.posterior_distributions, out.posterior_samples = self.encoder.hierarchical_posterior(input_data_centered)
+        
 		posterior_samples_concat=torch.cat(out.posterior_samples,1)
 		#Step 2: take samples zeta and reconstruct output with decoder
-		output_activations = self.decoder.decode(posterior_samples_concat)
-
+		output_activations = self.decoder(posterior_samples_concat)
+        
 		out.output_activations = output_activations+self._train_bias
 		out.output_distribution = Bernoulli(logits=out.output_activations)
 		out.output_data = torch.sigmoid(out.output_distribution.logits)
-		
+        
 		return out
 
 if __name__=="__main__":

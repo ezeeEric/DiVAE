@@ -1,11 +1,11 @@
 # @package _group_
 model_type: DiVAEPP
-activation_fct: tanh
+activation_fct: relu
 beta_smoothing_fct: 4
 decoder_hidden_nodes: 
-  - 200
-  - 200
-n_encoder_layer_nodes: 200
+  - 100
+  - 100
+n_encoder_layer_nodes: 100
 n_encoder_layers: 2
 n_latent_hierarchy_lvls: 4
-n_latent_nodes: 100
+n_latent_nodes: 32

@@ -83,7 +83,7 @@ class AutoEncoderBase(nn.Module):
         parameter_string="\n".join([str(par.shape) if isinstance(par,torch.Tensor) else str(par)  for par in self.__dict__.items()])
         return parameter_string
     
-    def forward(self, input_data):
+    def forward(self, x):
         """[summary]
 
         Args:

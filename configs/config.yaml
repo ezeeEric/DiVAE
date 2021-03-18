@@ -7,6 +7,10 @@ input_model: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
+create_plots: 0
+train: 1
+test: 0
+
 
 defaults:
   - model: divae

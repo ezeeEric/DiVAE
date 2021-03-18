@@ -109,16 +109,19 @@ def run(modelCreator=None, config=None):
         logger.info("Model loaded from file, skipping training.")
         pass
     else:
-        for epoch in range(1, config.engine.n_epochs+1):   
-            train_loss = engine.fit(epoch=epoch, is_training=True)
-            test_loss = engine.fit(epoch=epoch, is_training=False)
+        for epoch in range(1, config.engine.n_epochs+1): 
+            if config.train:
+                train_loss = engine.fit(epoch=epoch, is_training=True)
+            
+            if config.test:
+                test_loss = engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
     if config.save_model:
         modelCreator.save_model(config_string)
 
-    if config.create_plots:
+    if False:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
         #create plotting infrastructure

@@ -1,6 +1,5 @@
-
 """
-Autoencoders
+Hierarchical Encoder
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
@@ -11,10 +10,11 @@ import torch.nn as nn
 from models.networks.basicCoders import BasicEncoder
 from utils.dists.distributions import SpikeAndExponentialSmoother
 from utils.dists.MixtureExp import MixtureExp
+from utils.dists.MixtureExpMod import MixtureExpMod
 
 _SMOOTHER_DICT = {"SpikeExp" : SpikeAndExponentialSmoother, 
                   "MixtureExp" : MixtureExp}
-
+_SMOOTHER_MOD_DICT = {"MixtureExp" : MixtureExpMod}
 
 #logging module with handmade settings.
 from DiVAE import logging
@@ -57,7 +57,10 @@ class HierarchicalEncoder(BasicEncoder):
         self.skip_latent_layer=skip_latent_layer
 
         assert smoother in _SMOOTHER_DICT.keys(), "smoother should be one of" + str(_SMOOTHER_DICT.keys())
-        self.smoothing_distribution=_SMOOTHER_DICT[smoother]
+        self.smoothing_dist=_SMOOTHER_DICT[smoother]
+        
+        assert smoother in _SMOOTHER_MOD_DICT.keys(), "smoother should be one of" + str(_SMOOTHER_MOD_DICT.keys())
+        self.smoothing_dist_mod = _SMOOTHER_MOD_DICT[smoother]()
         
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
@@ -88,8 +91,8 @@ class HierarchicalEncoder(BasicEncoder):
 
         sequential=nn.Sequential(*moduleLayers)
         return sequential
-
-    def hierarchical_posterior(self, in_data=None, is_training=True):
+    
+    def hierarchical_posterior(self, x, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
             to n_latent_hierarchy_lvls and each element in the list is a DistUtil object containing posterior distribution 
             for the group of latent nodes in each hierarchy level. 
@@ -106,24 +109,63 @@ class HierarchicalEncoder(BasicEncoder):
         
         posterior = []
         post_samples = []
+        
         #loop hierarchy levels. apply previously defined network to input.
         #input is concatenation of data and latent variables per layer.
         for lvl in range(self.n_latent_hierarchy_lvls):
+            
             #network of hierarchy level lvl 
             current_net=self._networks[lvl]
             #input to this level current_net
-            current_input=torch.cat([in_data]+post_samples,dim=-1)
+            current_input=torch.cat([x]+post_samples,dim=-1)
             #feed network and retrieve logit
             logits=current_net(current_input)
+            
             #build the posterior distribution for this hierarchy
             #TODO this needs a switch: training smoothing, evaluation bernoulli
-            posterior_dist = self.smoothing_distribution(logits=logits,
-                             beta=self._config.model.beta_smoothing_fct)
-            #construct the zeta values (reparameterised logits, posterior samples)
+            posterior_dist = self.smoothing_dist(logits=logits,
+                                                 beta=self._config.model.beta_smoothing_fct)
             samples=posterior_dist.reparameterise()
             posterior.append(posterior_dist)
             post_samples.append(samples)
+            
         return posterior, post_samples
+
+    def forward(self, x):
+        """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
+            to n_latent_hierarchy_lvls and each element in the list is a DistUtil object containing posterior distribution 
+            for the group of latent nodes in each hierarchy level. 
+
+        Args:
+            input: a tensor containing input tensor.
+            is_training: A boolean indicating whether we are building a training graph or evaluation graph.
+
+        Returns:
+            posterior: a list of DistUtil objects containing posterior parameters.
+            post_samples: A list of samples from all the levels in the hierarchy, i.e. q(z_k| z_{0<i<k}, x).
+        """
+        logger.debug("ERROR Encoder::hierarchical_posterior")
+        
+        post_samples = []
+        post_logits = []
+        
+        #loop hierarchy levels. apply previously defined network to input.
+        #input is concatenation of data and latent variables per layer.
+        for lvl in range(self.n_latent_hierarchy_lvls):
+            
+            current_net=self._networks[lvl]
+            current_input=torch.cat([x]+post_samples,dim=-1)
+
+            logits=current_net(current_input)
+            post_logits.append(logits)
+            
+            beta = torch.tensor(self._config.model.beta_smoothing_fct,
+                                dtype=torch.float, requires_grad=False)
+            
+            samples=self.smoothing_dist_mod(logits, beta)
+            post_samples.append(samples)
+            
+        return beta, post_logits, post_samples
 
 if __name__=="__main__":
     logger.debug("Testing Networks")

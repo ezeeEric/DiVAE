@@ -1,10 +1,10 @@
 """
-Mixture of Exponential Distributions
+Mixture of Exponential Distribution
 
 Author: Abhi (abhishek@myumanitoba.ca)
 """
 import torch
-
+from torch import nn
 from torch import log, exp
 from torch.distributions.bernoulli import Bernoulli
 
@@ -14,23 +14,7 @@ class MixtureExp(Bernoulli):
     """
     def __init__(self, logits=None, beta=None):
         super(MixtureExp, self).__init__(logits=logits)
-        self.beta = torch.tensor(beta, dtype=torch.float, requires_grad=False)
-        
-    def reparameterise(self):
-        """
-        - ICDF of mixture of exponential distributions (Eq. 3, DVAE++)
-        Returns:
-            zeta: approximate post samples
-        """
-        q = torch.sigmoid(self.logits)
-        q = torch.clamp(q, min=1e-7, max=1.-1e-7)
-        
-        rho = torch.rand(q.size())
-        b = (rho + torch.exp(-self.beta)*(q - rho))/((1. - q) - 1.)
-        c = -(q*torch.exp(-self.beta))/(1. - q)
-        
-        zeta = (-1./self.beta)*(torch.log((-b + torch.sqrt(b**2 - 4*c))/2.))
-        return zeta
+        self.beta = beta
     
     def log_pdf(self, zeta):
         """

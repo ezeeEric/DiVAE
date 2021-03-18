@@ -16,10 +16,8 @@ class Engine(object):
 
     def __init__(self, cfg=None):
         self._config=cfg
-
         self._model=None
         self._optimiser=None
-
         self._data_mgr=None
 
     @property
