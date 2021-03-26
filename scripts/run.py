@@ -70,8 +70,8 @@ def run(modelCreator=None, config=None):
     if config.load_model:
         config_string=config.input_model.split("/")[-1].replace('.pt','')
     
-    if config.model.activation_fct.lower()=="relu":
-        modelCreator.default_activation_fct=torch.nn.ReLU() 
+        if config.model.activation_fct.lower()=="relu":
+            modelCreator.default_activation_fct=torch.nn.ReLU() 
     elif config.model.activation_fct.lower()=="tanh":
         modelCreator.default_activation_fct=torch.nn.Tanh() 
     else:

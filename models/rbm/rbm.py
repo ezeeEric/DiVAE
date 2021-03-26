@@ -1,4 +1,3 @@
-
 """
 PyTorch implementation of a restricted Boltzmann machine
 
@@ -20,15 +19,19 @@ class RBM(nn.Module):
 
 		self._n_visible=n_visible
 		self._n_hidden=n_hidden
-		
-		# random weights and biases for all layers
+ 
+	    # random weights and biases for all layers
 		# weights between visible and hidden nodes. 784x128 (that is 28x28 input
 		#size, 128 arbitrary choice)
 		# if requires_grad=False : we calculate the weight update ourselves, not
 		# through backpropagation
 		require_grad=True
-		#arbitrarily scaled by 0.01 
-		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=require_grad)
+		"""
+		num_params = int(((n_visible)*(n_visible-1))/2)
+		self._weights = nn.Parameter(torch.randn(num_params) * 0.01, requires_grad=require_grad)
+		self._W_idxs = torch.triu_indices(n_visible, n_hidden, offset=1)
+        	"""
+		self._weights = nn.Parameter(torch.randn(n_visible, n_hidden)*0.01, requires_grad=require_grad)
   		# #all biases initialised to 0.5
 		self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=require_grad)
 		# #applying a 0 bias to the hidden nodes
@@ -50,6 +53,14 @@ class RBM(nn.Module):
 		return self._hidden_bias
 
 	def get_weights(self):
+		"""
+		W = torch.zeros(self._n_visible, self._n_hidden)
+		W_diff = torch.zeros(self._n_visible, self._n_hidden)
+		W_diff[self._W_idxs[0], self._W_idxs[1]] = self._weights
+		W = W + W_diff
+		W = W + W.t()
+		print("self._weights :", self._weights)
+		"""
 		return self._weights
 
 	def run_training(self, in_data):

@@ -18,7 +18,7 @@ class MixtureExp(Bernoulli):
     
     def log_pdf(self, zeta):
         """
-        - Compute log(r(zeta|z = 0)), Note log(r(zeta|z = 0)) = log_pdf(self, 1-zeta)
+        - Compute log(r(zeta|z = 0)), Note log(r(zeta|z = 1)) = log_pdf(self, 1-zeta)
         Args:
             zeta: approximate post samples
         

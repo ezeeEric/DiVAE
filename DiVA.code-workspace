@@ -6,6 +6,7 @@
 	],
 	"settings": {
 		"git.ignoreLimitWarning": true,
-		"python.venvPath": "/Users/drdre/codez/qVAE/DiVAE/"
+		"python.venvPath": "/Users/drdre/codez/qVAE/DiVAE/",
+		"python.pythonPath": "/usr/bin/python3"
 	}
 }

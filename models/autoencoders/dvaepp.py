@@ -68,10 +68,10 @@ class DiVAEPP(DiVAE):
         #see definition for explanation
         out=self._output_container.clear()
       	
-	#TODO data prep - study if this does good things
+	    #TODO data prep - study if this does good things
         input_data_centered=x.view(-1, self._flat_input_size)-self._dataset_mean
         
-	#Step 1: Feed data through encoder
+	    #Step 1: Feed data through encoder
         out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
         post_samples = torch.cat(out.post_samples, 1)
         
@@ -100,15 +100,16 @@ class DiVAEPP(DiVAE):
     def loss(self, input_data, fwd_out):
 	    logger.debug("loss")
     
-	    kl_loss=self.kl_divergence(fwd_out.beta, fwd_out.post_logits, fwd_out.post_samples)
+	    kl_loss, cross_entropy, entropy, neg_energy=self.kl_divergence(fwd_out.beta, fwd_out.post_logits, fwd_out.post_samples)
 
 	    ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
 	    ae_loss_per_sample = torch.sum(ae_loss_matrix,1)
 	    ae_loss = torch.mean(ae_loss_per_sample)
-
+        
 	    loss = ae_loss + kl_loss
  
-	    return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss}
+	    return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss,
+               "cross_entropy":cross_entropy, "entropy":entropy, "neg_energy":neg_energy}
         
     def kl_divergence(self, beta, post_logits, post_samples, is_training=True):
         """
@@ -156,15 +157,16 @@ class DiVAEPP(DiVAE):
         rbm_vis = rbm_visible_samples.detach()
         rbm_hid = rbm_hidden_samples.detach()
         
-        batch_energy = (- torch.sum(torch.matmul(rbm_vis, torch.matmul(self.prior.get_weights(), rbm_hid.t())), 1) 
+        batch_energy = (- torch.diagonal(torch.matmul(rbm_vis, torch.matmul(self.prior.get_weights(), rbm_hid.t()))) 
                         - torch.matmul(rbm_vis, self.prior.get_visible_bias())
                         - torch.matmul(rbm_hid, self.prior.get_hidden_bias()))
-        neg_energy = - torch.mean(batch_energy, 0)
-        cross_entropy = neg_energy + cross_entropy
-
-        kl_loss = cross_entropy - torch.mean(entropy, 0)
         
-        return kl_loss
+        neg_energy = - torch.mean(batch_energy, 0)
+        # neg_energy = torch.mean(batch_energy, 0)
+        entropy = torch.mean(entropy, 0)
+
+        kl_loss = neg_energy + cross_entropy - entropy
+        return kl_loss, cross_entropy, entropy, neg_energy 
     
     def cross_entropy_from_hierarchical(self, logits, log_ratio):
         """
@@ -191,6 +193,8 @@ class DiVAEPP(DiVAE):
         
         cross_entropy = (- torch.matmul(q1, self.prior.get_visible_bias())
                          - torch.matmul(q2, self.prior.get_hidden_bias())
-                         - torch.sum(torch.matmul(q1_pert, torch.matmul(self.prior.get_weights(), q2.t())), 1))
-                         
-        return torch.mean(cross_entropy, 0)
+                         - torch.diagonal(torch.matmul(q1_pert, torch.matmul(self.prior.get_weights(), q2.t()))))
+        
+        cross_entropy = torch.mean(cross_entropy, 0)
+        #cross_entropy = - torch.mean(cross_entropy, 0)
+        return cross_entropy
