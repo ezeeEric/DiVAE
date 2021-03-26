@@ -1,13 +1,12 @@
 """
 Discrete Variational Autoencoder Class
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
 from torch import nn
-from models.autoencoders.autoencoderbase import AutoEncoderBase
+from hydra.utils import instantiate
 
+from models.autoencoders.autoencoderbase import AutoEncoderBase
 from models.networks.basicCoders import BasicDecoder
 from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from models.rbm.rbm import RBM
@@ -84,21 +83,20 @@ class DiVAE(AutoEncoderBase):
         logger.debug("Creating Network Structures")
         self.encoder=self._create_encoder()
         self.prior=self._create_prior()
-        self.sampler=self._create_sampler()
         self.decoder=self._create_decoder()
-        return
+        self.sampler = self._create_sampler(rbm=self.prior)
 
-    def _create_sampler(self):
+    def _create_sampler(self, rbm=None):
         logger.debug("Creating sampling routine")
         """
             Define the sampler to be used for sampling from the RBM.
 
         Returns:
-            Instance of GibbsSampler.
+            Instance of BaseSampler.
         """
-        assert self.prior is not None, "Prior (RBM) must be defined."
-        return GibbsSampler(RBM=self.prior, n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
-    
+        assert rbm is not None, "Prior (RBM) must be defined."
+        return instantiate(self._config.sampler,RBM=rbm)
+
     def _create_encoder(self):
         logger.debug("Creating encoder")
         return HierarchicalEncoder(
@@ -196,7 +194,7 @@ class DiVAE(AutoEncoderBase):
         ######
         # NEGATIVE: samples z_i from prior (RBM)
         ####
-        rbm_samples=self.sampler.get_samples(approx_post_samples=positive_samples_left, n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
+        rbm_samples=self.sampler.get_samples(approx_post_samples=positive_samples_left, n_gibbs_sampling_steps=self._config.sampler.n_gibbs_sampling_steps)
         negative_samples=torch.cat(rbm_samples,dim=1).detach()
         
         # Ep(z,theta) = -zT*Weights*z - zT*bias
@@ -314,7 +312,7 @@ class DiVAE(AutoEncoderBase):
             prior_sample = self.sampler.get_samples(
                 approx_post_samples=[], #empty list, as we want to generate samples from random numbers
                 n_latent_nodes=self.n_latent_nodes,
-                n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
+                n_gibbs_sampling_steps=self._config.sampler.n_gibbs_sampling_steps)
             prior_sample = torch.cat(prior_sample).detach()
             prior_samples.append(prior_sample)
         

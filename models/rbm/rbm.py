@@ -1,8 +1,6 @@
 
 """
 PyTorch implementation of a restricted Boltzmann machine
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import numpy as np
@@ -45,6 +43,9 @@ class RBM(nn.Module):
     @property
     def weights(self):
         return self._weights
+
+    def __repr__(self):
+        return "RBM: n_vis={0}, n_hid={1}".format(self._n_visible,self._n_hidden)
 
     def get_logZ_value(self):
         #TODO include calculation of this value

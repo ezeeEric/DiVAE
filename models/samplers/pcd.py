@@ -9,21 +9,21 @@ import torch
 
 class PCD(BaseSampler):
     
-    def __init__(self, batchSize, RBM, **kwargs):
+    def __init__(self, batch_size, RBM, **kwargs):
         super(PCD, self).__init__(**kwargs)
         
         self._RBM = RBM
-        self._MCState = (torch.rand(batchSize, self._RBM.visible_bias.size(0)) >= 
-                         torch.rand(batchSize, self._RBM.visible_bias.size(0))).float()
+        self._MCState = (torch.rand(batch_size, self._RBM.visible_bias.size(0)) >= 
+                         torch.rand(batch_size, self._RBM.visible_bias.size(0))).float()
         
     def hidden_samples(self, visible_states):
         """
         Sample batch of hidden states given a batch of visible states
         
         Args:
-            visible_states : Tensor, Dims=(batchSize * nVisibleNodes)
+            visible_states : Tensor, Dims=(batch_size * nVisibleNodes)
         Output:
-            hidden_states sample : Tensor, Dims=(batchSize * nHiddenNodes)
+            hidden_states sample : Tensor, Dims=(batch_size * nHiddenNodes)
         """
         hidden_activations = (torch.matmul(visible_states, self._RBM.weights)
                           + self._RBM.hidden_bias)
@@ -35,9 +35,9 @@ class PCD(BaseSampler):
         Sample batch of visible states given a batch of hidden states
         
         Args:
-            hidden_states : Tensor, Dims=(batchSize * nHiddenNodes)
+            hidden_states : Tensor, Dims=(batch_size * nHiddenNodes)
         Output:
-            visible_states sample : Tensor, Dims=(batchSize * nVisibleNodes)
+            visible_states sample : Tensor, Dims=(batch_size * nVisibleNodes)
         """
         visible_activations = (torch.matmul(hidden_states, self._RBM.weights.t()) 
                            + self._RBM.visible_bias)
@@ -49,8 +49,8 @@ class PCD(BaseSampler):
         Block Gibbs sampling with initialization through a persistent Markov Chain
         
         Returns:
-            visible_states : Batch of visible states at end of Gibbs sampling, Dims=(batchSize * nVisibleNodes)
-            hidden_states : Batch of hidden states at end of Gibbs sampling, Dims=(batchSize * nHiddenNodes)
+            visible_states : Batch of visible states at end of Gibbs sampling, Dims=(batch_size * nVisibleNodes)
+            hidden_states : Batch of hidden states at end of Gibbs sampling, Dims=(batch_size * nHiddenNodes)
         """
         visible_states = self._MCState
         for step in range(self.n_gibbs_sampling_steps):

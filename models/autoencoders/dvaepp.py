@@ -44,22 +44,6 @@ class DiVAEPP(DiVAE):
             smoother="MixtureExp",
             cfg=self._config)
     
-    def _create_sampler(self):
-        """
-        - Overrides _create_sampler in discreteVAE.py
-        
-        Returns:
-            PCD Sampler
-        """
-        return PCD(batchSize=32, RBM=self.prior, n_gibbs_sampling_steps=40)
-    
-    def create_networks(self):
-        logger.debug("Creating Network Structures")
-        self.encoder = self._create_encoder()
-        self.prior = self._create_prior()
-        self.decoder = self._create_decoder()
-        self.sampler = self._create_sampler()
-        
     def kl_divergence(self, post_dists, post_samples, is_training=True):
         """
         - Compute KLD b.w. hierarchical posterior and RBM prior for DVAE++
