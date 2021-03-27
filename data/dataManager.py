@@ -117,17 +117,19 @@ class DataManager(object):
 
         elif self._config.data.data_type.lower()=="calo":
             inFiles={
-                'gamma':    self._config.calo_input_gamma,
-                'eplus':    self._config.calo_input_eplus,        
-                'piplus':   self._config.calo_input_piplus         
+                'gamma':    self._config.data.calo_input_gamma,
+                'eplus':    self._config.data.calo_input_eplus,        
+                'piplus':   self._config.data.calo_input_piplus         
             }
+
             train_dataset,test_dataset,val_dataset=get_calo_datasets(
                 inFiles=inFiles,
-                particle_type=[self._config.particle_type],
+                particle_type=[self._config.data.particle_type],
                 layer_subset=self._config.data.calo_layers,
                 frac_train_dataset=self._config.data.frac_train_dataset,
                 frac_test_dataset=self._config.data.frac_test_dataset, 
                 )
+                
         #create the DataLoader for the training dataset
         train_loader=DataLoader(   
             train_dataset,

@@ -124,7 +124,7 @@ def update(changed_image):
             im.set_cmap(changed_image.get_cmap())
             im.set_clim(changed_image.get_clim())
 
-def plot_calo_jet_generated(output_data, n_samples=5, out_file="./output/testCalo.png", do_gif=False):
+def plot_calo_jet_generated(output_data, n_samples=5, output="./output/testCalo.png", do_gif=False):
     for i in range(n_samples):
 
         plt.figure(figsize=(10, 3.5))

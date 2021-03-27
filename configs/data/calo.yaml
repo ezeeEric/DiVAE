@@ -7,6 +7,8 @@ calo_layers:
   - layer_1
   - layer_2
 particle_type: gamma
+frac_test_dataset: 0.02
+frac_train_dataset: 0.08
 
 calo_input_eplus: /Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5
 calo_input_gamma: /Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5

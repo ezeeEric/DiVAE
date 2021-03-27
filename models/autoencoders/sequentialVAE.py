@@ -40,7 +40,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         # input_sizes=self._flat_input_size if isinstance(self._flat_input_size,list) else [self._flat_input_size]
 
         for i,dim in enumerate(self._flat_input_size):
-            self._reparam_nodes[i]=(self._config.encoder_hidden_nodes[-1],self._latent_dimensions)
+            self._reparam_nodes[i]=(self._config.model.encoder_hidden_nodes[-1],self._latent_dimensions)
 
             #define network structure
             self._encoder_nodes[i]=[]
@@ -51,13 +51,13 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             #for each new calo layer, add input dimension
             input_dec+=self._latent_dimensions if i==0 else self._flat_input_size[i-1]
 
-            enc_node_list=[input_enc]+self._config.encoder_hidden_nodes
+            enc_node_list=[input_enc]+list(self._config.model.encoder_hidden_nodes)
 
             for num_nodes in range(0,len(enc_node_list)-1):
                 nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
                 self._encoder_nodes[i].append(nodepair)
             
-            dec_node_list=[input_dec]+self._config.model.decoder_hidden_nodes+[dim]
+            dec_node_list=[input_dec]+list(self._config.model.decoder_hidden_nodes)+[dim]
 
             for num_nodes in range(0,len(dec_node_list)-1):
                 nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
@@ -78,7 +78,6 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
 
         for i,dim in enumerate(self._flat_input_size):
             self._autoencoders[i]=VariationalAutoEncoder.init_with_nodelist(dim=dim,
-                                                        cfg=self._config,
                                                         actfct=self._activation_fct,
                                                         enc_nodes=self._encoder_nodes[i],
                                                         rep_nodes=self._reparam_nodes[i],
@@ -119,11 +118,10 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
 
         outputs=[]
         for i,it_dim in enumerate(self._flat_input_size):
-            rnd_input=torch.randn((config.n_generate_samples,self._latent_dimensions))
+            rnd_input=torch.randn((self._config.n_generate_samples,self._latent_dimensions))
             rnd_input_cat=torch.cat([rnd_input]+ outputs, dim=1)
             output = self._autoencoders[i].decoder.decode(rnd_input_cat)
             output.detach()
-
             outputs.append(output)
         return outputs
     
@@ -152,5 +150,5 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
                 logvar=fwd_out.logvars[i]
             )
             in_data=input_data[i].view(-1, dim)
-            total_loss+=self._autoencoders[i].loss(in_data, tmp_out)
-        return total_loss
+            total_loss+=self._autoencoders[i].loss(in_data, tmp_out, flat_input_dim=dim)
+        return {'loss': total_loss}

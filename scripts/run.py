@@ -57,19 +57,6 @@ def run(modelCreator=None, config=None):
     dataMgr.pre_processing()
 
     #set parameters relevant for this run
-    date=datetime.datetime.now().strftime("%y%m%d")
-
-    config_string="_".join(str(i) for i in [config.model.model_type,
-                                            config.data.data_type,
-                                            date,
-                                            config.tag
-                                            ])
-    if config.data.data_type=='calo': 
-        config_string+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
-    # overwrite config string with file name if we load from file
-    if config.load_model:
-        config_string=config.input_model.split("/")[-1].replace('.pt','')
-    
     if config.model.activation_fct.lower()=="relu":
         modelCreator.default_activation_fct=torch.nn.ReLU() 
     elif config.model.activation_fct.lower()=="tanh":
@@ -77,7 +64,6 @@ def run(modelCreator=None, config=None):
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
-
 
     #instantiate the chosen model
     #loads from file 
@@ -114,7 +100,9 @@ def run(modelCreator=None, config=None):
             test_loss = engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
-    #also save the current configuration with the same tag for bookkeeping
+    date=datetime.datetime.now().strftime("%y%m%d")
+    config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
+
     if config.save_model:
         modelCreator.save_model(config_string)
 
