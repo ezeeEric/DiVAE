@@ -143,7 +143,6 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             #layer.
             #TODO how to index the OutputContainer lists, so we can call
             #fwdout[i] here?
-
             tmp_out=OutputContainer(
                 output_data=fwd_out.outputs[i],
                 mu=fwd_out.mus[i],

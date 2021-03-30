@@ -81,6 +81,42 @@ more clamping in KLD
 - The configuration object config is instantiated in the __init__ file of the
   main module and imported as global variable.
 
+
+## How to plot
+### Calorimeter Data
+Currently (March 2021) there is one model able to run on the sequence of
+calorimeter images: sequentialVAE (sVAE). In simple short, this is a succession
+of 3 VAEs where the n+1 layer is conditioned on the preceding layer's outputs.
+The conditionng is done like in the simple `conditionalVAE` model, i.e. by
+including the condition as input AND in the latent layer.
+
+Relevant configuration files:
+```
+configs/config_calo.yaml
+configs/engine/calo_training.yaml
+configs/data/calo.yaml
+```
+
+**Please change the calorimeter data path in `configs/data/calo.yaml` to the shared space on ML1.** 
+
+Once this has been changed, you can run the setup by executing:
+```
+python scripts/run.py --config-name  config_calo
+```
+
+A quick summary of the inner workings:
+- we create an instance of `PlotProvider` in `run.py` and call `plot()` on that instance
+- this `plot()` function imports the module containing the definition of the
+  plotting functions to be executed. The module is `utils.plotting.plotFunctionsCalo` by
+  default.
+- the function then loops all functions defined in the cfg-setting `plot_calo.yaml:plotFunctions`
+- if you choose to execute `plot_shower_metrics`, all metrics listed in
+  `plot_calo.yaml:plot_metrics` are plotted
+- the plot will be created in the current hydra-created output directory
+
+
+
+
 ## TODOs
 ### General
 - various generic NN training routines could improve our results:

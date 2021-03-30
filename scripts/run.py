@@ -27,7 +27,7 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
-from utils.plotProvider import PlotProvider
+from utils.plotting.plotProvider import PlotProvider
 from engine.engine import Engine
 from models.modelCreator import ModelCreator
 
@@ -40,7 +40,7 @@ def main(cfg=None):
 
     wandb.init(entity="qvae", project="divae", config=cfg)  
     print(OmegaConf.to_yaml(cfg))
-
+    
     #create model handling object
     modelCreator=ModelCreator(cfg=cfg)
     
@@ -98,28 +98,30 @@ def run(modelCreator=None, config=None):
         for epoch in range(1, config.engine.n_epochs+1):   
             train_loss = engine.fit(epoch=epoch, is_training=True)
             test_loss = engine.fit(epoch=epoch, is_training=False)
-    
-    #save our trained model
-    date=datetime.datetime.now().strftime("%y%m%d")
-    config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
 
     if config.save_model:
+        #save our trained model
+        date=datetime.datetime.now().strftime("%y%m%d")
+        config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
 
     if config.create_plots:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
-        #create plotting infrastructure
-        pp=PlotProvider(config_string=config_string,date_tag=date, cfg=config)
-        #TODO is there a neater integration than to add this as member?
-        pp.data_dimensions=dataMgr.get_input_dimensions()
-        #create plot
-        pp.plot(eval_output)
-
+        
         #sample generation
         if config.generate_samples:
             output_generated=engine.generate_samples()
-            pp.plot_generative_output(output_generated)
+            eval_output.output_generated=output_generated
+
+        #instantiate plotting infrastructure
+        pp=PlotProvider(data_container=eval_output, plotFunctions=config.plotting.plotFunctions, config_string=config_string,date_tag=date, cfg=config)
+        
+        #TODO is there a neater integration than to add this as member?
+        pp.data_dimensions=dataMgr.get_input_dimensions()
+        
+        #call all the registered plot functions (hydra config)
+        pp.plot(eval_output)
     
     logger.info("run() finished successfully.")
 
