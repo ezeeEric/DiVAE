@@ -54,7 +54,7 @@ class DiVAEPP(DiVAE):
         Returns:
             PCD Sampler
         """
-        return PCD(batchSize=128, RBM=self.prior, n_gibbs_sampling_steps=40)
+        return PCD(batchSize=64, RBM=self.prior, n_gibbs_sampling_steps=40)
     
     def forward(self, x):
         """
@@ -79,22 +79,6 @@ class DiVAEPP(DiVAE):
         out.output_activations = output_activations+self._train_bias
         out.output_distribution = Bernoulli(logits=out.output_activations)
         out.output_data = torch.sigmoid(out.output_distribution.logits)
-        
-        """
-        Autograd graph visualization
-        
-        # Create the dot objects using torchviz
-        post_logits_dot = make_dot(torch.cat(out.post_logits, 1), params=dict(self.encoder.named_parameters()))
-        post_samples_dot = make_dot(post_samples, params=dict(self.encoder.named_parameters()))
-        
-        # Save the dot objects
-        post_logits_dot.save(filename='post_logits.dot')
-        post_samples_dot.save(filename='post_samples.dot')
-        
-        output_activations_dot = make_dot(output_activations)
-        output_activations_dot.save(filename='output_activations.dot')
-        """
-        
         return out
     
     def loss(self, input_data, fwd_out):
@@ -157,7 +141,17 @@ class DiVAEPP(DiVAE):
         rbm_vis = rbm_visible_samples.detach()
         rbm_hid = rbm_hidden_samples.detach()
         
-        batch_energy = (- torch.diagonal(torch.matmul(rbm_vis, torch.matmul(self.prior.get_weights(), rbm_hid.t()))) 
+        # Broadcast W to (batchSize * nVis * nHid)
+        W = self.prior.get_weights()
+        W = W + torch.zeros((rbm_vis.size(0),) + W.size())
+        
+        # Prepare H, V for torch.matmul()
+        # Change H.size() from (batchSize * nHid) to (batchSize * nHid * 1)
+        H = rbm_hid.unsqueeze(2)
+        # Change V.size() from (batchSize * nVis) to (batchSize * 1 * nVis)
+        V = rbm_hid.unsqueeze(2).permute(0, 2, 1)
+        
+        batch_energy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
                         - torch.matmul(rbm_vis, self.prior.get_visible_bias())
                         - torch.matmul(rbm_hid, self.prior.get_hidden_bias()))
         
@@ -191,10 +185,34 @@ class DiVAEPP(DiVAE):
         q2 = torch.sigmoid(logit_q2)
         q1_pert = torch.sigmoid(logit_q1 + log_ratio_1)
         
-        cross_entropy = (- torch.matmul(q1, self.prior.get_visible_bias())
-                         - torch.matmul(q2, self.prior.get_hidden_bias())
-                         - torch.diagonal(torch.matmul(q1_pert, torch.matmul(self.prior.get_weights(), q2.t()))))
+        # Broadcast W to (batchSize * nVis * nHid)
+        W = self.prior.get_weights()
+        W = W + torch.zeros((q1.size(0),) + W.size())
+        
+        # Prepare q2, q1_pert for torch.matmul()
+        # Change q2.size() from (batchSize * nHid) to (batchSize * nHid * 1)
+        H = q2.unsqueeze(2)
+        # Change V.size() from (batchSize * nVis) to (batchSize * 1 * nVis)
+        V = q1_pert.unsqueeze(2).permute(0, 2, 1)
+        
+        cross_entropy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
+                         - torch.matmul(q1, self.prior.get_visible_bias())
+                         - torch.matmul(q2, self.prior.get_hidden_bias()))
         
         cross_entropy = torch.mean(cross_entropy, 0)
         #cross_entropy = - torch.mean(cross_entropy, 0)
         return cross_entropy
+    
+    def generate_samples(self):
+        """
+        generate_samples()
+        
+        """
+        rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
+        rbm_vis = rbm_visible_samples.detach()
+        rbm_hid = rbm_hidden_samples.detach()
+        prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
+        
+        output_activations = self.decoder(prior_samples) + self._train_bias
+        samples = Bernoulli(logits=output_activations).reparameterise()
+        return samples

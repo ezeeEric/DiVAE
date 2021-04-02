@@ -103,6 +103,14 @@ class Engine(object):
 
                 # Output logging
                 if is_training and batch_idx % 100 == 0:
+                    if batch_idx % 500 == 0:
+                        recon = fwd_output.output_distribution.reparameterise()
+                        recon = recon.reshape((-1,) + input_data.size()[2:]).detach().numpy()
+                        batch_loss_dict["recon_img"] = [wandb.Image(img, caption="Reconstruction") for img in recon]
+                        samples = self._model.generate_samples()
+                        samples = samples.reshape((-1,) + input_data.size()[2:]).detach().numpy()
+                        batch_loss_dict["sample_img"] = [wandb.Image(img, caption="Samples") for img in samples]
+                    
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(
                                             epoch,
                                             batch_idx*len(input_data), 

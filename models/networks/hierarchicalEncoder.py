@@ -14,7 +14,7 @@ from utils.dists.MixtureExpMod import MixtureExpMod
 
 _SMOOTHER_DICT = {"SpikeExp" : SpikeAndExponentialSmoother, 
                   "MixtureExp" : MixtureExp}
-_SMOOTHER_MOD_DICT = {"MixtureExp" : MixtureExpMod}
+_SMOOTHER_MOD_DICT = {"MixtureExp" : MixtureExpMod, "SpikeExp" : None}
 
 #logging module with handmade settings.
 from DiVAE import logging
@@ -60,7 +60,7 @@ class HierarchicalEncoder(BasicEncoder):
         self.smoothing_dist=_SMOOTHER_DICT[smoother]
         
         assert smoother in _SMOOTHER_MOD_DICT.keys(), "smoother should be one of" + str(_SMOOTHER_MOD_DICT.keys())
-        self.smoothing_dist_mod = _SMOOTHER_MOD_DICT[smoother]()
+        self.smoothing_dist_mod = _SMOOTHER_MOD_DICT[smoother]() if _SMOOTHER_MOD_DICT[smoother] is not None else None
         
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
