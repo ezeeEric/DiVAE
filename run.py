@@ -4,7 +4,7 @@ Main executable. The run() method steers data loading, model creation, training
 and evaluation by calling the respective interfaces.
 
 Author: Abhishek <abhishek@myumanitoba.ca>
-Author: Eric Drechsler <eric.drechsler@cern.ch>
+Author: Eric Drechsler <eric.drechsler@cern.ch
 """
 
 #external libraries
@@ -22,6 +22,10 @@ from omegaconf import OmegaConf
 
 # Add the path to the parent directory to augment search for module
 sys.path.append(os.getcwd())
+# Add the path to the parent directory to augment search for module
+par_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+if par_dir not in sys.path:
+    sys.path.append(par_dir)
     
 # Weights and Biases
 import wandb
@@ -35,7 +39,7 @@ from utils.plotProvider import PlotProvider
 from engine.engine import Engine
 from models.modelCreator import ModelCreator
 
-@hydra.main(config_path="../configs", config_name="config")
+@hydra.main(config_path="configs", config_name="config")
 def main(cfg=None):
 
     #TODO hydra update: output path not needed anymore. Replace all instances

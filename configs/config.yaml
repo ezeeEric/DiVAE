@@ -13,7 +13,7 @@ test: 0
 
 
 defaults:
-  - model: divae
+  - model: divaepp
   - data: mnist
   - engine: divae_training
   - task
