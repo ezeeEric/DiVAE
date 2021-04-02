@@ -91,15 +91,16 @@ class DiVAE(AutoEncoderBase):
 
 	def _create_sampler(self):
 		logger.debug("Creating sampling routine")
-		#TODO make this steerable
+        
+        	#TODO make this steerable
 		"""
-        sampler=ContrastiveDivergence( 
-			learning_rate=self._config.engine.learning_rate,
-			momentum_coefficient=self._config.engine.momentum_coefficient,
-			n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps,
-			weight_decay_factor=self._config.engine.weight_decay_factor
-		)
-        """
+        	sampler = ContrastiveDivergence(learning_rate=self._config.engine.learning_rate,
+                                        momentum_coefficient=self._config.engine.momentum_coefficient,
+                                        n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps,
+                                        weight_decay_factor=self._config.engine.weight_decay_factor)
+		"""
+        
+                                        
 		#TODO this cyclic dependency needs to be removed. 
 		assert self.prior is not None, "Prior must be defined"
 		sampler.set_rbm_parameters(self.prior)
@@ -336,7 +337,7 @@ class DiVAE(AutoEncoderBase):
 		output=torch.sigmoid(output_distribution.logits)
 		output.detach()
 
-		return output
+		return output_distribution.reparameterise()
 
 	def forward(self, x):
 		logger.debug("forward")
