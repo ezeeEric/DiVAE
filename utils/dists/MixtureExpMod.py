@@ -19,12 +19,13 @@ class MixtureExpMod(torch.nn.Module):
         Returns:
             zeta: approximate post samples
         """
-        q = torch.sigmoid(logits)
-        q = torch.clamp(q, min=1e-7, max=1.-1e-7)
+        Q = torch.sigmoid(logits)
+        Q = torch.clamp(Q, min=1e-7, max=1.-1e-7)
         
-        rho = torch.rand(q.size())
-        b = (rho + torch.exp(-beta)*(q - rho))/((1. - q) - 1.)
-        c = -(q*torch.exp(-beta))/(1. - q)
-        
-        zeta = (-1./beta)*(torch.log((-b + torch.sqrt(b**2 - 4*c))/2.))
+        rho = torch.rand(Q.size())
+        #B = (rho + torch.exp(-beta)*(Q - rho))/((1. - Q) - 1.)
+        B = ((rho + torch.exp(-beta)*(Q - rho))/(1. - Q)) - 1.
+        C = -(Q*torch.exp(-beta))/(1. - Q)
+        M = (-B + torch.sqrt(B**2 - 4*C))/2.
+        zeta = (-1./beta)*(torch.log(M))
         return zeta
