@@ -81,6 +81,8 @@ class Engine(object):
             data_loader=self.data_mgr.test_loader
 
         epoch_loss_dict = {}
+        num_batches = len(data_loader)
+        num_epochs = self._config.engine.n_epochs
 
         with torch.set_grad_enabled(is_training):
             for batch_idx, (input_data, label) in enumerate(data_loader):
@@ -91,15 +93,21 @@ class Engine(object):
                 #forward call
                 #output is a namespace with members as added in the forward call
                 #and subsequently used in loss()
-                with torch.autograd.set_detect_anomaly(True):
+                with torch.autograd.set_detect_anomaly(False):
                     fwd_output=self._model(input_data)
 
                     # Compute model-dependent loss
                     batch_loss_dict = self._model.loss(input_data,fwd_output)
 
                     if is_training:
-                        batch_loss_dict["loss"].backward()
-                        self._optimiser.step()
+                        if self._config.model.model_type == "DiVAEPP":
+                            gamma = (((epoch-1)*num_batches)+(batch_idx+1))/(num_epochs*num_batches)
+                            batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + gamma*batch_loss_dict["kl_loss"]
+                            batch_loss_dict["loss"].backward()
+                            self._optimiser.step()
+                        else:
+                            batch_loss_dict["loss"].backward()
+                            self._optimiser.step()
 
                 # Output logging
                 if is_training and batch_idx % 100 == 0:

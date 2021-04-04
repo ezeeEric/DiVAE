@@ -21,7 +21,7 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 class HierarchicalEncoder(BasicEncoder):
-    def __init__(self, activation_fct=nn.Tanh(), input_dimension=784, n_latent_hierarchy_lvls=4, n_latent_nodes=100, n_encoder_layer_nodes=200, n_encoder_layers=2, skip_latent_layer=False, smoother="SpikeExp", **kwargs):
+    def __init__(self, activation_fct=nn.ReLU(), input_dimension=784, n_latent_hierarchy_lvls=4, n_latent_nodes=100, n_encoder_layer_nodes=200, n_encoder_layers=2, skip_latent_layer=False, smoother="SpikeExp", **kwargs):
 
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
@@ -74,6 +74,7 @@ class HierarchicalEncoder(BasicEncoder):
         # this is done outside this class...  
         #TODO this should be revised with better structure for input layer config  
         layers=[self.num_input_nodes+level*self.n_latent_nodes]+[self.n_encoder_layer_nodes]*self.n_encoder_layers+[self.n_latent_nodes]
+        
         #in case we want to sample gaussian variables
         if skip_latent_layer: 
             layers=[self.num_input_nodes+level*self.n_latent_nodes]+[self.n_encoder_layer_nodes]*self.n_encoder_layers
@@ -156,7 +157,8 @@ class HierarchicalEncoder(BasicEncoder):
             current_net=self._networks[lvl]
             current_input=torch.cat([x]+post_samples,dim=-1)
 
-            logits=current_net(current_input)
+            # Clamping logit values
+            logits=torch.clamp(current_net(current_input), min=-88., max=88.)
             post_logits.append(logits)
             
             beta = torch.tensor(self._config.model.beta_smoothing_fct,

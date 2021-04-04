@@ -20,7 +20,7 @@ class MixtureExpMod(torch.nn.Module):
             zeta: approximate post samples
         """
         Q = torch.sigmoid(logits)
-        Q = torch.clamp(Q, min=1e-7, max=1.-1e-7)
+        Q = torch.clamp(Q, min=1e-5, max=1.-1e-5)
         
         rho = torch.rand(Q.size())
         #B = (rho + torch.exp(-beta)*(Q - rho))/((1. - Q) - 1.)

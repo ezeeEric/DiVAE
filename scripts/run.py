@@ -91,7 +91,7 @@ def run(modelCreator=None, config=None):
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
     
-    engine=Engine()
+    engine=Engine(cfg=config)
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
 

@@ -1,6 +1,6 @@
 # @package _group_
 learning_rate: 0.001
-n_batch_samples: 64
+n_batch_samples: 60
 n_epochs: 10
 n_gibbs_sampling_steps: 40
 sampling_mode: gibbs_flat

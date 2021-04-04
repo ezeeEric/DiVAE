@@ -10,6 +10,7 @@ Author :  ODM, Dr. Dre
 import torch
 from torch import zeros, ones
 from torch.distributions import Distribution, Uniform
+from torch.nn.functional import binary_cross_entropy_with_logits
 
 import numpy as np
 import logging
@@ -64,7 +65,8 @@ class Bernoulli(Distribution):
         Returns: 
             log_prob: a matrix of log_prob (num_samples * num_vars).
         """
-        log_prob = - sigmoid_cross_entropy_with_logits(logits=self.logits, labels=samples)
+        #log_prob = - sigmoid_cross_entropy_with_logits(logits=self.logits, labels=samples)
+        log_prob = - binary_cross_entropy_with_logits(self.logits, samples, reduction='none')
         return log_prob
 
     def __repr__(self):

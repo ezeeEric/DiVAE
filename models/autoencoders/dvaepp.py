@@ -76,7 +76,7 @@ class DiVAEPP(DiVAE):
         post_samples = torch.cat(out.post_samples, 1)
         
         output_activations = self.decoder(post_samples)
-        out.output_activations = output_activations+self._train_bias
+        out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
         out.output_distribution = Bernoulli(logits=out.output_activations)
         out.output_data = torch.sigmoid(out.output_distribution.logits)
         return out
@@ -118,6 +118,7 @@ class DiVAEPP(DiVAE):
         # Compute and sum the entropy for each hierarchy level
         for logits, samples in zip(post_logits, post_samples):
             factorial = self.encoder.smoothing_dist(logits=logits, beta=beta)
+
             entropy += torch.sum(factorial.entropy(), 1)
             log_ratio.append(factorial.log_ratio(samples))
             
