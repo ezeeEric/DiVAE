@@ -35,13 +35,19 @@ class Bernoulli(Distribution):
         self.logits = logits
         self.beta = beta
 
-    def reparameterise(self):
+    def reparameterise(self, num_samples=64):
         #draw samples from bernoulli distribution with probability p=1-q
         #where q is logits and rho acts as sample 
         #returns 0/1
-        q = torch.sigmoid(self.logits) # equals 1-probability
+        # equals 1-probability
+        # Broadcast to (num_samples * batch_size * output_size)
+        q = torch.sigmoid(self.logits)
+        q = q + torch.zeros((num_samples, ) + q.size())
+        # Sample from U(0,1), Size:(num_samples * batch_size * output_size)
         rho = torch.rand(q.size())
-        bernoulli_sample = torch.where(rho<q, torch.ones(q.size()), zeros(q.size()))
+        sample = torch.where(rho<q, torch.ones(q.size()), zeros(q.size()))
+        sample = torch.mean(sample, dim=0)
+        bernoulli_sample = torch.where(sample>0.5, torch.ones(sample.size()), zeros(sample.size()))
         return bernoulli_sample
     
     def entropy(self):

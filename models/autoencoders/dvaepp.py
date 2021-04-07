@@ -118,7 +118,6 @@ class DiVAEPP(DiVAE):
         # Compute and sum the entropy for each hierarchy level
         for logits, samples in zip(post_logits, post_samples):
             factorial = self.encoder.smoothing_dist(logits=logits, beta=beta)
-
             entropy += torch.sum(factorial.entropy(), 1)
             log_ratio.append(factorial.log_ratio(samples))
             
@@ -203,6 +202,14 @@ class DiVAEPP(DiVAE):
         cross_entropy = torch.mean(cross_entropy, 0)
         #cross_entropy = - torch.mean(cross_entropy, 0)
         return cross_entropy
+    
+    def kl_div_loss(self, beta, post_logits, post_samples, is_training=True):
+        """
+        Compute the weighted KL loss to balance the KL term across hierarhical
+        variable groups (Appendix H, DVAE++)
+        """
+        logger.debug("dvaepp::kl_div_loss")
+        
     
     def generate_samples(self):
         """

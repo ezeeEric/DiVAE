@@ -101,6 +101,9 @@ class Engine(object):
 
                     if is_training:
                         if self._config.model.model_type == "DiVAEPP":
+                            """
+                            Cheap hack to allow KL annealing in DVAE++
+                            """
                             gamma = (((epoch-1)*num_batches)+(batch_idx+1))/(num_epochs*num_batches)
                             batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + gamma*batch_loss_dict["kl_loss"]
                             batch_loss_dict["loss"].backward()
