@@ -35,24 +35,23 @@ class PlotProvider(object):
     def plot_generative_output(self, input_data):
         #TODO this is a quick hack to use the same plotting function for input
         #vs output and generated samples
-        n_split=input_data.size()[0]//2
-        in_data_1,in_data_2=torch.split(input_data,split_size_or_sections=int(n_split),dim=0)
-        in_data_1=in_data_1.detach().numpy()
-        in_data_2=in_data_2.detach().numpy()
-        
-        plot_MNIST_output(input_data=in_data_1, 
-            output_data=in_data_2,
-            n_samples=n_split, 
-            out_file="{0}/{2}_{1}_generated.png".format(self._config.output_path,self.config_string,self.date_tag))
-            
-        # from utils.helpers import plot_generative_output
+        if isinstance(input_data,list):
         # plot_generative_output(output.detach(), n_samples=n_samples, output="./output/divae_mnist/rbm_samples/rbm_sampling_{0}.png".format(outstring))
         # def generate_samples_svae(model, outstring=""):
-        #     outputs=model.generate_samples(n_samples=5)
-        #     outputs=[ out.detach() for out in outputs]
-        #     from utils.helpers import plot_calo_jet_generated
-        #     plot_calo_jet_generated(outputs, n_samples=5, output="./output/svae_calo/generated_{0}.png".format(outstring))
-        #     return
+            outputs=[ out.detach() for out in input_data]
+            from utils.helpers import plot_calo_jet_generated
+            plot_calo_jet_generated(outputs, n_samples=5, output="./generated_{0}.png".format("test"))
+            return
+        else:   
+            n_split=input_data.size()[0]//2
+            in_data_1,in_data_2=torch.split(input_data,split_size_or_sections=int(n_split),dim=0)
+            in_data_1=in_data_1.detach().numpy()
+            in_data_2=in_data_2.detach().numpy()
+            
+            plot_MNIST_output(input_data=in_data_1, 
+                output_data=in_data_2,
+                n_samples=n_split, 
+                out_file="{0}/{2}_{1}_generated.png".format(self._config.output_path,self.config_string,self.date_tag))
         pass
 
     def plot(self, input_container):
