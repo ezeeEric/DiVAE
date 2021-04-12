@@ -105,6 +105,8 @@ class Engine(object):
                             Cheap hack to allow KL annealing in DVAE++
                             """
                             gamma = (((epoch-1)*num_batches)+(batch_idx+1))/(num_epochs*num_batches)
+                            #gamma = 1.0
+                            batch_loss_dict["gamma"] = gamma
                             batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + gamma*batch_loss_dict["kl_loss"]
                             batch_loss_dict["loss"].backward()
                             self._optimiser.step()
@@ -118,9 +120,17 @@ class Engine(object):
                         recon = fwd_output.output_distribution.reparameterise()
                         recon = recon.reshape((-1,) + input_data.size()[2:]).detach().numpy()
                         batch_loss_dict["recon_img"] = [wandb.Image(img, caption="Reconstruction") for img in recon]
+                        
                         samples = self._model.generate_samples()
                         samples = samples.reshape((-1,) + input_data.size()[2:]).detach().numpy()
                         batch_loss_dict["sample_img"] = [wandb.Image(img, caption="Samples") for img in samples]
+                        
+                        input_imgs = input_data.squeeze(1).detach().numpy()
+                        batch_loss_dict["input_img"] = [wandb.Image(img, caption="Input") for img in input_imgs]
+                    else:
+                        batch_loss_dict.pop('recon_img', None)
+                        batch_loss_dict.pop('sample_img', None)
+                        batch_loss_dict.pop('input_img', None)
                     
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(
                                             epoch,

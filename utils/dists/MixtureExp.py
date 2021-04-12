@@ -36,7 +36,7 @@ class MixtureExp(Bernoulli):
             log_ratio: log r(\zeta|z=1) - log r(\zeta|z=0) 
         """
         log_pdf_0 = self.log_pdf(zeta)
-        log_pdf_1 = self.log_pdf(1. - zeta)
+        log_pdf_1 = self.log_pdf(1.- zeta)
         log_ratio = log_pdf_1 - log_pdf_0
         return log_ratio
         
