@@ -10,5 +10,5 @@ mnist_input: /fast_scratch/QVAE/data/
 
 load_data_from_pkl: 0
 frac_test_dataset: 0.001
-frac_train_dataset: 0.01
+frac_train_dataset: 0.25
 

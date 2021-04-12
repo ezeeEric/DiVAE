@@ -8,6 +8,10 @@ calo_layers:
   - layer_2
 particle_type: gamma
 
-calo_input_eplus: /Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5
-calo_input_gamma: /Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5
-calo_input_piplus: /Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5
+calo_input_eplus: /fast_scratch/QVAE/data/calo/eplus.hdf5
+calo_input_gamma: /fast_scratch/QVAE/data/calo/gamma.hdf5
+calo_input_piplus: /fast_scratch/QVAE/data/calo/piplus.hdf5
+
+#calo_input_eplus: /Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5
+#calo_input_gamma: /Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5
+#calo_input_piplus: /Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5
