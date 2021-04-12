@@ -7,8 +7,12 @@ from torch import nn
 class BaseSampler(nn.Module):
     def __init__(self, n_gibbs_sampling_steps, **kwargs):
         super(BaseSampler, self).__init__(**kwargs)
-        self.n_gibbs_sampling_steps = n_gibbs_sampling_steps
+        self._n_gibbs_sampling_steps = n_gibbs_sampling_steps
     
+    @property
+    def n_gibbs_sampling_steps(self):
+        return self._n_gibbs_sampling_steps
+
     def __repr__(self):
         outstring=""
         for key,val in self.__dict__.items():
