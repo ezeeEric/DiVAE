@@ -12,3 +12,4 @@ defaults:
   - data: calo
   - engine: calo_training
   - task
+  - plotting: plot_calo
