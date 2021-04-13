@@ -61,10 +61,6 @@ def run(modelCreator=None, config=None):
     dataMgr.pre_processing()
 
     #set parameters relevant for this run
-<<<<<<< HEAD
-    if config.model.activation_fct.lower()=="relu":
-        modelCreator.default_activation_fct=torch.nn.ReLU() 
-=======
     date=datetime.datetime.now().strftime("%y%m%d")
 
     config_string="_".join(str(i) for i in [config.model.model_type,
@@ -74,15 +70,15 @@ def run(modelCreator=None, config=None):
                                             ])
     if config.data.data_type=='calo': 
         config_string+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
+        
     # overwrite config string with file name if we load from file
     if config.load_model:
         config_string=config.input_model.split("/")[-1].replace('.pt','')
     
-        if config.model.activation_fct.lower()=="relu":
-            modelCreator.default_activation_fct=torch.nn.ReLU() 
->>>>>>> wandb
+    if config.model.activation_fct.lower()=="relu":
+        modelCreator.default_activation_fct=torch.nn.ReLU()
     elif config.model.activation_fct.lower()=="tanh":
-        modelCreator.default_activation_fct=torch.nn.Tanh() 
+        modelCreator.default_activation_fct=torch.nn.Tanh()
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
@@ -117,12 +113,6 @@ def run(modelCreator=None, config=None):
         logger.info("Model loaded from file, skipping training.")
         pass
     else:
-<<<<<<< HEAD
-        for epoch in range(1, config.engine.n_epochs+1):   
-            train_loss = engine.fit(epoch=epoch, is_training=True)
-            test_loss = engine.fit(epoch=epoch, is_training=False)
-
-=======
         for epoch in range(1, config.engine.n_epochs+1): 
             if config.train:
                 train_loss = engine.fit(epoch=epoch, is_training=True)
@@ -132,7 +122,6 @@ def run(modelCreator=None, config=None):
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
->>>>>>> wandb
     if config.save_model:
         #save our trained model
         date=datetime.datetime.now().strftime("%y%m%d")
