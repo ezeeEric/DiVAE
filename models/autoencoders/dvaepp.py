@@ -7,6 +7,9 @@ Author: Abhi (abhishek@myumanitoba.ca)
 # PyTorch imports
 import torch
 
+# Torchviz imports
+from torchviz import make_dot
+
 # DiVAE imports
 from models.autoencoders.discreteVAE import DiVAE
 from models.rbm.rbm import RBM
@@ -44,7 +47,55 @@ class DiVAEPP(DiVAE):
             smoother="MixtureExp",
             cfg=self._config)
     
-    def kl_divergence(self, post_dists, post_samples, is_training=True):
+    def _create_sampler(self):
+        """
+        - Overrides _create_sampler in discreteVAE.py
+        
+        Returns:
+            PCD Sampler
+        """
+        return PCD(batchSize=64, RBM=self.prior, n_gibbs_sampling_steps=40)
+    
+    def forward(self, x):
+        """
+        - Overrides forward in discreteVAE.py
+        
+        Returns:
+            out: output container 
+        """
+        logger.debug("forward")
+        
+        #see definition for explanation
+        out=self._output_container.clear()
+      	
+	    #TODO data prep - study if this does good things
+        input_data_centered=x.view(-1, self._flat_input_size)-self._dataset_mean
+        
+	    #Step 1: Feed data through encoder
+        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
+        post_samples = torch.cat(out.post_samples, 1)
+        
+        output_activations = self.decoder(post_samples)
+        out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        out.output_distribution = Bernoulli(logits=out.output_activations)
+        out.output_data = torch.sigmoid(out.output_distribution.logits)
+        return out
+    
+    def loss(self, input_data, fwd_out):
+	    logger.debug("loss")
+    
+	    kl_loss, cross_entropy, entropy, neg_energy=self.kl_divergence(fwd_out.beta, fwd_out.post_logits, fwd_out.post_samples)
+
+	    ae_loss_matrix=-fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
+	    ae_loss_per_sample = torch.sum(ae_loss_matrix,1)
+	    ae_loss = torch.mean(ae_loss_per_sample)
+        
+	    loss = ae_loss + kl_loss
+ 
+	    return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss,
+               "cross_entropy":cross_entropy, "entropy":entropy, "neg_energy":neg_energy}
+        
+    def kl_divergence(self, beta, post_logits, post_samples, is_training=True):
         """
         - Compute KLD b.w. hierarchical posterior and RBM prior for DVAE++
         - See (https://github.com/QuadrantAI/dvae/blob/master/rbm.py#L139) for original 
@@ -65,16 +116,16 @@ class DiVAEPP(DiVAE):
         log_ratio = []
         
         # Compute and sum the entropy for each hierarchy level
-        for factorial, samples in zip(post_dists, post_samples):
+        for logits, samples in zip(post_logits, post_samples):
+            factorial = self.encoder.smoothing_dist(logits=logits, beta=beta)
             entropy += torch.sum(factorial.entropy(), 1)
-            logit_q.append(factorial.logits)
             log_ratio.append(factorial.log_ratio(samples))
             
-        logit_q = torch.cat(logit_q, 1)
+        logit_q = torch.cat(post_logits, 1)
         log_ratio = torch.cat(log_ratio, 1)
         samples = torch.cat(post_samples, 1)
         
-        num_latent_layers = len(post_dists)
+        num_latent_layers = len(post_logits)
         
         # Mean-field solution for num_latent_layers == 1
         if num_latent_layers == 1:
@@ -90,15 +141,26 @@ class DiVAEPP(DiVAE):
         rbm_vis = rbm_visible_samples.detach()
         rbm_hid = rbm_hidden_samples.detach()
         
-        batch_energy = (torch.sum(torch.matmul(rbm_vis, torch.matmul(self.prior.weights, rbm_hid.t())), 1) 
-                        + torch.matmul(rbm_vis, self.prior.visible_bias)
-                        + torch.matmul(rbm_hid, self.prior.hidden_bias))
-        neg_energy = - torch.mean(batch_energy)
-        cross_entropy = neg_energy + cross_entropy
-
-        kl_loss = cross_entropy - entropy
+        # Broadcast W to (batchSize * nVis * nHid)
+        W = self.prior.weights
+        W = W + torch.zeros((rbm_vis.size(0),) + W.size())
         
-        return kl_loss
+        # Prepare H, V for torch.matmul()
+        # Change H.size() from (batchSize * nHid) to (batchSize * nHid * 1)
+        H = rbm_hid.unsqueeze(2)
+        # Change V.size() from (batchSize * nVis) to (batchSize * 1 * nVis)
+        V = rbm_hid.unsqueeze(2).permute(0, 2, 1)
+        
+        batch_energy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
+                        - torch.matmul(rbm_vis, self.prior.visible_bias)
+                        - torch.matmul(rbm_hid, self.prior.hidden_bias))
+        
+        neg_energy = - torch.mean(batch_energy, 0)
+        # neg_energy = torch.mean(batch_energy, 0)
+        entropy = torch.mean(entropy, 0)
+
+        kl_loss = neg_energy + cross_entropy - entropy
+        return kl_loss, cross_entropy, entropy, neg_energy 
     
     def cross_entropy_from_hierarchical(self, logits, log_ratio):
         """
@@ -123,8 +185,43 @@ class DiVAEPP(DiVAE):
         q2 = torch.sigmoid(logit_q2)
         q1_pert = torch.sigmoid(logit_q1 + log_ratio_1)
         
-        cross_entropy = (- torch.matmul(q1, self.prior.visible_bias)
-                         - torch.matmul(q2, self.prior.hidden_bias) 
-                         - torch.sum(torch.matmul(q1_pert, torch.matmul(self.prior.weights, q2.t())), 1))
-                         
-        return torch.mean(cross_entropy)
+        # Broadcast W to (batchSize * nVis * nHid)
+        W = self.prior.weights
+        W = W + torch.zeros((q1.size(0),) + W.size())
+        
+        # Prepare q2, q1_pert for torch.matmul()
+        # Change q2.size() from (batchSize * nHid) to (batchSize * nHid * 1)
+        H = q2.unsqueeze(2)
+        # Change V.size() from (batchSize * nVis) to (batchSize * 1 * nVis)
+        V = q1_pert.unsqueeze(2).permute(0, 2, 1)
+        
+        cross_entropy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
+                         - torch.matmul(q1, self.prior.visible_bias)
+                         - torch.matmul(q2, self.prior.hidden_bias))
+        
+        cross_entropy = torch.mean(cross_entropy, 0)
+        #cross_entropy = - torch.mean(cross_entropy, 0)
+        return cross_entropy
+    
+    def kl_div_loss(self, beta, post_logits, post_samples, is_training=True):
+        """
+        Compute the weighted KL loss to balance the KL term across hierarhical
+        variable groups (Appendix H, DVAE++)
+        """
+        logger.debug("dvaepp::kl_div_loss")
+        
+    
+    def generate_samples(self):
+        """
+        generate_samples()
+        
+        """
+        rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
+        rbm_vis = rbm_visible_samples.detach()
+        rbm_hid = rbm_hidden_samples.detach()
+        prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
+        
+        output_activations = self.decoder(prior_samples) + self._train_bias
+        samples = Bernoulli(logits=output_activations).reparameterise()
+        return samples
+

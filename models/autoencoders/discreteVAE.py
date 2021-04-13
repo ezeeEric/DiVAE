@@ -337,7 +337,7 @@ class DiVAE(AutoEncoderBase):
         out.posterior_distributions, out.posterior_samples = self.encoder.hierarchical_posterior(input_data_centered)
         posterior_samples_concat=torch.cat(out.posterior_samples,1)
         #Step 2: take samples zeta and reconstruct output with decoder
-        output_activations = self.decoder.decode(posterior_samples_concat)
+        output_activations = self.decoder(posterior_samples_concat)
 
         out.output_activations = output_activations+self._train_bias
         out.output_distribution = Bernoulli(logits=out.output_activations)

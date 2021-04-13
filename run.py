@@ -4,7 +4,7 @@ Main executable. The run() method steers data loading, model creation, training
 and evaluation by calling the respective interfaces.
 
 Author: Abhishek <abhishek@myumanitoba.ca>
-Author: Eric Drechsler <eric.drechsler@cern.ch>
+Author: Eric Drechsler <eric.drechsler@cern.ch
 """
 
 #external libraries
@@ -22,6 +22,10 @@ from omegaconf import OmegaConf
 
 # Add the path to the parent directory to augment search for module
 sys.path.append(os.getcwd())
+# Add the path to the parent directory to augment search for module
+par_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+if par_dir not in sys.path:
+    sys.path.append(par_dir)
     
 # Weights and Biases
 import wandb
@@ -31,11 +35,11 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
-from utils.plotting.plotProvider import PlotProvider
+from utils.plotProvider import PlotProvider
 from engine.engine import Engine
 from models.modelCreator import ModelCreator
 
-@hydra.main(config_path="../configs", config_name="config")
+@hydra.main(config_path="configs", config_name="config")
 def main(cfg=None):
 
     #TODO hydra update: output path not needed anymore. Replace all instances
@@ -44,7 +48,7 @@ def main(cfg=None):
 
     wandb.init(entity="qvae", project="divae", config=cfg)  
     print(OmegaConf.to_yaml(cfg))
-    
+
     #create model handling object
     modelCreator=ModelCreator(cfg=cfg)
     
@@ -61,10 +65,6 @@ def run(modelCreator=None, config=None):
     dataMgr.pre_processing()
 
     #set parameters relevant for this run
-<<<<<<< HEAD
-    if config.model.activation_fct.lower()=="relu":
-        modelCreator.default_activation_fct=torch.nn.ReLU() 
-=======
     date=datetime.datetime.now().strftime("%y%m%d")
 
     config_string="_".join(str(i) for i in [config.model.model_type,
@@ -80,12 +80,12 @@ def run(modelCreator=None, config=None):
     
         if config.model.activation_fct.lower()=="relu":
             modelCreator.default_activation_fct=torch.nn.ReLU() 
->>>>>>> wandb
     elif config.model.activation_fct.lower()=="tanh":
         modelCreator.default_activation_fct=torch.nn.Tanh() 
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
+
 
     #instantiate the chosen model
     #loads from file 
@@ -95,7 +95,7 @@ def run(modelCreator=None, config=None):
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
     
-    engine=Engine(cfg=config)
+    engine=Engine()
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
 
@@ -117,12 +117,6 @@ def run(modelCreator=None, config=None):
         logger.info("Model loaded from file, skipping training.")
         pass
     else:
-<<<<<<< HEAD
-        for epoch in range(1, config.engine.n_epochs+1):   
-            train_loss = engine.fit(epoch=epoch, is_training=True)
-            test_loss = engine.fit(epoch=epoch, is_training=False)
-
-=======
         for epoch in range(1, config.engine.n_epochs+1): 
             if config.train:
                 train_loss = engine.fit(epoch=epoch, is_training=True)
@@ -132,30 +126,25 @@ def run(modelCreator=None, config=None):
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
->>>>>>> wandb
     if config.save_model:
-        #save our trained model
-        date=datetime.datetime.now().strftime("%y%m%d")
-        config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
 
     if False:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
-        
-        #sample generation
-        if config.generate_samples:
-            output_generated=engine.generate_samples()
-            eval_output.output_generated=output_generated
-
-        #instantiate plotting infrastructure
-        pp=PlotProvider(data_container=eval_output, plotFunctions=config.plotting.plotFunctions, config_string=config_string,date_tag=date, cfg=config)
-        
+        #create plotting infrastructure
+        pp=PlotProvider(config_string=config_string,date_tag=date, cfg=config)
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()
-        
-        #call all the registered plot functions (hydra config)
+        #create plot
         pp.plot(eval_output)
+
+        #sample generation
+        if config.generate_samples:
+            #TODO should we move this method call or wrap it to modelCreator.generate_samples()?
+            output_generated=modelCreator.model.generate_samples()
+            pp.plot_generative_output(output_generated)
+    
     
     logger.info("run() finished successfully.")
 

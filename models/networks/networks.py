@@ -30,6 +30,9 @@ class Network(nn.Module):
     
     def decode(self):
         raise NotImplementedError
+        
+    def forward(self, x):
+        raise NotImplementedError
     
     def _create_network(self):        
         for node in self._node_sequence:

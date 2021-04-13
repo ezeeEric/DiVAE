@@ -16,10 +16,8 @@ class Engine(object):
 
     def __init__(self, cfg=None):
         self._config=cfg
-
         self._model=None
         self._optimiser=None
-
         self._data_mgr=None
 
     @property
@@ -78,6 +76,8 @@ class Engine(object):
             data_loader=self.data_mgr.test_loader
 
         epoch_loss_dict = {}
+        num_batches = len(data_loader)
+        num_epochs = self._config.engine.n_epochs
 
         with torch.set_grad_enabled(is_training):
             for batch_idx, (input_data, label) in enumerate(data_loader):
@@ -88,48 +88,54 @@ class Engine(object):
                 #forward call
                 #output is a namespace with members as added in the forward call
                 #and subsequently used in loss()
-                fwd_output=self._model(input_data)
-                """
-                try:
-                    
-                except:
-                    #TODO hack for conditionalVAE
-                    fwd_output=self._model(input_data,label)
-                """
-                # Compute model-dependent loss
-                batch_loss_dict = self._model.loss(input_data,fwd_output)
+                with torch.autograd.set_detect_anomaly(False):
+                    fwd_output=self._model(input_data)
 
-                if is_training:
-                    batch_loss_dict["loss"].backward()
-                    self._optimiser.step()
-                
-                for key in batch_loss_dict.keys():
-                    if key in epoch_loss_dict.keys():
-                        epoch_loss_dict[key] += batch_loss_dict[key].item()
-                    else:
-                        epoch_loss_dict[key] = batch_loss_dict[key].item()
+                    # Compute model-dependent loss
+                    batch_loss_dict = self._model.loss(input_data,fwd_output)
+
+                    if is_training:
+                        if self._config.model.model_type == "DiVAEPP":
+                            """
+                            Cheap hack to allow KL annealing in DVAE++
+                            """
+                            gamma = (((epoch-1)*num_batches)+(batch_idx+1))/(num_epochs*num_batches)
+                            #gamma = 1.0
+                            batch_loss_dict["gamma"] = gamma
+                            batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + gamma*batch_loss_dict["kl_loss"]
+                            batch_loss_dict["loss"].backward()
+                            self._optimiser.step()
+                        else:
+                            batch_loss_dict["loss"].backward()
+                            self._optimiser.step()
 
                 # Output logging
                 if is_training and batch_idx % 100 == 0:
+                    if batch_idx % 500 == 0:
+                        recon = fwd_output.output_distribution.reparameterise()
+                        recon = recon.reshape((-1,) + input_data.size()[2:]).detach().numpy()
+                        batch_loss_dict["recon_img"] = [wandb.Image(img, caption="Reconstruction") for img in recon]
+                        
+                        samples = self._model.generate_samples()
+                        samples = samples.reshape((-1,) + input_data.size()[2:]).detach().numpy()
+                        batch_loss_dict["sample_img"] = [wandb.Image(img, caption="Samples") for img in samples]
+                        
+                        input_imgs = input_data.squeeze(1).detach().numpy()
+                        batch_loss_dict["input_img"] = [wandb.Image(img, caption="Input") for img in input_imgs]
+                    else:
+                        batch_loss_dict.pop('recon_img', None)
+                        batch_loss_dict.pop('sample_img', None)
+                        batch_loss_dict.pop('input_img', None)
+                    
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(
                                             epoch,
                                             batch_idx*len(input_data), 
                                             len(data_loader.dataset),
                                             100.*batch_idx/len(data_loader),
-                                            batch_loss_dict["loss"].data.item()/len(input_data)))
-        
-        outstring="Train" if is_training else "Test"
-        epoch_loss_dict = {key:(value/len(data_loader.dataset)) for key,value in epoch_loss_dict.items()}
-        
-        # wandb logging - training
-        if is_training:
-            wandb.log(epoch_loss_dict)
-        else:
-            epoch_loss_dict_test = {str(key)+"_test":value for key,value in epoch_loss_dict.items()}
-            wandb.log(epoch_loss_dict_test)
-        
-        logger.info("Total Loss ({0}):\t {1:.4f}".format(outstring, epoch_loss_dict["loss"]))
-        return epoch_loss_dict["loss"]
+                                            batch_loss_dict["loss"]))
+                    
+                    wandb.log(batch_loss_dict)
+        return batch_loss_dict["loss"]
     
     def evaluate(self):
         #similar to test call of fit() method but returning values
