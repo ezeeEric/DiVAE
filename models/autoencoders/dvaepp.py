@@ -47,14 +47,14 @@ class DiVAEPP(DiVAE):
             smoother="MixtureExp",
             cfg=self._config)
     
-    def _create_sampler(self):
+    def _create_sampler(self, rbm=None):
         """
         - Overrides _create_sampler in discreteVAE.py
         
         Returns:
             PCD Sampler
         """
-        return PCD(batchSize=64, RBM=self.prior, n_gibbs_sampling_steps=40)
+        return PCD(batch_size=64, RBM=self.prior, n_gibbs_sampling_steps=40)
     
     def forward(self, x):
         """

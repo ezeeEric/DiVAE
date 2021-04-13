@@ -145,7 +145,6 @@ def run(modelCreator=None, config=None):
             output_generated=modelCreator.model.generate_samples()
             pp.plot_generative_output(output_generated)
     
-    
     logger.info("run() finished successfully.")
 
 if __name__=="__main__":
