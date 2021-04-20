@@ -2,7 +2,7 @@
 model_type: DiVAEPP
 activation_fct: relu
 beta_smoothing_fct: 5
-decoder_hidden_nodes: 
+decoder_hidden_nodes:
   - 64
   - 64
   - 64

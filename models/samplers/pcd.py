@@ -15,6 +15,7 @@ class PCD(BaseSampler):
         self._RBM = RBM
         self._MCState = (torch.rand(batch_size, self._RBM.visible_bias.size(0)) >= 
                          torch.rand(batch_size, self._RBM.visible_bias.size(0))).float()
+        self._batch_size = batch_size
         
     def hidden_samples(self, visible_states):
         """
@@ -57,6 +58,9 @@ class PCD(BaseSampler):
             hidden_states = self.hidden_samples(visible_states)
             visible_states = self.visible_samples(hidden_states)
         
+        # PCD to standard Gibbs sampling
         self._MCState = visible_states
+        #self._MCState = (torch.rand(self._batch_size , self._RBM.visible_bias.size(0)) >= 
+                         #torch.rand(self._batch_size , self._RBM.visible_bias.size(0))).float()
         
         return visible_states, hidden_states
