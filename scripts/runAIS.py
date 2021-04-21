@@ -20,9 +20,6 @@ from models.rbm.rbmBase import RBMBase
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-# from data.dataManager import DataManager
-from utils.plotProvider import PlotProvider
-
 @hydra.main(config_path="../configs/sampler/", config_name="ais")
 def main(cfg=None):
 
@@ -42,9 +39,6 @@ def main(cfg=None):
         rbm.weights=torch.randn(cfg.n_visible, cfg.n_hidden)
         rbm.visible_bias=torch.rand(cfg.n_visible)
         rbm.hidden_bias=torch.rand(cfg.n_hidden)
-
-        # rbm.visible_bias=0.5*torch.ones(cfg.n_visible)
-        # rbm.hidden_bias=torch.zeros(cfg.n_hidden)
 
     #EPS
     eps=None
