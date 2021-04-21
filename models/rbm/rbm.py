@@ -1,4 +1,3 @@
-
 """
 PyTorch implementation of a restricted Boltzmann machine
 """

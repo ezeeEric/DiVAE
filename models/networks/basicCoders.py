@@ -19,8 +19,8 @@ class BasicEncoder(Network):
     def __init__(self,**kwargs):
         super(BasicEncoder, self).__init__(**kwargs)
 
-    def encode(self, x):
-        logger.debug("encode")
+    def forward(self, x):
+        logger.debug("Encoder::encode")
         for layer in self._layers:
             if self._activation_fct:
                 x=self._activation_fct(layer(x))
@@ -34,7 +34,7 @@ class BasicDecoder(Network):
         super(BasicDecoder, self).__init__(**kwargs)
         self._output_activation_fct=output_activation_fct
 
-    def decode(self, x):
+    def forward(self, x):
         logger.debug("Decoder::decode")
         nr_layers=len(self._layers)
         for idx,layer in enumerate(self._layers):
