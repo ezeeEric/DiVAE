@@ -100,14 +100,14 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
             #every input is concatenation of previous inputs
             # input_data_transformed=input_data[i].view(-1, dim) if i==0 else torch.cat([input_data_transformed,input_data[i].view(-1, dim)],dim=-1)
             input_data_transformed=input_data[i].view(-1, dim) if i==0 else torch.cat(out.outputs+[input_data[i].view(-1, dim)],dim=-1)
-            q = current_vae.encoder.encode(input_data_transformed)
+            q = current_vae.encoder(input_data_transformed)
             mu = current_vae._reparam_layers['mu'](q)
             logvar = current_vae._reparam_layers['var'](q)
             zeta = current_vae.reparameterize(mu, logvar)
             zeta_transformed=zeta
             for output in out.outputs:
                 zeta_transformed=torch.cat([zeta_transformed,output],dim=-1)
-            output_data = current_vae.decoder.decode(zeta_transformed)
+            output_data = current_vae.decoder(zeta_transformed)
             out.outputs.append(output_data)
             out.mus.append(mu)
             out.logvars.append(logvar)
@@ -120,7 +120,7 @@ class SequentialVariationalAutoEncoder(AutoEncoder):
         for i,it_dim in enumerate(self._flat_input_size):
             rnd_input=torch.randn((self._config.n_generate_samples,self._latent_dimensions))
             rnd_input_cat=torch.cat([rnd_input]+ outputs, dim=1)
-            output = self._autoencoders[i].decoder.decode(rnd_input_cat)
+            output = self._autoencoders[i].decoder(rnd_input_cat)
             output.detach()
             outputs.append(output)
         return outputs
