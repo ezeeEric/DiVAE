@@ -59,21 +59,6 @@ def run(modelCreator=None, config=None):
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
     dataMgr.pre_processing()
-
-    #set parameters relevant for this run
-    date=datetime.datetime.now().strftime("%y%m%d")
-
-    config_string="_".join(str(i) for i in [config.model.model_type,
-                                            config.data.data_type,
-                                            date,
-                                            config.tag
-                                            ])
-    if config.data.data_type=='calo': 
-        config_string+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
-        
-    # overwrite config string with file name if we load from file
-    if config.load_model:
-        config_string=config.input_model.split("/")[-1].replace('.pt','')
     
     if config.model.activation_fct.lower()=="relu":
         modelCreator.default_activation_fct=torch.nn.ReLU()

@@ -317,7 +317,7 @@ class DiVAE(AutoEncoderBase):
             prior_samples.append(prior_sample)
         
         prior_samples=torch.stack(prior_samples)
-        output_activations = self.decoder.decode(prior_samples)
+        output_activations = self.decoder(prior_samples)
         output_activations = output_activations+self._train_bias
         output_distribution = Bernoulli(logits=output_activations)
         output=torch.sigmoid(output_distribution.logits)
