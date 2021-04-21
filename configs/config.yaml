@@ -8,9 +8,6 @@ input_model: 0
 #variable is then used downstream to set paths.
 output_path: ???
 create_plots: 0
-train: 1
-test: 0
-
 
 defaults:
   - model: divaepp
