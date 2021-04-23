@@ -1,4 +1,4 @@
-#DiVAE [ˈdiːvə]
+# DiVAE [ˈdiːvə]
 
 A package containing neural network architectures based on Variational
 Autoencoders (VAE) and Restricted Boltzmann Machines (RBM).
