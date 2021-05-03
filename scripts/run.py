@@ -14,11 +14,16 @@ import datetime
 import sys
 
 import torch
-torch.manual_seed(1)
+torch.manual_seed(32)
 import numpy as np
 import matplotlib.pyplot as plt
 import hydra
 from omegaconf import OmegaConf
+
+# PyTorch imports
+from torch import device, load, save
+from torch.nn import DataParallel
+from torch.cuda import is_available
 
 # Add the path to the parent directory to augment search for module
 sys.path.append(os.getcwd())
@@ -91,9 +96,35 @@ def run(modelCreator=None, config=None):
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
     
+    # Load the model on the GPU if applicable
+    dev = None
+    if (config.device == 'gpu') and config.gpu_list:
+        logger.info('Requesting GPUs. GPU list :' + str(config.gpu_list))
+        devids = ["cuda:{0}".format(x) for x in list(config.gpu_list)]
+        logger.info("Main GPU : " + devids[0])
+        
+        if is_available():
+            print(devids[0])
+            dev = device(devids[0])
+            if len(devids) > 1:
+                logger.info("Using DataParallel on {}".format(devids))
+                model = DataParallel(model, device_ids=list(config.gpu_list))
+            logger.info("CUDA available")
+        else:
+            dev = device('cpu')
+            logger.info("CUDA unavailable")
+    else:
+        logger.info('Unable to use GPU. Switching to CPU.')
+        dev = device('cpu')
+        
+    # Send the model to the selected device
+    model.to(dev)
+
     engine=Engine(cfg=config)
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
+    #add device instance to engine namespace
+    engine.device=dev
 
     # Log metrics with wandb
     wandb.watch(model)

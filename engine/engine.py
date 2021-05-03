@@ -19,6 +19,7 @@ class Engine(object):
         self._model=None
         self._optimiser=None
         self._data_mgr=None
+        self._device=None
 
     @property
     def model(self):
@@ -43,6 +44,14 @@ class Engine(object):
     @data_mgr.setter   
     def data_mgr(self,data_mgr):
         self._data_mgr=data_mgr
+        
+    @property
+    def device(self):
+        return self._device
+    
+    @device.setter
+    def device(self, device):
+        self._device=device
     
     def register_dataManager(self,data_mgr):
         assert data_mgr is not None, "Empty Data Mgr"
@@ -89,6 +98,7 @@ class Engine(object):
                 #output is a namespace with members as added in the forward call
                 #and subsequently used in loss()
                 with torch.autograd.set_detect_anomaly(False):
+                    input_data = input_data.to(self._device)
                     fwd_output=self._model(input_data)
 
                     # Compute model-dependent loss
@@ -113,14 +123,14 @@ class Engine(object):
                 if is_training and batch_idx % 100 == 0:
                     if batch_idx % 500 == 0:
                         recon = fwd_output.output_distribution.reparameterise()
-                        recon = recon.reshape((-1,) + input_data.size()[2:]).detach().numpy()
+                        recon = recon.reshape((-1,) + input_data.size()[2:]).detach().cpu().numpy()
                         batch_loss_dict["recon_img"] = [wandb.Image(img, caption="Reconstruction") for img in recon]
                         
                         samples = self._model.generate_samples()
-                        samples = samples.reshape((-1,) + input_data.size()[2:]).detach().numpy()
+                        samples = samples.reshape((-1,) + input_data.size()[2:]).detach().cpu().numpy()
                         batch_loss_dict["sample_img"] = [wandb.Image(img, caption="Samples") for img in samples]
                         
-                        input_imgs = input_data.squeeze(1).detach().numpy()
+                        input_imgs = input_data.squeeze(1).detach().cpu().numpy()
                         batch_loss_dict["input_img"] = [wandb.Image(img, caption="Input") for img in input_imgs]
                     else:
                         batch_loss_dict.pop('recon_img', None)

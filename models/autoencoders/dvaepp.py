@@ -69,14 +69,15 @@ class DiVAEPP(DiVAE):
         out=self._output_container.clear()
       	
 	    #TODO data prep - study if this does good things
-        input_data_centered=x.view(-1, self._flat_input_size)-self._dataset_mean
+        input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
         out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_activations = self.decoder(post_samples)
-        out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        #out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        out.output_activations = torch.clamp(output_activations, min=-88., max=88.)
         out.output_distribution = Bernoulli(logits=out.output_activations)
         out.output_data = torch.sigmoid(out.output_distribution.logits)
         return out
@@ -143,7 +144,7 @@ class DiVAEPP(DiVAE):
         
         # Broadcast W to (batchSize * nVis * nHid)
         W = self.prior.weights
-        W = W + torch.zeros((rbm_vis.size(0),) + W.size())
+        W = W + torch.zeros((rbm_vis.size(0),) + W.size(), device=rbm_vis.device)
         
         # Prepare H, V for torch.matmul()
         # Change H.size() from (batchSize * nHid) to (batchSize * nHid * 1)
@@ -187,7 +188,7 @@ class DiVAEPP(DiVAE):
         
         # Broadcast W to (batchSize * nVis * nHid)
         W = self.prior.weights
-        W = W + torch.zeros((q1.size(0),) + W.size())
+        W = W + torch.zeros((q1.size(0),) + W.size(), device=q1.device)
         
         # Prepare q2, q1_pert for torch.matmul()
         # Change q2.size() from (batchSize * nHid) to (batchSize * nHid * 1)
@@ -214,14 +215,12 @@ class DiVAEPP(DiVAE):
     def generate_samples(self):
         """
         generate_samples()
-        
         """
         rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
         rbm_vis = rbm_visible_samples.detach()
         rbm_hid = rbm_hidden_samples.detach()
         prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
         
-        output_activations = self.decoder(prior_samples) + self._train_bias
+        output_activations = self.decoder(prior_samples)# + self._train_bias
         samples = Bernoulli(logits=output_activations).reparameterise()
         return samples
-
