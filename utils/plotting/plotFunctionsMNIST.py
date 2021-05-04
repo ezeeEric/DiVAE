@@ -88,7 +88,7 @@ def update(changed_image):
 
 #@title Helper Functions
 def plot_autoencoder_outputs(model, n, dims):
-    decoded_imgs = model.decode(x_test)
+    decoded_imgs = model(x_test)
 
     # number of example digits to show
     n = 5

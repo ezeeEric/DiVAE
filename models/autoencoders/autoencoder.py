@@ -60,8 +60,8 @@ class AutoEncoder(AutoEncoderBase):
         #see definition for einput_dataplanation
         out=self._output_container.clear()
         
-        out.zeta = self.encoder.encode(input_data.view(-1,self._flat_input_size))
-        out.output_data = self.decoder.decode(out.zeta)
+        out.zeta = self.encoder(input_data.view(-1,self._flat_input_size))
+        out.output_data = self.decoder(out.zeta)
 
         return out
     

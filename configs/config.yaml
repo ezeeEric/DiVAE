@@ -15,7 +15,6 @@ device: gpu
 gpu_list:
   - 0
 
-
 defaults:
   - model: divaepp
   - data: mnist

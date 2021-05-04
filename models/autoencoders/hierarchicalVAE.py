@@ -111,7 +111,7 @@ hierarchy layer.
             lvl+=1    
 
         zeta_concat=torch.cat(out.zeta_list,axis=1)
-        out.output_data = self.decoder.decode(zeta_concat)
+        out.output_data = self.decoder(zeta_concat)
 
         return out
 
