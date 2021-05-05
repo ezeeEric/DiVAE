@@ -24,12 +24,6 @@ class Network(nn.Module):
 
         if self._node_sequence and create_module_list:
             self._create_network()
-    
-    def encode(self):
-        raise NotImplementedError
-    
-    def decode(self):
-        raise NotImplementedError
         
     def forward(self, x):
         raise NotImplementedError

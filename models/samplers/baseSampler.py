@@ -9,11 +9,17 @@ class BaseSampler(nn.Module):
         super(BaseSampler, self).__init__(**kwargs)
         self.n_gibbs_sampling_steps = n_gibbs_sampling_steps
     
-    def run_training(self):
+    def __repr__(self):
+        outstring=""
+        for key,val in self.__dict__.items():
+            outstring+="{0}: {1}\n".format(key,val)
+        return outstring
+    
+    def visible_samples(self):
         raise NotImplementedError
 
-    def sample_from_visible(self):
+    def hidden_samples(self):
         raise NotImplementedError
 
-    def sample_from_hidden(self):
-        raise NotImplementedError
+    def get_samples(self):
+        return NotImplementedError

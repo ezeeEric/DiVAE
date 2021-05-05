@@ -14,7 +14,6 @@ from models.networks.networks import Network
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-#Implements encode()
 class BasicEncoder(Network):
     def __init__(self,**kwargs):
         super(BasicEncoder, self).__init__(**kwargs)
@@ -28,7 +27,6 @@ class BasicEncoder(Network):
                 x=layer(x)
         return x
 
-#Implements decode()
 class BasicDecoder(Network):
     def __init__(self,output_activation_fct=None,**kwargs):
         super(BasicDecoder, self).__init__(**kwargs)

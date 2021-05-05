@@ -41,7 +41,7 @@ class VariationalAutoEncoder(AutoEncoder):
     
     #Factory method to create VAEs with set encoder nodes
     @classmethod
-    def init_with_nodelist(cls,dim,cfg,actfct, enc_nodes, rep_nodes, dec_nodes, **kwargs):
+    def init_with_nodelist(cls,dim,actfct, enc_nodes, rep_nodes, dec_nodes, **kwargs):
         assert enc_nodes is not None and rep_nodes is not None and dec_nodes is not None,\
             "Need defined nodelist for this type of initialisation"
         vae=cls(**kwargs)              
@@ -77,14 +77,15 @@ class VariationalAutoEncoder(AutoEncoder):
         # Draw a rnd var z~N[0,1] and feed it through the decoder
         rnd_input=torch.randn((self._config.n_generate_samples,self._reparam_nodes[1]))
         zeta=rnd_input 
-        output = self.decoder.decode(zeta)
+        output = self.decoder(zeta)
         output.detach()
         return output
 
-    def loss(self, input_data, fwd_out):
+    def loss(self, input_data, fwd_out , flat_input_dim=None):
         logger.debug("VAE Loss")
         # Autoencoding term
-        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, self._flat_input_size), reduction='sum')
+        flat_in_dim=flat_input_dim if flat_input_dim else self._flat_input_size
+        auto_loss = torch.nn.functional.binary_cross_entropy(fwd_out.output_data, input_data.view(-1, flat_in_dim), reduction='sum')
         
         # KL loss term assuming Gaussian-distributed latent variables
         kl_loss = 0.5 * torch.sum(1 + fwd_out.logvar - fwd_out.mu.pow(2) - torch.exp(fwd_out.logvar))
@@ -94,11 +95,11 @@ class VariationalAutoEncoder(AutoEncoder):
         #see definition for explanation
         out=self._output_container.clear()
 
-        z = self.encoder.encode(input_data.view(-1, self._flat_input_size))
+        z = self.encoder(input_data.view(-1, self._flat_input_size))
         out.mu = self._reparam_layers['mu'](z)
         out.logvar = self._reparam_layers['var'](z)
         out.zeta = self.reparameterize(out.mu, out.logvar)
-        out.output_data = self.decoder.decode(out.zeta)
+        out.output_data = self.decoder(out.zeta)
 
         return out
 

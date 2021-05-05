@@ -46,13 +46,13 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
         label_unsqueezed=label.unsqueeze(-1)
 
         input_data_cat=torch.cat([input_data_transformed,label_unsqueezed],dim=1)
-        z = self.encoder.encode(input_data_cat)
+        z = self.encoder(input_data_cat)
         out.mu = self._reparam_layers['mu'](z)
         out.logvar = self._reparam_layers['var'](z)
         zeta = self.reparameterize(out.mu, out.logvar)
         out.zeta_cat=torch.cat([zeta,label_unsqueezed],dim=1)
         
-        out.output_data = self.decoder.decode(out.zeta_cat)
+        out.output_data = self.decoder(out.zeta_cat)
 
         return out
 
@@ -67,7 +67,7 @@ class ConditionalVariationalAutoEncoder(VariationalAutoEncoder):
             rnd_input=torch.randn((n_samples_per_nr,self._reparam_nodes[1]))
             target=torch.full((n_samples_per_nr, 1), i, dtype=torch.float32)
             rnd_input_cat=torch.cat([rnd_input,target], dim=1)
-            output = self.decoder.decode(rnd_input_cat)
+            output = self.decoder(rnd_input_cat)
             output.detach()
             outlist.append(output)
         return torch.cat(outlist)

@@ -47,14 +47,14 @@ class DiVAEPP(DiVAE):
             smoother="MixtureExp",
             cfg=self._config)
     
-    def _create_sampler(self):
+    def _create_sampler(self, rbm=None):
         """
         - Overrides _create_sampler in discreteVAE.py
         
         Returns:
             PCD Sampler
         """
-        return PCD(batchSize=64, RBM=self.prior, n_gibbs_sampling_steps=40)
+        return PCD(batch_size=64, RBM=self.prior, n_gibbs_sampling_steps=40)
     
     def forward(self, x):
         """
@@ -69,14 +69,15 @@ class DiVAEPP(DiVAE):
         out=self._output_container.clear()
       	
 	    #TODO data prep - study if this does good things
-        input_data_centered=x.view(-1, self._flat_input_size)-self._dataset_mean
+        input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
         out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_activations = self.decoder(post_samples)
-        out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        #out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        out.output_activations = torch.clamp(output_activations, min=-88., max=88.)
         out.output_distribution = Bernoulli(logits=out.output_activations)
         out.output_data = torch.sigmoid(out.output_distribution.logits)
         return out
@@ -142,8 +143,8 @@ class DiVAEPP(DiVAE):
         rbm_hid = rbm_hidden_samples.detach()
         
         # Broadcast W to (batchSize * nVis * nHid)
-        W = self.prior.get_weights()
-        W = W + torch.zeros((rbm_vis.size(0),) + W.size())
+        W = self.prior.weights
+        W = W + torch.zeros((rbm_vis.size(0),) + W.size(), device=rbm_vis.device)
         
         # Prepare H, V for torch.matmul()
         # Change H.size() from (batchSize * nHid) to (batchSize * nHid * 1)
@@ -152,8 +153,8 @@ class DiVAEPP(DiVAE):
         V = rbm_hid.unsqueeze(2).permute(0, 2, 1)
         
         batch_energy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
-                        - torch.matmul(rbm_vis, self.prior.get_visible_bias())
-                        - torch.matmul(rbm_hid, self.prior.get_hidden_bias()))
+                        - torch.matmul(rbm_vis, self.prior.visible_bias)
+                        - torch.matmul(rbm_hid, self.prior.hidden_bias))
         
         neg_energy = - torch.mean(batch_energy, 0)
         # neg_energy = torch.mean(batch_energy, 0)
@@ -186,8 +187,8 @@ class DiVAEPP(DiVAE):
         q1_pert = torch.sigmoid(logit_q1 + log_ratio_1)
         
         # Broadcast W to (batchSize * nVis * nHid)
-        W = self.prior.get_weights()
-        W = W + torch.zeros((q1.size(0),) + W.size())
+        W = self.prior.weights
+        W = W + torch.zeros((q1.size(0),) + W.size(), device=q1.device)
         
         # Prepare q2, q1_pert for torch.matmul()
         # Change q2.size() from (batchSize * nHid) to (batchSize * nHid * 1)
@@ -196,8 +197,8 @@ class DiVAEPP(DiVAE):
         V = q1_pert.unsqueeze(2).permute(0, 2, 1)
         
         cross_entropy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
-                         - torch.matmul(q1, self.prior.get_visible_bias())
-                         - torch.matmul(q2, self.prior.get_hidden_bias()))
+                         - torch.matmul(q1, self.prior.visible_bias)
+                         - torch.matmul(q2, self.prior.hidden_bias))
         
         cross_entropy = torch.mean(cross_entropy, 0)
         #cross_entropy = - torch.mean(cross_entropy, 0)
@@ -214,13 +215,12 @@ class DiVAEPP(DiVAE):
     def generate_samples(self):
         """
         generate_samples()
-        
         """
         rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
         rbm_vis = rbm_visible_samples.detach()
         rbm_hid = rbm_hidden_samples.detach()
         prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
         
-        output_activations = self.decoder(prior_samples) + self._train_bias
+        output_activations = self.decoder(prior_samples)# + self._train_bias
         samples = Bernoulli(logits=output_activations).reparameterise()
         return samples

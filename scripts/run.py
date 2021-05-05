@@ -14,11 +14,16 @@ import datetime
 import sys
 
 import torch
-torch.manual_seed(1)
+torch.manual_seed(32)
 import numpy as np
 import matplotlib.pyplot as plt
 import hydra
 from omegaconf import OmegaConf
+
+# PyTorch imports
+from torch import device, load, save
+from torch.nn import DataParallel
+from torch.cuda import is_available
 
 # Add the path to the parent directory to augment search for module
 sys.path.append(os.getcwd())
@@ -31,7 +36,7 @@ from DiVAE import logging
 logger = logging.getLogger(__name__)
 
 from data.dataManager import DataManager
-from utils.plotProvider import PlotProvider
+from utils.plotting.plotProvider import PlotProvider
 from engine.engine import Engine
 from models.modelCreator import ModelCreator
 
@@ -44,7 +49,7 @@ def main(cfg=None):
 
     wandb.init(entity="qvae", project="divae", config=cfg)  
     print(OmegaConf.to_yaml(cfg))
-
+    
     #create model handling object
     modelCreator=ModelCreator(cfg=cfg)
     
@@ -59,29 +64,14 @@ def run(modelCreator=None, config=None):
     dataMgr.init_dataLoaders()
     #run pre processing: get/set input dimensions and mean of train dataset
     dataMgr.pre_processing()
-
-    #set parameters relevant for this run
-    date=datetime.datetime.now().strftime("%y%m%d")
-
-    config_string="_".join(str(i) for i in [config.model.model_type,
-                                            config.data.data_type,
-                                            date,
-                                            config.tag
-                                            ])
-    if config.data.data_type=='calo': 
-        config_string+="_nlayers_{0}_{1}".format(len(config.data.calo_layers),config.particle_type)
-    # overwrite config string with file name if we load from file
-    if config.load_model:
-        config_string=config.input_model.split("/")[-1].replace('.pt','')
     
-        if config.model.activation_fct.lower()=="relu":
-            modelCreator.default_activation_fct=torch.nn.ReLU() 
+    if config.model.activation_fct.lower()=="relu":
+        modelCreator.default_activation_fct=torch.nn.ReLU()
     elif config.model.activation_fct.lower()=="tanh":
-        modelCreator.default_activation_fct=torch.nn.Tanh() 
+        modelCreator.default_activation_fct=torch.nn.Tanh()
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
-
 
     #instantiate the chosen model
     #loads from file 
@@ -91,9 +81,35 @@ def run(modelCreator=None, config=None):
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
     
+    # Load the model on the GPU if applicable
+    dev = None
+    if (config.device == 'gpu') and config.gpu_list:
+        logger.info('Requesting GPUs. GPU list :' + str(config.gpu_list))
+        devids = ["cuda:{0}".format(x) for x in list(config.gpu_list)]
+        logger.info("Main GPU : " + devids[0])
+        
+        if is_available():
+            print(devids[0])
+            dev = device(devids[0])
+            if len(devids) > 1:
+                logger.info("Using DataParallel on {}".format(devids))
+                model = DataParallel(model, device_ids=list(config.gpu_list))
+            logger.info("CUDA available")
+        else:
+            dev = device('cpu')
+            logger.info("CUDA unavailable")
+    else:
+        logger.info('Unable to use GPU. Switching to CPU.')
+        dev = device('cpu')
+        
+    # Send the model to the selected device
+    model.to(dev)
+
     engine=Engine(cfg=config)
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
+    #add device instance to engine namespace
+    engine.device=dev
 
     # Log metrics with wandb
     wandb.watch(model)
@@ -123,24 +139,28 @@ def run(modelCreator=None, config=None):
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
     if config.save_model:
+        #save our trained model
+        date=datetime.datetime.now().strftime("%y%m%d")
+        config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
 
     if False:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
-        #create plotting infrastructure
-        pp=PlotProvider(config_string=config_string,date_tag=date, cfg=config)
-        #TODO is there a neater integration than to add this as member?
-        pp.data_dimensions=dataMgr.get_input_dimensions()
-        #create plot
-        pp.plot(eval_output)
-
+        
         #sample generation
         if config.generate_samples:
-            #TODO should we move this method call or wrap it to modelCreator.generate_samples()?
-            output_generated=modelCreator.model.generate_samples()
-            pp.plot_generative_output(output_generated)
-    
+            output_generated=engine.generate_samples()
+            eval_output.output_generated=output_generated
+
+        #instantiate plotting infrastructure
+        pp=PlotProvider(data_container=eval_output, plotFunctions=config.plotting.plotFunctions, config_string=config_string,date_tag=date, cfg=config)
+        
+        #TODO is there a neater integration than to add this as member?
+        pp.data_dimensions=dataMgr.get_input_dimensions()
+        
+        #call all the registered plot functions (hydra config)
+        pp.plot(eval_output)
     
     logger.info("run() finished successfully.")
 

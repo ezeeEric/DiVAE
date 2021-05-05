@@ -43,7 +43,8 @@ class AutoEncoderBase(nn.Module):
         self._latent_dimensions=self._config.model.n_latent_nodes
         
         if len(flat_input_size)>1:
-            logger.warning("Received multiple input dimension numbers. Assuming multiple inputs.")
+            logger.warning("Attention. Input data is a list with more than one image,\
+             i.e. jet shower data with a sequence of calorimeter images. This only works for certain models.")
             self._flat_input_size=flat_input_size
         else:
             self._flat_input_size=flat_input_size[0]
@@ -74,6 +75,15 @@ class AutoEncoderBase(nn.Module):
         raise NotImplementedError
 
     def _create_decoder(self):
+        raise NotImplementedError
+
+    def _create_sampler(self):
+        """
+            Define the sampler to be used for sampling from the RBM.
+
+        Returns:
+            Instance of baseSampler.
+        """
         raise NotImplementedError
     
     def generate_samples(self):

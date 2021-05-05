@@ -42,12 +42,12 @@ class Bernoulli(Distribution):
         # equals 1-probability
         # Broadcast to (num_samples * batch_size * output_size)
         q = torch.sigmoid(self.logits)
-        q = q + torch.zeros((num_samples, ) + q.size())
+        q = q + torch.zeros((num_samples, ) + q.size(), device=q.device)
         # Sample from U(0,1), Size:(num_samples * batch_size * output_size)
-        rho = torch.rand(q.size())
-        sample = torch.where(rho<q, torch.ones(q.size()), zeros(q.size()))
+        rho = torch.rand(q.size(), device=q.device)
+        sample = torch.where(rho<q, torch.ones(q.size(), device=q.device), zeros(q.size(), device=q.device))
         sample = torch.mean(sample, dim=0)
-        bernoulli_sample = torch.where(sample>0.5, torch.ones(sample.size()), zeros(sample.size()))
+        bernoulli_sample = torch.where(sample>0.5, torch.ones(sample.size(), device=sample.device), zeros(sample.size(), device=sample.device))
         return bernoulli_sample
     
     def entropy(self):

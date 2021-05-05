@@ -1,0 +1,3 @@
+# @package _group_
+_target_: models.samplers.gibbsSampler.GibbsSampler
+n_gibbs_sampling_steps: 40

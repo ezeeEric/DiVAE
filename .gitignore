@@ -13,6 +13,8 @@ outputs/
 wandb/
 data/MNIST/
 MNIST/
+configs/
+*.code-workspace
 
 ##############################################
 #### Automatically created
