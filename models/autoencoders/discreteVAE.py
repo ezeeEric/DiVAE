@@ -95,7 +95,7 @@ class DiVAE(AutoEncoderBase):
             Instance of BaseSampler.
         """
         assert rbm is not None, "Prior (RBM) must be defined."
-        return instantiate(self._config.sampler,RBM=rbm)
+        return instantiate(self._config.sampler, RBM=rbm)
 
     def _create_encoder(self):
         logger.debug("Creating encoder")
@@ -116,7 +116,7 @@ class DiVAE(AutoEncoderBase):
     def _create_prior(self):
         logger.debug("_create_prior")
         num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
-        return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
+        return RBM(n_visible=num_rbm_nodes_per_layer, n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
         #TODO Implement weight decay
