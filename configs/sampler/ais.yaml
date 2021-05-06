@@ -1,7 +1,7 @@
 # @package _group_
 run_exact_cross_check: 1
-n_visible: 2
-n_hidden: 2
+n_visible: 10
+n_hidden: 10
 n_betas: 10
 
 n_ais_chains: 1000

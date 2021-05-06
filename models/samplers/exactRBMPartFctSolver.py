@@ -50,6 +50,17 @@ class ExactPartitionSolver(object):
         logZ=torch.log(torch.sum(torch.exp(-torch.Tensor(act_list))))
         return Z,logZ
 
+    def calculatePartitionFct(self):
+        #pydeep adapted...
+        act_list=[]
+        hid=torch.FloatTensor(self._hid_bin_vec)
+        act=torch.matmul(hid,self._rbm.weights.t())+self._rbm.visible_bias
+        bias=torch.matmul(hid,self._rbm.hidden_bias.t()).reshape(act.shape[0],1)
+        logph=bias+torch.sum(torch.log(torch.exp(act)+1),dim=1).reshape(act.shape[0],1)
+        Z=logph
+        logZ=torch.log(torch.sum(torch.exp(logph)))
+        return Z,logZ
+
     def loadFromFile(self):
         import pickle
         f=open("/Users/drdre/codez/qVAE/DiVAE/output/210324_eps/rbm_1010.pkl",'rb')

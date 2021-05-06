@@ -16,6 +16,8 @@ from models.samplers.ais import AnnealedImportanceSampler
 from models.samplers.exactRBMPartFctSolver import ExactPartitionSolver
 from models.rbm.rbmBase import RBMBase
 
+from examples.rbm_test import cross_check_pydeep
+
 #self defined imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -60,12 +62,13 @@ def runAIS(rbm=None, eps=None, ais=None, config=None):
     ais_logZ=ais.sample()
 
     logger.info("Results:\n\t EPS logZ: {0:.4f}\n\t AIS logZ: {1:.4f}".format(eps_logZ,ais_logZ.item()))
+    cross_check_pydeep(rbm)
 
 
 if __name__=="__main__":
     logger.info("Starting standalone Annealed Importance Sampling run.")
 
     main()
-
+    
     logger.info("Auf Wiedersehen!")
 
