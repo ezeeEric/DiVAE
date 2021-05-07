@@ -38,6 +38,9 @@ class AutoEncoderBase(nn.Module):
 
         # the main configuration namespace returned by configaro
         self._config=cfg
+        
+        # Number of latent hierarchy levels
+        self._n_latent_hierarchy_lvls = self._config.model.n_latent_hierarchy_lvls
 
         # number of nodes in latent layer
         self._latent_dimensions=self._config.model.n_latent_nodes

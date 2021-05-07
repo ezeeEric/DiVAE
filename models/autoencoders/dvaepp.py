@@ -36,7 +36,7 @@ class DiVAEPP(DiVAE):
         Returns:
             Hierarchical Encoder instance
         """
-        logger.debug("")
+        logger.debug("_create_encoder")
         return HierarchicalEncoder(
             input_dimension=self._flat_input_size,
             n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
@@ -150,17 +150,16 @@ class DiVAEPP(DiVAE):
         # Change H.size() from (batchSize * nHid) to (batchSize * nHid * 1)
         H = rbm_hid.unsqueeze(2)
         # Change V.size() from (batchSize * nVis) to (batchSize * 1 * nVis)
-        V = rbm_hid.unsqueeze(2).permute(0, 2, 1)
+        V = rbm_vis.unsqueeze(2).permute(0, 2, 1)
         
         batch_energy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
                         - torch.matmul(rbm_vis, self.prior.visible_bias)
                         - torch.matmul(rbm_hid, self.prior.hidden_bias))
         
         neg_energy = - torch.mean(batch_energy, 0)
-        # neg_energy = torch.mean(batch_energy, 0)
         entropy = torch.mean(entropy, 0)
 
-        kl_loss = neg_energy + cross_entropy - entropy
+        kl_loss = cross_entropy - entropy + neg_energy
         return kl_loss, cross_entropy, entropy, neg_energy 
     
     def cross_entropy_from_hierarchical(self, logits, log_ratio):
@@ -175,7 +174,7 @@ class DiVAEPP(DiVAE):
         Returns:
             cross_entropy
         """
-        num_var_rbm = (self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions)//2
+        num_var_rbm = (self._n_latent_hierarchy_lvls * self._latent_dimensions)//2
         
         logit_q1 = logits[:, :num_var_rbm]
         logit_q2 = logits[:, num_var_rbm:]
