@@ -13,10 +13,10 @@ train: 1
 test: 0
 device: gpu
 gpu_list:
-  - 0
+  - 1
 
 defaults:
-  - model: divaepp
+  - model: gumbolt
   - data: mnist
   - engine: divae_training
   - task
