@@ -92,7 +92,7 @@ class GumBolt(DiVAEPP):
         # Compute positive energy expval using hierarchical posterior samples
         
         # Number of hidden and visible variables on each side of the RBM
-        num_var_rbm = (self._n_latent_hierarchy_lvls * self._latent_dimensions)//2
+        num_var_rbm = (self.n_latent_hierarchy_lvls * self._latent_dimensions)//2
         
         # Compute positive energy contribution to the KL divergence
         post_zetas_vis, post_zetas_hid = post_zetas[:, :num_var_rbm], post_zetas[:, num_var_rbm:]

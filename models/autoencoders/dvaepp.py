@@ -174,7 +174,7 @@ class DiVAEPP(DiVAE):
         Returns:
             cross_entropy
         """
-        num_var_rbm = (self._n_latent_hierarchy_lvls * self._latent_dimensions)//2
+        num_var_rbm = (self.n_latent_hierarchy_lvls * self._latent_dimensions)//2
         
         logit_q1 = logits[:, :num_var_rbm]
         logit_q2 = logits[:, num_var_rbm:]
