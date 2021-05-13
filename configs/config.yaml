@@ -13,7 +13,7 @@ train: 1
 test: 0
 device: gpu
 gpu_list:
-  - 0
+  - 1
 
 
 defaults:
