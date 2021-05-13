@@ -18,5 +18,5 @@ gpu_list:
 defaults:
   - model: gumbolt
   - data: mnist
-  - engine: divae_training
+  - engine: training_divae
   - task

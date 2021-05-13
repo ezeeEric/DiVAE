@@ -99,11 +99,12 @@ def run(modelCreator=None, config=None):
             dev = device('cpu')
             logger.info("CUDA unavailable")
     else:
-        logger.info('Unable to use GPU. Switching to CPU.')
+        logger.info('Requested CPU or unable to use GPU. Setting CPU as device.')
         dev = device('cpu')
         
     # Send the model to the selected device
     model.to(dev)
+
 
     engine=Engine(cfg=config)
     #add dataMgr instance to engine namespace
@@ -144,7 +145,7 @@ def run(modelCreator=None, config=None):
         config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
 
-    if False:
+    if config.create_plots:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
         

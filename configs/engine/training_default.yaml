@@ -1,4 +1,5 @@
 # @package _group_
+_target_: engine.engine.Engine
 learning_rate: 0.001
 n_batch_samples: 64
 n_epochs: 100
