@@ -1,7 +1,7 @@
 # @package _group_
 model_type: gumBolt
 activation_fct: relu
-beta_smoothing_fct: 7
+beta_smoothing_fct: 5
 decoder_hidden_nodes:
   - 64
   - 64
@@ -9,4 +9,4 @@ decoder_hidden_nodes:
 n_encoder_layer_nodes: 64
 n_encoder_layers: 3
 n_latent_hierarchy_lvls: 2
-n_latent_nodes: 16
+n_latent_nodes: 32
