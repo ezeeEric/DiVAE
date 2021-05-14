@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 class EngineDiVAEpp(Engine):
 
     def __init__(self, cfg=None, **kwargs):
+        logger.info("Setting up DiVAEpp engine.")
         super(Engine,self).__init__(cfg, **kwargs)
 
     def fit(self, epoch, is_training=True):
@@ -53,6 +54,8 @@ class EngineDiVAEpp(Engine):
                     batch_loss_dict = self._model.loss(input_data,fwd_output)
 
                     if is_training:
+                        #TODO As this engine is now specific to DiVAEPP, can we
+                        #remove this switch? 
                         if self._config.model.model_type == "DiVAEPP":
                             """
                             Cheap hack to allow KL annealing in DVAE++
@@ -61,11 +64,9 @@ class EngineDiVAEpp(Engine):
                             #gamma = 1.0
                             batch_loss_dict["gamma"] = gamma
                             batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + gamma*batch_loss_dict["kl_loss"]
-                            batch_loss_dict["loss"].backward()
-                            self._optimiser.step()
-                        else:
-                            batch_loss_dict["loss"].backward()
-                            self._optimiser.step()
+
+                        batch_loss_dict["loss"].backward()
+                        self._optimiser.step()
 
                 # Output logging
                 if is_training and batch_idx % 100 == 0:

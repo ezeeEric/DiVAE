@@ -8,9 +8,6 @@ input_model: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
-create_plots: 0
-train: 1
-test: 0
 device: gpu
 gpu_list:
   - 1
@@ -19,4 +16,6 @@ defaults:
   - model: gumbolt
   - data: mnist
   - engine: training_divae
+#this loads options defining what tasks to run, i.e. train/test/create_plots
+#etc. Change the options in task.yaml
   - task
