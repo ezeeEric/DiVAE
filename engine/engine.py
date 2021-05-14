@@ -1,9 +1,8 @@
 """
-Default Engine for simple models.
+Default Engine Class for various autoencoder models.
 
-Works with:
+Tested with:
 - Autoencoder
-
 """
 
 import torch

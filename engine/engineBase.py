@@ -1,6 +1,5 @@
 """
-Abstract Base
-Provides data handling, logging and wandb integration.
+Base Class of Engines. Defines properties and methods.
 """
 
 import torch

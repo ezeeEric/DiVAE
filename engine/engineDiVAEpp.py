@@ -1,6 +1,6 @@
 """
-Engine for DiVAEPP and derived models. 
-
+Engine specific to DiVAEPP and derived models. Utilises wandb logging for plots
+of generated samples. 
 """
 
 import torch
