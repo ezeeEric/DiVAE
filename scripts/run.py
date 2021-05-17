@@ -18,6 +18,8 @@ torch.manual_seed(32)
 import numpy as np
 import matplotlib.pyplot as plt
 import hydra
+from hydra.utils import instantiate
+
 from omegaconf import OmegaConf
 
 # PyTorch imports
@@ -49,7 +51,7 @@ def main(cfg=None):
 
     wandb.init(entity="qvae", project="divae", config=cfg)  
     print(OmegaConf.to_yaml(cfg))
-    
+
     #create model handling object
     modelCreator=ModelCreator(cfg=cfg)
     
@@ -99,21 +101,19 @@ def run(modelCreator=None, config=None):
             dev = device('cpu')
             logger.info("CUDA unavailable")
     else:
-        logger.info('Unable to use GPU. Switching to CPU.')
+        logger.info('Requested CPU or unable to use GPU. Setting CPU as device.')
         dev = device('cpu')
         
     # Send the model to the selected device
     model.to(dev)
+    # Log metrics with wandb
+    wandb.watch(model)
 
-    engine=Engine(cfg=config)
+    engine=instantiate(config.engine, cfg=config)
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
     #add device instance to engine namespace
-    engine.device=dev
-
-    # Log metrics with wandb
-    wandb.watch(model)
-    
+    engine.device=dev    
     #instantiate and register optimisation algorithm
     engine.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
     #add the model instance to the engine namespace
@@ -144,7 +144,7 @@ def run(modelCreator=None, config=None):
         config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
 
-    if False:
+    if config.create_plots:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
         

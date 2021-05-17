@@ -1,15 +1,22 @@
-# @package _group_
+  # @package _group_
 tag: default
 debug: False
 load_data_from_pkl: 0
 load_model: 0
-input_model: 
-  # ./output/divae_mnist/model_DiVAE_mnist_1200_100_400_2_0.001_4_100_tanh_default_210126.pt
+save_model: 0
+input_model: 0
+#output path is set in code to hydra's current working directory
+#variable is then used downstream to set paths.
 output_path: ???
+device: cpu
+gpu_list:
+  - 0
 
 defaults:
   - model: sequentialVAE
   - data: calo
   - engine: calo_training
-  - task
   - plotting: plot_calo
+#this loads options defining what tasks to run, i.e. train/test/create_plots
+#etc. Change the options in task.yaml
+  - task

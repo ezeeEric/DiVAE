@@ -1,7 +1,8 @@
 """
-Training, testing and evaluation engine.
+Default Engine Class for various autoencoder models.
 
-Provides data handling, logging and wandb integration.
+Tested with:
+- Autoencoder
 """
 
 import torch
@@ -9,54 +10,17 @@ import torch
 # Weights and Biases
 import wandb
 
+from engine.engineBase import EngineBase
+
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class Engine(object):
+class Engine(EngineBase):
 
-    def __init__(self, cfg=None):
-        self._config=cfg
-        self._model=None
-        self._optimiser=None
-        self._data_mgr=None
-        self._device=None
-
-    @property
-    def model(self):
-        return self._model
-    
-    @model.setter   
-    def model(self,model):
-        self._model=model
-
-    @property
-    def optimiser(self):
-        return self._optimiser
-    
-    @optimiser.setter   
-    def optimiser(self,optimiser):
-        self._optimiser=optimiser
-    
-    @property
-    def data_mgr(self):
-        return self._data_mgr
-    
-    @data_mgr.setter   
-    def data_mgr(self,data_mgr):
-        self._data_mgr=data_mgr
+    def __init__(self, cfg=None, **kwargs):
+        logger.info("Setting up default engine.")
+        super(Engine,self).__init__(cfg, **kwargs)
         
-    @property
-    def device(self):
-        return self._device
-    
-    @device.setter
-    def device(self, device):
-        self._device=device
-    
-    def register_dataManager(self,data_mgr):
-        assert data_mgr is not None, "Empty Data Mgr"
-        self.data_mgr=data_mgr
-        return
 
     def generate_samples(self):
         #generate the samples. Each model has its own specific settings which
@@ -94,48 +58,18 @@ class Engine(object):
                 #the default is to sum up gradients for successive backprop. steps.
                 #that is useful for RNNs but not here.
                 self._optimiser.zero_grad()
-                #forward call
-                #output is a namespace with members as added in the forward call
-                #and subsequently used in loss()
                 with torch.autograd.set_detect_anomaly(False):
                     input_data = input_data.to(self._device)
+                    #forward call
+                    #output is a namespace with members as added in the forward call
+                    #and subsequently used in loss()
                     fwd_output=self._model(input_data)
 
                     # Compute model-dependent loss
                     batch_loss_dict = self._model.loss(input_data,fwd_output)
 
-                    if is_training:
-                        if self._config.model.model_type == "DiVAEPP":
-                            """
-                            Cheap hack to allow KL annealing in DVAE++
-                            """
-                            gamma = (((epoch-1)*num_batches)+(batch_idx+1))/(num_epochs*num_batches)
-                            #gamma = 1.0
-                            batch_loss_dict["gamma"] = gamma
-                            batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + gamma*batch_loss_dict["kl_loss"]
-                            batch_loss_dict["loss"].backward()
-                            self._optimiser.step()
-                        else:
-                            batch_loss_dict["loss"].backward()
-                            self._optimiser.step()
-
-                # Output logging
-                if is_training and batch_idx % 100 == 0:
-                    if batch_idx % 500 == 0:
-                        recon = fwd_output.output_distribution.reparameterise()
-                        recon = recon.reshape((-1,) + input_data.size()[2:]).detach().cpu().numpy()
-                        batch_loss_dict["recon_img"] = [wandb.Image(img, caption="Reconstruction") for img in recon]
-                        
-                        samples = self._model.generate_samples()
-                        samples = samples.reshape((-1,) + input_data.size()[2:]).detach().cpu().numpy()
-                        batch_loss_dict["sample_img"] = [wandb.Image(img, caption="Samples") for img in samples]
-                        
-                        input_imgs = input_data.squeeze(1).detach().cpu().numpy()
-                        batch_loss_dict["input_img"] = [wandb.Image(img, caption="Input") for img in input_imgs]
-                    else:
-                        batch_loss_dict.pop('recon_img', None)
-                        batch_loss_dict.pop('sample_img', None)
-                        batch_loss_dict.pop('input_img', None)
+                    batch_loss_dict["loss"].backward()
+                    self._optimiser.step()
                     
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(
                                             epoch,
@@ -145,6 +79,7 @@ class Engine(object):
                                             batch_loss_dict["loss"]))
                     
                     wandb.log(batch_loss_dict)
+
         return batch_loss_dict["loss"]
     
     def evaluate(self):
