@@ -30,7 +30,10 @@ class HierarchicalEncoder(BasicEncoder):
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
         #TODO this assumes MNIST dataset without sequential layers
-        self.num_input_nodes=input_dimension
+        if isinstance(input_dimension, int):
+            self.num_input_nodes = input_dimension
+        elif isinstance(input_dimension, list):
+            self.num_input_nodes = sum(input_dimension)
 
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
@@ -76,8 +79,11 @@ class HierarchicalEncoder(BasicEncoder):
         #skip_latent_layer: instead of having a single latent layer, use
         #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy level
         # this is done outside this class...  
-        #TODO this should be revised with better structure for input layer config  
-        layers=[self.num_input_nodes+level*self.n_latent_nodes]+[self.n_encoder_layer_nodes]*self.n_encoder_layers+[self.n_latent_nodes]
+        #TODO this should be revised with better structure for input layer config
+        if level == 0:
+            layers = [self.num_input_nodes] + list(self._config.model.encoder_hidden_nodes) + [self.n_latent_nodes]
+        else:
+            layers=[self.num_input_nodes+(level*self.n_latent_nodes)]+[self.n_encoder_layer_nodes]*self.n_encoder_layers+[self.n_latent_nodes]
         
         #in case we want to sample gaussian variables
         if skip_latent_layer: 
@@ -85,12 +91,8 @@ class HierarchicalEncoder(BasicEncoder):
 
         moduleLayers=nn.ModuleList([])
         for l in range(len(layers)-1):
-            n_in_nodes=layers[l]
-            n_out_nodes=layers[l+1]
-
-            moduleLayers.append(nn.Linear(n_in_nodes,n_out_nodes))
-            #apply the activation function for all layers except the last
-            #(latent) layer 
+            moduleLayers.append(nn.Linear(layers[l], layers[l+1]))
+            #apply the activation function for all layers except the last (latent) layer 
             act_fct = nn.Identity() if l==len(layers)-2 else self.activation_fct
             moduleLayers.append(act_fct)
 

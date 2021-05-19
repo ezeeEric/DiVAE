@@ -26,6 +26,9 @@ class DiVAE(AutoEncoderBase):
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
         
+        if isinstance(self._flat_input_size, list):
+            self._flat_input_size = sum(self._flat_input_size)
+
         dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+list(self._config.model.decoder_hidden_nodes)+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
