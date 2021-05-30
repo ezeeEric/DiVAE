@@ -119,6 +119,7 @@ def run(modelCreator=None, config=None):
     #add the model instance to the engine namespace
     engine.model = model
 
+    
     #no need to train if we load from file.
     if config.load_model:
         #return pre-trained model after loading from file
@@ -130,11 +131,11 @@ def run(modelCreator=None, config=None):
         pass
     else:
         for epoch in range(1, config.engine.n_epochs+1): 
-            if config.train:
-                train_loss = engine.fit(epoch=epoch, is_training=True)
+            if "train" in config.task:
+                engine.fit(epoch=epoch, is_training=True)
             
-            if config.test:
-                test_loss = engine.fit(epoch=epoch, is_training=False)
+            if "validate" in config.task:
+                engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
@@ -154,7 +155,11 @@ def run(modelCreator=None, config=None):
             eval_output.output_generated=output_generated
 
         #instantiate plotting infrastructure
-        pp=PlotProvider(data_container=eval_output, plotFunctions=config.plotting.plotFunctions, config_string=config_string,date_tag=date, cfg=config)
+        pp=PlotProvider(data_container=eval_output,
+                        plotFunctions=config.plotting.plotFunctions,
+                        config_string=config_string,
+                        date_tag=date,
+                        cfg=config)
         
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()

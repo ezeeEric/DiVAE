@@ -7,8 +7,8 @@ calo_layers:
   - layer_1
   - layer_2
 particle_type: gamma
-frac_test_dataset: 0.1
-frac_train_dataset: 0.9
+frac_test_dataset: 0.6
+frac_train_dataset: 0.3
 
 calo_input_eplus: /fast_scratch/QVAE/data/calo/eplus.hdf5
 calo_input_gamma: /fast_scratch/QVAE/data/calo/gamma.hdf5

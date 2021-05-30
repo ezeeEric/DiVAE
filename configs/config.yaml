@@ -13,8 +13,11 @@ device: gpu
 gpu_list:
   - 0
 
+task:
+  - train
+  - validate
+
 defaults:
   - model: divaeppcalo
   - data: calo
   - engine: dvaecalo_training
-  - task
