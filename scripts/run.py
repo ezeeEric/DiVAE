@@ -77,9 +77,9 @@ def run(modelCreator=None, config=None):
 
     #instantiate the chosen model
     #loads from file 
-    model=modelCreator.initmodel(load_from_file=config.load_model, dataMgr=dataMgr)
+    model=modelCreator.init_model(load_from_file=config.load_model, dataMgr=dataMgr)
     #create the NN infrastructure
-    model.createnetworks()
+    model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
     
