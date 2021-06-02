@@ -8,6 +8,8 @@ import os
 
 import torch
 torch.manual_seed(1)
+torch.set_default_tensor_type(torch.DoubleTensor)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import hydra
@@ -16,7 +18,7 @@ from models.samplers.ais import AnnealedImportanceSampler
 from models.samplers.exactRBMPartFctSolver import ExactPartitionSolver
 from models.rbm.rbmBase import RBMBase
 
-from examples.rbm_test import cross_check_pydeep
+from examples.rbm_test import cross_check_pydeep,cross_check_pydeep_simple
 
 #self defined imports
 from DiVAE import logging
@@ -48,7 +50,7 @@ def main(cfg=None):
         eps=ExactPartitionSolver(rbm=rbm)
     
     #AIS
-    ais=AnnealedImportanceSampler(target_rbm=rbm, n_betas=cfg.n_betas, n_ais_chains=cfg.n_ais_chains, n_gibbs_sampling_steps=10)
+    ais=AnnealedImportanceSampler(target_rbm=rbm, n_betas=cfg.n_betas, n_ais_chains=cfg.n_ais_chains, n_gibbs_sampling_steps=cfg.n_gibbs_sampling_steps)
 
     runAIS(rbm=rbm, eps=eps, ais=ais, config=cfg)
 
@@ -62,8 +64,10 @@ def runAIS(rbm=None, eps=None, ais=None, config=None):
     ais_logZ=ais.sample()
 
     logger.info("Results:\n\t EPS logZ: {0:.4f}\n\t AIS logZ: {1:.4f}".format(eps_logZ,ais_logZ.item()))
-    cross_check_pydeep(rbm)
-
+    #simplified pydeep
+    cross_check_pydeep_simple(rbm)
+    #use full pydeep
+    # cross_check_pydeep(rbm)
 
 if __name__=="__main__":
     logger.info("Starting standalone Annealed Importance Sampling run.")

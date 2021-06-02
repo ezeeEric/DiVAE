@@ -7,6 +7,8 @@ import torch
 from torch import nn
 from copy import deepcopy
 
+from torch._C import dtype
+
 from models.rbm.rbm import RBM
 from models.samplers.baseSampler import BaseSampler
 
@@ -17,6 +19,7 @@ class ExactPartitionSolver(object):
     def __init__(self, rbm=None, **kwargs):
         assert rbm is not None, "ExactPartitionSolver needs an RBMBase instance"
 
+        self.dtype=torch.float64
         self._rbm=rbm
         self._hid_bin_vec=[]
         self._vis_bin_vec=[]
@@ -53,7 +56,7 @@ class ExactPartitionSolver(object):
     def calculatePartitionFct(self):
         #pydeep adapted...
         act_list=[]
-        hid=torch.FloatTensor(self._hid_bin_vec)
+        hid=torch.DoubleTensor(self._hid_bin_vec)
         act=torch.matmul(hid,self._rbm.weights.t())+self._rbm.visible_bias
         bias=torch.matmul(hid,self._rbm.hidden_bias.t()).reshape(act.shape[0],1)
         logph=bias+torch.sum(torch.log(torch.exp(act)+1),dim=1).reshape(act.shape[0],1)
