@@ -3,14 +3,21 @@ tag: default
 debug: False
 load_data_from_pkl: 0
 load_model: 0
+save_model: 0
 input_model: 0
+create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
-create_plots: 0
+device: gpu
+gpu_list:
+  - 0
+
+task:
+  - train
+  - validate
 
 defaults:
-  - model: divaepp
-  - data: mnist
-  - engine: divae_training
-  - task
+  - model: divaeppcalo
+  - data: calo
+  - engine: dvaecalo_training
