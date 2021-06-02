@@ -36,7 +36,7 @@ class DiVAEPP(DiVAE):
         Returns:
             Hierarchical Encoder instance
         """
-        logger.debug("")
+        logger.debug("_create_encoder")
         return HierarchicalEncoder(
             input_dimension=self._flat_input_size,
             n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
@@ -69,14 +69,15 @@ class DiVAEPP(DiVAE):
         out=self._output_container.clear()
       	
 	    #TODO data prep - study if this does good things
-        input_data_centered=x.view(-1, self._flat_input_size)-self._dataset_mean
+        input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
         out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_activations = self.decoder(post_samples)
-        out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        #out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
+        out.output_activations = torch.clamp(output_activations, min=-88., max=88.)
         out.output_distribution = Bernoulli(logits=out.output_activations)
         out.output_data = torch.sigmoid(out.output_distribution.logits)
         return out
@@ -143,23 +144,22 @@ class DiVAEPP(DiVAE):
         
         # Broadcast W to (batchSize * nVis * nHid)
         W = self.prior.weights
-        W = W + torch.zeros((rbm_vis.size(0),) + W.size())
+        W = W + torch.zeros((rbm_vis.size(0),) + W.size(), device=rbm_vis.device)
         
         # Prepare H, V for torch.matmul()
         # Change H.size() from (batchSize * nHid) to (batchSize * nHid * 1)
         H = rbm_hid.unsqueeze(2)
         # Change V.size() from (batchSize * nVis) to (batchSize * 1 * nVis)
-        V = rbm_hid.unsqueeze(2).permute(0, 2, 1)
+        V = rbm_vis.unsqueeze(2).permute(0, 2, 1)
         
         batch_energy = (- torch.matmul(V, torch.matmul(W, H)).reshape(-1) 
                         - torch.matmul(rbm_vis, self.prior.visible_bias)
                         - torch.matmul(rbm_hid, self.prior.hidden_bias))
         
         neg_energy = - torch.mean(batch_energy, 0)
-        # neg_energy = torch.mean(batch_energy, 0)
         entropy = torch.mean(entropy, 0)
 
-        kl_loss = neg_energy + cross_entropy - entropy
+        kl_loss = cross_entropy - entropy + neg_energy
         return kl_loss, cross_entropy, entropy, neg_energy 
     
     def cross_entropy_from_hierarchical(self, logits, log_ratio):
@@ -174,7 +174,7 @@ class DiVAEPP(DiVAE):
         Returns:
             cross_entropy
         """
-        num_var_rbm = (self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions)//2
+        num_var_rbm = (self.n_latent_hierarchy_lvls * self._latent_dimensions)//2
         
         logit_q1 = logits[:, :num_var_rbm]
         logit_q2 = logits[:, num_var_rbm:]
@@ -187,7 +187,7 @@ class DiVAEPP(DiVAE):
         
         # Broadcast W to (batchSize * nVis * nHid)
         W = self.prior.weights
-        W = W + torch.zeros((q1.size(0),) + W.size())
+        W = W + torch.zeros((q1.size(0),) + W.size(), device=q1.device)
         
         # Prepare q2, q1_pert for torch.matmul()
         # Change q2.size() from (batchSize * nHid) to (batchSize * nHid * 1)
@@ -214,14 +214,12 @@ class DiVAEPP(DiVAE):
     def generate_samples(self):
         """
         generate_samples()
-        
         """
         rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
         rbm_vis = rbm_visible_samples.detach()
         rbm_hid = rbm_hidden_samples.detach()
         prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
         
-        output_activations = self.decoder(prior_samples) + self._train_bias
+        output_activations = self.decoder(prior_samples)# + self._train_bias
         samples = Bernoulli(logits=output_activations).reparameterise()
         return samples
-

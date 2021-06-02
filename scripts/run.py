@@ -14,11 +14,18 @@ import datetime
 import sys
 
 import torch
-torch.manual_seed(1)
+torch.manual_seed(32)
 import numpy as np
 import matplotlib.pyplot as plt
 import hydra
+from hydra.utils import instantiate
+
 from omegaconf import OmegaConf
+
+# PyTorch imports
+from torch import device, load, save
+from torch.nn import DataParallel
+from torch.cuda import is_available
 
 # Add the path to the parent directory to augment search for module
 sys.path.append(os.getcwd())
@@ -44,7 +51,7 @@ def main(cfg=None):
 
     wandb.init(entity="qvae", project="divae", config=cfg)  
     print(OmegaConf.to_yaml(cfg))
-    
+
     #create model handling object
     modelCreator=ModelCreator(cfg=cfg)
     
@@ -76,18 +83,43 @@ def run(modelCreator=None, config=None):
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
     
-    engine=Engine(cfg=config)
-    #add dataMgr instance to engine namespace
-    engine.data_mgr=dataMgr
-
+    # Load the model on the GPU if applicable
+    dev = None
+    if (config.device == 'gpu') and config.gpu_list:
+        logger.info('Requesting GPUs. GPU list :' + str(config.gpu_list))
+        devids = ["cuda:{0}".format(x) for x in list(config.gpu_list)]
+        logger.info("Main GPU : " + devids[0])
+        
+        if is_available():
+            print(devids[0])
+            dev = device(devids[0])
+            if len(devids) > 1:
+                logger.info("Using DataParallel on {}".format(devids))
+                model = DataParallel(model, device_ids=list(config.gpu_list))
+            logger.info("CUDA available")
+        else:
+            dev = device('cpu')
+            logger.info("CUDA unavailable")
+    else:
+        logger.info('Requested CPU or unable to use GPU. Setting CPU as device.')
+        dev = device('cpu')
+        
+    # Send the model to the selected device
+    model.to(dev)
     # Log metrics with wandb
     wandb.watch(model)
-    
+
+    engine=instantiate(config.engine, cfg=config)
+    #add dataMgr instance to engine namespace
+    engine.data_mgr=dataMgr
+    #add device instance to engine namespace
+    engine.device=dev    
     #instantiate and register optimisation algorithm
     engine.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
     #add the model instance to the engine namespace
     engine.model = model
 
+    
     #no need to train if we load from file.
     if config.load_model:
         #return pre-trained model after loading from file
@@ -99,11 +131,11 @@ def run(modelCreator=None, config=None):
         pass
     else:
         for epoch in range(1, config.engine.n_epochs+1): 
-            if config.train:
-                train_loss = engine.fit(epoch=epoch, is_training=True)
+            if "train" in config.task:
+                engine.fit(epoch=epoch, is_training=True)
             
-            if config.test:
-                test_loss = engine.fit(epoch=epoch, is_training=False)
+            if "validate" in config.task:
+                engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
@@ -113,7 +145,7 @@ def run(modelCreator=None, config=None):
         config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
 
-    if False:
+    if config.create_plots:
         #call a forward method derivative - for output object.
         eval_output=engine.evaluate()
         
@@ -123,7 +155,11 @@ def run(modelCreator=None, config=None):
             eval_output.output_generated=output_generated
 
         #instantiate plotting infrastructure
-        pp=PlotProvider(data_container=eval_output, plotFunctions=config.plotting.plotFunctions, config_string=config_string,date_tag=date, cfg=config)
+        pp=PlotProvider(data_container=eval_output,
+                        plotFunctions=config.plotting.plotFunctions,
+                        config_string=config_string,
+                        date_tag=date,
+                        cfg=config)
         
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()

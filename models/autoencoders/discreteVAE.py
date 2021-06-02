@@ -26,6 +26,9 @@ class DiVAE(AutoEncoderBase):
         #TODO can this be done through inheritance from AutoEncoder?
         self._decoder_nodes=[]
         
+        if isinstance(self._flat_input_size, list):
+            self._flat_input_size = sum(self._flat_input_size)
+
         dec_node_list=[(int(self._latent_dimensions*self._config.model.n_latent_hierarchy_lvls))]+list(self._config.model.decoder_hidden_nodes)+[self._flat_input_size]
 
         for num_nodes in range(0,len(dec_node_list)-1):
@@ -95,7 +98,7 @@ class DiVAE(AutoEncoderBase):
             Instance of BaseSampler.
         """
         assert rbm is not None, "Prior (RBM) must be defined."
-        return instantiate(self._config.sampler,RBM=rbm)
+        return instantiate(self._config.sampler, RBM=rbm)
 
     def _create_encoder(self):
         logger.debug("Creating encoder")
@@ -116,7 +119,7 @@ class DiVAE(AutoEncoderBase):
     def _create_prior(self):
         logger.debug("_create_prior")
         num_rbm_nodes_per_layer=self._config.model.n_latent_hierarchy_lvls*self._latent_dimensions//2
-        return RBM(n_visible=num_rbm_nodes_per_layer,n_hidden=num_rbm_nodes_per_layer)
+        return RBM(n_visible=num_rbm_nodes_per_layer, n_hidden=num_rbm_nodes_per_layer)
    
     def weight_decay_loss(self):
         #TODO Implement weight decay
