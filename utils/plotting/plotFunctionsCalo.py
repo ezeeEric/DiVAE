@@ -126,5 +126,3 @@ def plot_shower_metrics(data_container=None, cfg=None):
         plt.ylabel("Entries / Bin")
         plt.title(cfg.model.model_type)
         plt.savefig('{0}.png'.format(mName))
-
-
