@@ -1,4 +1,4 @@
-# @package _group_
+
 model_type: DiVAEpp
 activation_fct: relu
 beta_smoothing_fct: 5

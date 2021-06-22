@@ -82,7 +82,7 @@ class ModelCreator(object):
 
     def save_model(self,cfg_string='test'):
         logger.info("Saving Model")
-        f=open(os.path.join(self._config.output_path,"model_{0}.pt".format(cfg_string)),'wb')
+        f=open(os.path.join(os.getcwd(),"model_{0}.pt".format(cfg_string)),'wb')
         torch.save(self._model.state_dict(),f)
         f.close()
         return

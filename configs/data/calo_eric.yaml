@@ -1,0 +1,15 @@
+
+
+#TODO where to put this - proper mnist/calo data split
+data_type: calo
+calo_layers: 
+  - layer_0
+  - layer_1
+  - layer_2
+particle_type: gamma
+frac_test_dataset: 0.2
+frac_train_dataset: 0.8
+
+input_calo_eplus: /Users/drdre/inputz/CaloGAN_EMShowers/eplus.hdf5
+input_calo_gamma: /Users/drdre/inputz/CaloGAN_EMShowers/gamma.hdf5
+input_calo_piplus: /Users/drdre/inputz/CaloGAN_EMShowers/piplus.hdf5

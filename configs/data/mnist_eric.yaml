@@ -4,11 +4,10 @@ binarise_dataset: threshold
 # load_data_from_pkl: 0
 
 # Automatic download applicable if MNIST files could not be found
-# Use top-level directory path for the repo as mnist_input
+# Use top-level directory path for the repo as input_mnist
 pre_processed_input_file: 0
-mnist_input: /fast_scratch/QVAE/data/
+input_mnist: /Users/drdre/inputz/
 
 load_data_from_pkl: 0
-frac_test_dataset: 0.001
-frac_train_dataset: 1
-
+frac_test_dataset: 0.005
+frac_train_dataset: 0.01

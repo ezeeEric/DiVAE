@@ -1,4 +1,4 @@
-# @package _group_
+
 tag: default
 debug: False
 load_data_from_pkl: 0
@@ -18,6 +18,6 @@ task:
   - validate
 
 defaults:
-  - model: divaeppcalo
+  - model: divae
   - data: calo
-  - engine: dvaecalo_training
+  - engine: calo_training

@@ -1,4 +1,4 @@
-# @package _group_
+
 model_type: DiVAE
 activation_fct: tanh
 beta_smoothing_fct: 4
