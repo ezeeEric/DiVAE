@@ -1,4 +1,4 @@
-# @package _group_
+
 model_type: sparseAE
 l1_regularisation_weight: 100
 #TODO hydra: this is duplicated... how to use hierarchy properly?

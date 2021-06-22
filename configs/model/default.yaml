@@ -1,5 +1,4 @@
 
-model_type: HiVAE
 activation_fct: RELU
 n_latent_hierarchy_lvls: 4
 n_encoder_layer_nodes: 500
