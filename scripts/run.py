@@ -44,21 +44,19 @@ from models.modelCreator import ModelCreator
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
-
-    #TODO hydra update: output path not needed anymore. Replace all instances
-    #with current work directory instead. (Hydra sets that automatically)
-    cfg.output_path=os.getcwd()
-
+    #initialise wandb logging. Note that this function has many more options,
+    #reference: https://docs.wandb.ai/ref/python/init
+    #this is the setting for individual, ungrouped runs
     wandb.init(entity="qvae", project="divae", config=cfg)  
-    print(OmegaConf.to_yaml(cfg))
+
+    #run the ting
+    run(config=cfg)
+
+def run(config=None):
+    return
 
     #create model handling object
-    modelCreator=ModelCreator(cfg=cfg)
-    
-    #run the ting
-    run(modelCreator, config=cfg)
-
-def run(modelCreator=None, config=None):
+    modelCreator=ModelCreator(cfg=config)
 
     #container for our Dataloaders
     dataMgr=DataManager(cfg=config)

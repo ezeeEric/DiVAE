@@ -20,7 +20,6 @@ def plot_shower_image_sequence(data_container=None, cfg=None):
     logger.info("plot_shower_image_sequence()")
     input_data=data_container.input_data
     output_data=data_container.outputs
-    output_path=cfg.output_path
     n_samples=cfg.plotting.n_samples
 
     for i in range(n_samples):
@@ -73,7 +72,7 @@ def plot_shower_image_sequence(data_container=None, cfg=None):
             im.callbacksSM.connect('changed', update)
         fig.suptitle('Geant4 vs. sVAE Calorimeter shower')
         # plt.tight_layout()
-        fig.savefig(output_path+"/test_{0}.png".format(i))
+        fig.savefig(os.getcwd()+"/test_{0}.png".format(i))
 
 # recurse infinitely!
 def update(changed_image):

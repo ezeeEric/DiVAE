@@ -74,6 +74,19 @@ Set option `input_model` to the desired pickle file containing your model. Watch
 out for additional information stored in that pickle - these are read out in
 successive order. See `modelMaker::load_model()` for implementation details. 
 
+
+### ... run with Slurm submission
+It is possible to run on computing clusters with the Slrum submission engine. Hydra has a built-in plugin interfacing the library `submitit`. It is important to use these dependencies:
+```
+hydra-core==1.1.0
+hydra-submitit-launcher==1.1.5
+submitit @ https://github.com/facebookincubator/submitit/archive/refs/tags/1.3.0.tar.gz
+```
+as the default PyPI version does not work on Cedar. A first script is added in the `scripts/` directory and a great starting point. To utitlise the batch submission, simply add the `--multirun` flag to your command line and specify which parameter to loop over like so:
+```
+python scripts/runSlurm.py --multirun config.myopt=1,2 
+```
+
 ## Notes
 - In Hierarchical Encoder: probabilities are clamped (clipped)
 more clamping in KLD

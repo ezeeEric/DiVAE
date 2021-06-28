@@ -1,4 +1,4 @@
-# @package _group_
+
 _target_: models.samplers.pcd.PCD
 n_gibbs_sampling_steps: 40
 batch_size: 32
