@@ -9,9 +9,11 @@ import torch
 
 # Weights and Biases
 import wandb
+import numpy as np
 
 from engine.engine import Engine
 from utils.hists.histHandler import HistHandler
+from utils.plotting.plotCalo import plot_calo_images
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -74,10 +76,7 @@ class EngineCalo(Engine):
                     # Update the histogram
                     self._hist_handler.update(in_data.detach().cpu().numpy(), 
                                               fwd_output.output_activations.detach().cpu().numpy(),
-                                              self._model.generate_samples().detach().cpu().numpy())
-                            
-                if batch_idx == 0:
-                    upsample = self.get_upsample_layer(input_data)
+                                              self._model.generate_samples(self._config.engine.n_valid_batch_size).detach().cpu().numpy())
                     
                 if (batch_idx % log_batch_idx) == 0:
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(epoch,
@@ -98,19 +97,18 @@ class EngineCalo(Engine):
                             recon_image = fwd_output.output_activations[:num_plot_samples, start_index:start_index+layer_data_flat.size(1)]
                             sample_image = samples[:num_plot_samples, start_index:start_index+layer_data_flat.size(1)]
                             start_index += layer_data_flat.size(1)
-                                
-                            input_image = upsample(input_data[layer][:num_plot_samples].unsqueeze(1)).squeeze(1).detach().cpu().numpy()
-                            recon_image = upsample(recon_image.reshape((-1, 1) + input_data[layer].size()[1:])).squeeze(1).detach().cpu().numpy()
-                            sample_image = upsample(sample_image.reshape((-1, 1) + input_data[layer].size()[1:])).squeeze(1).detach().cpu().numpy()
-                                
-                            input_images.append(input_image)
-                            recon_images.append(recon_image)
-                            sample_images.append(sample_image)
-                                
-                        for layer in range(len(input_data)):
-                            batch_loss_dict["input_layer_{}".format(layer)] = [wandb.Image(img, caption="input") for img in input_images[layer]]
-                            batch_loss_dict["recon_layer_{}".format(layer)] = [wandb.Image(img, caption="recon") for img in recon_images[layer]]
-                            batch_loss_dict["sample_layer_{}".format(layer)] = [wandb.Image(img, caption="sample") for img in sample_images[layer]]
+                            
+                            input_image = input_data[layer][:num_plot_samples].unsqueeze(1).squeeze(1).detach().cpu().numpy()
+                            recon_image = recon_image.reshape((-1, 1) + input_data[layer].size()[1:]).squeeze(1).detach().cpu().numpy()
+                            sample_image = sample_image.reshape((-1, 1) + input_data[layer].size()[1:]).squeeze(1).detach().cpu().numpy()
+                             
+                            input_images.append(input_image*1000.)
+                            recon_images.append(recon_image*1000.)
+                            sample_images.append(sample_image*1000.)
+                        
+                        batch_loss_dict["input"] = plot_calo_images(input_images)
+                        batch_loss_dict["recon"] = plot_calo_images(recon_images)
+                        batch_loss_dict["sample"] = plot_calo_images(sample_images)
                         
                         if not is_training:
                             for key in batch_loss_dict.keys():
@@ -135,31 +133,6 @@ class EngineCalo(Engine):
                     val_loss_dict.pop(key)
                     
             wandb.log(val_loss_dict)
-    
-    def get_upsample_layer(self, input_data):
-        """
-        - Define layer to upsample all images to max layer size (Easier for visualization)
-        
-        Args:
-            input_data: list of data tensors for each layer with dimensions (batch_size * phi * eta)
-        
-        Returns:
-            upsample_layer: torch.nn.Upsample layer which upsamples input images to the max size
-                            using nearest neighbor interpolation
-        """
-        logger.info("engineCalo.EngineCalo.get_upsample_layer() : Defining upsampling layer")
- 
-        max_size_phi = 0
-        max_size_eta = 0
-        
-        for layer in range(len(input_data)):
-            if input_data[layer].size(1) > max_size_phi:
-                max_size_phi = input_data[layer].size(1)
-            if input_data[layer].size(2) > max_size_eta:
-                max_size_eta = input_data[layer].size(2)
-                
-        max_size = max(max_size_phi, max_size_eta)
-        return torch.nn.Upsample(size=(max_size, max_size))
 
 if __name__=="__main__":
     logger.info("Willkommen!")

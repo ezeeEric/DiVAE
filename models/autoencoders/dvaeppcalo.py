@@ -8,7 +8,6 @@ Author : Abhi (abhishek@myumanitoba.ca)
 import torch
 from torch.nn import ReLU, MSELoss
 
-
 # DiVAE.models imports
 from models.autoencoders.dvaepp import DiVAEPP
 
@@ -59,15 +58,17 @@ class DiVAEPPCalo(DiVAEPP):
         return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss,
                 "cross_entropy":cross_entropy, "entropy":entropy, "neg_energy":neg_energy}
     
-    def generate_samples(self):
+    def generate_samples(self, num_samples=64):
         """
         generate_samples()
         """
-        rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
-        rbm_vis = rbm_visible_samples.detach()
-        rbm_hid = rbm_hidden_samples.detach()
-        prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
-        
-        output_activations = self.decoder(prior_samples)# + self._train_bias
-        return self._output_activation_fct(output_activations)
-
+        num_iterations = max(num_samples//self.sampler.get_batch_size(), 1)
+        samples = []
+        for i in range(num_iterations):
+            rbm_visible_samples, rbm_hidden_samples = self.sampler.block_gibbs_sampling()
+            rbm_vis = rbm_visible_samples.detach()
+            rbm_hid = rbm_hidden_samples.detach()
+            prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
+            samples.append(self._output_activation_fct(self.decoder(prior_samples)))
+            
+        return torch.cat(samples, dim=0)

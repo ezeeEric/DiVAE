@@ -55,7 +55,8 @@ class HistHandler(object):
         cat_names = [identifier.name for identifier in cat_ax.identifiers()]
         bins = [ax_bin.mid for ax_bin in bin_ax.identifiers()]
         
-        value_dict = {cat_name:c_hist.values()[(cat_name,)] for cat_name in cat_names}
+        value_dict = {cat_name:c_hist.values(overflow='all')[(cat_name,)] for cat_name in cat_names}
+        bins = [bins[0]] + bins + [bins[len(bins)-1]]
         
         fig = plt.figure()
         for cat_name in cat_names:

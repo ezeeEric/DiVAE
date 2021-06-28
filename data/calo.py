@@ -32,7 +32,8 @@ class CaloImage(object):
         return img
 
     def _get_image(self,idx):
-        return self.normalise(self._image[idx])
+        return self._image[idx]/1000.
+        #return self.normalise(self._image[idx])
     
     def get_flattened_input_size(self):
         return self._input_size
