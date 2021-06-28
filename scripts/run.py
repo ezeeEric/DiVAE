@@ -53,7 +53,6 @@ def main(cfg=None):
     run(config=cfg)
 
 def run(config=None):
-    return
 
     #create model handling object
     modelCreator=ModelCreator(cfg=config)
