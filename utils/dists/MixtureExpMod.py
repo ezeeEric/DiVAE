@@ -22,8 +22,8 @@ class MixtureExpMod(torch.nn.Module):
         Q = torch.sigmoid(logits)
         Q = torch.clamp(Q, min=1e-5, max=1.-1e-5)
         
-        rho = torch.rand(Q.size())
-        #B = (rho + torch.exp(-beta)*(Q - rho))/((1. - Q) - 1.)
+        rho = torch.rand(Q.size(), device=Q.device)
+        
         B = ((rho + torch.exp(-beta)*(Q - rho))/(1. - Q)) - 1.
         C = -(Q*torch.exp(-beta))/(1. - Q)
         M = (-B + torch.sqrt(B**2 - 4*C))/2.

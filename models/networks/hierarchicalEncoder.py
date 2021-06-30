@@ -11,10 +11,14 @@ from models.networks.basicCoders import BasicEncoder
 from utils.dists.distributions import SpikeAndExponentialSmoother
 from utils.dists.MixtureExp import MixtureExp
 from utils.dists.MixtureExpMod import MixtureExpMod
+from utils.dists.GumbelMod import GumbelMod
 
 _SMOOTHER_DICT = {"SpikeExp" : SpikeAndExponentialSmoother, 
-                  "MixtureExp" : MixtureExp}
-_SMOOTHER_MOD_DICT = {"MixtureExp" : MixtureExpMod, "SpikeExp" : None}
+                  "MixtureExp" : MixtureExp,
+                  "Gumbel" : None}
+_SMOOTHER_MOD_DICT = {"MixtureExp" : MixtureExpMod,
+                      "SpikeExp" : None,
+                      "Gumbel" : GumbelMod}
 
 #logging module with handmade settings.
 from DiVAE import logging
@@ -161,8 +165,10 @@ class HierarchicalEncoder(BasicEncoder):
             logits=torch.clamp(current_net(current_input), min=-88., max=88.)
             post_logits.append(logits)
             
+            # Scalar tensor - device doesn't matter but made explicit
             beta = torch.tensor(self._config.model.beta_smoothing_fct,
-                                dtype=torch.float, requires_grad=False)
+                                dtype=torch.float, device=logits.device,
+                                requires_grad=True)
             
             samples=self.smoothing_dist_mod(logits, beta)
             post_samples.append(samples)

@@ -21,6 +21,7 @@ from models.autoencoders.conditionalVAE import ConditionalVariationalAutoEncoder
 from models.autoencoders.sequentialVAE import SequentialVariationalAutoEncoder
 from models.autoencoders.discreteVAE import DiVAE
 from models.autoencoders.dvaepp import DiVAEPP
+from models.autoencoders.gumbolt import GumBolt
 
 _MODEL_DICT={
     "AE": AutoEncoder, 
@@ -30,7 +31,8 @@ _MODEL_DICT={
     "sVAE": SequentialVariationalAutoEncoder,
     "HiVAE": HierarchicalVAE,
     "DiVAE": DiVAE,
-    "DiVAEpp": DiVAEPP
+    "DiVAEpp": DiVAEPP,
+    "gumBolt": GumBolt
 }
 
 class ModelCreator(object):
@@ -54,7 +56,7 @@ class ModelCreator(object):
                             train_ds_mean=dataMgr.get_train_dataset_mean(),
                             activation_fct=self._default_activation_fct,
                             cfg=self._config)
-
+                
                 return self.model
         logger.error("Unknown Model Type. Make sure your model is registered in modelCreator._MODEL_DICT.")
         raise NotImplementedError

@@ -1,0 +1,12 @@
+# @package _group_
+_target_: utils.plotting.plotProvider.PlotProvider
+plotModule: utils.plotting.plotFunctionsCalo
+#these methods will be called in the plotting procedure and are imported from
+#the module above
+plotFunctions:
+  - plot_shower_metrics
+  # - plot_MNIST_output
+#collection of all cfgs needed 
+n_samples: 1
+plot_metrics: 
+  - total_energy

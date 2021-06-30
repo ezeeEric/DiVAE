@@ -38,7 +38,7 @@ class AutoEncoderBase(nn.Module):
 
         # the main configuration namespace returned by configaro
         self._config=cfg
-
+        
         # number of nodes in latent layer
         self._latent_dimensions=self._config.model.n_latent_nodes
         
