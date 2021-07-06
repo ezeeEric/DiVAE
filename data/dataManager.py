@@ -36,6 +36,10 @@ class DataManager(object):
     @property
     def test_loader(self):
         return self._test_loader
+    
+    @property
+    def val_loader(self):
+        return self._val_loader
 
     def init_dataLoaders(self):
         logger.info("Loading Data")
@@ -133,19 +137,19 @@ class DataManager(object):
         #create the DataLoader for the training dataset
         train_loader=DataLoader(   
             train_dataset,
-            batch_size=self._config.engine.n_batch_samples, 
+            batch_size=self._config.engine.n_train_batch_size, 
             shuffle=True)
 
         #create the DataLoader for the testing/validation datasets
         #set batch size to full test/val dataset size - limitation only by hardware
         test_loader = DataLoader(
             test_dataset,
-            batch_size=len(test_dataset), 
+            batch_size=self._config.engine.n_test_batch_size, 
             shuffle=False)
         
         val_loader = DataLoader(
             val_dataset,
-            batch_size=len(val_dataset), 
+            batch_size=self._config.engine.n_valid_batch_size, 
             shuffle=False)
 
         logger.info("{0}: {2} events, {1} batches".format(train_loader,len(train_loader),len(train_loader.dataset)))
