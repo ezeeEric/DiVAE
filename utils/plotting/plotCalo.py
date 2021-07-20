@@ -9,7 +9,7 @@ from io import BytesIO
 from PIL import Image
 import wandb
 
-_NORM_LIST = [LogNorm(vmax=10000, vmin=0.1), LogNorm(vmax=10000, vmin=0.1), LogNorm(vmax=10, vmin=0.1)]
+_NORM_LIST = [LogNorm(vmax=10000, vmin=0.1), LogNorm(vmax=10000 , vmin=0.1), LogNorm(vmax=10, vmin=0.1)]
 
 def plot_calo_images(layer_images):
     image_list = []

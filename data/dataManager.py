@@ -3,8 +3,9 @@ Data Manager
 
 Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
-
 import torch
+import numpy as np
+import joblib
 from torch.utils.data import DataLoader
 
 from DiVAE import logging
@@ -12,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 from data.mnist import get_mnist_datasets
 from data.calo import get_calo_datasets
+
+# Constants
+_EPSILON = 1e-2
 
 class DataManager(object):
     def __init__(self,train_loader=None,test_loader=None,val_loader=None, cfg=None):
@@ -27,6 +31,10 @@ class DataManager(object):
         self._flat_input_sizes=None 
 
         self._train_dataset_means=None
+        
+        # Variables to be used in the scaling and inverse scaling
+        self._amin_array = None
+        self._transformer = None
         return
 
     @property
@@ -95,12 +103,24 @@ class DataManager(object):
             means.append(torch.mean(torch.stack(imgList),dim=0))
 
         self._train_dataset_mean=means
+        
+    def _set_amin_array(self):
+        assert self._config.data.scaler_amin
+        with open(self._config.data.scaler_amin, 'rb') as f:
+            self._amin_array = np.load(f)
+        
+    def _set_transformer(self):
+        assert self._config.data.scaler_path
+        self._transformer = joblib.load(self._config.data.scaler_path)
 
     def pre_processing(self):
         if not self._config.load_data_from_pkl:
             self._set_input_dimensions()
             self._set_flattened_input_sizes()
             self._set_train_dataset_mean()
+            if self._config.data.scaled:
+                self._set_transformer()
+                self._set_amin_array()
         else:
             #TODO load from file
             raise NotImplementedError
@@ -168,3 +188,26 @@ class DataManager(object):
             input_dimensions =pickle.load(dataFile)
             train_ds_mean   =pickle.load(dataFile)
         return train_loader, test_loader, input_dimensions, train_ds_mean
+    
+    def inv_transform(self, data):
+        """
+        Applies inverse transformation to standard scaling
+        
+        Args:
+            data - np array (num_examples * num_features)
+            
+        Returns:
+            nparr - Inverse transformed np array (num_examples * num_features)
+        """
+        nparr = np.where(data > 0., data, np.inf)
+        
+        for j in range(nparr.shape[1]):
+            amin = self._amin_array[j]
+            if amin < 0. and not np.isnan(amin) and not np.isinf(amin):
+                nparr[:, j] -= _EPSILON
+                nparr[:, j] += amin
+                
+        nparr = self._transformer.inverse_transform(nparr)
+        nparr = np.where(np.isinf(nparr), 0., nparr)
+        
+        return nparr

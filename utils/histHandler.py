@@ -8,12 +8,29 @@ from PIL import Image
 import wandb
 
 from utils.hists.totalEnergyHist import TotalEnergyHist
+from utils.hists.diffEnergyHist import DiffEnergyHist
+from utils.hists.layerEnergyHist import LayerEnergyHist
+from utils.hists.fracTotalEnergyHist import FracTotalEnergyHist
+#from utils.hists.maxDepthHist import MaxDepthHist
+
+_LAYER_SIZES={"layer_0" : [0, 288],
+              "layer_1" : [288, 432],
+              "layer_2" : [432, 504]}
 
 class HistHandler(object):
     
     def __init__(self, cfg):
         self._cfg = cfg
-        self._hdict = {"totalEnergyHist":TotalEnergyHist()}
+        self._hdict = {"totalEnergyHist":TotalEnergyHist(),
+                       "diffEnergyHist":DiffEnergyHist()}
+        
+        for layer in cfg.data.calo_layers:
+            start_idx, end_idx = _LAYER_SIZES[layer]
+            self._hdict[layer + "_EnergyHist"] = LayerEnergyHist(start_idx, end_idx)
+            self._hdict[layer + "_fracEnergyHist"] = FracTotalEnergyHist(start_idx, end_idx)
+            
+        layer_dict = {layer : _LAYER_SIZES[layer] for layer in cfg.data.calo_layers}
+        #self._hdict["maxDepthHist"] = MaxDepthHist(layer_dict)
         
     def update(self, in_data, recon_data, sample_data):
         for hkey in self._hdict.keys():
@@ -59,12 +76,21 @@ class HistHandler(object):
         bins = [bins[0]] + bins + [bins[len(bins)-1]]
         
         fig = plt.figure()
+        ax = fig.add_subplot(111)
         for cat_name in cat_names:
-            plt.step(bins, value_dict[cat_name], label=cat_name)
+            ax.step(bins, value_dict[cat_name], label=cat_name)
             
-        plt.legend(title=cat_ax.label)
-        plt.xlabel(bin_ax.label)
-        plt.ylabel(c_hist.label)
+        ax.legend(title=cat_ax.label)
+        ax.set_xlabel(bin_ax.label)
+        ax.set_ylabel(c_hist.label)
+
+        if bins[0]<0:
+            ax.set_xscale('symlog')
+        else:
+            ax.set_xscale('log')
+            
+        ax.set_yscale('log')
+        ax.set_ylim(bottom=1)
         
         buf = BytesIO()
         plt.savefig(buf, format='png')

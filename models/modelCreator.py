@@ -23,6 +23,7 @@ from models.autoencoders.discreteVAE import DiVAE
 from models.autoencoders.dvaepp import DiVAEPP
 from models.autoencoders.gumbolt import GumBolt
 from models.autoencoders.dvaeppcalo import DiVAEPPCalo
+from models.autoencoders.gumboltCalo import GumBoltCalo
 
 _MODEL_DICT={
     "AE": AutoEncoder, 
@@ -34,7 +35,8 @@ _MODEL_DICT={
     "DiVAE": DiVAE,
     "DiVAEpp": DiVAEPP,
     "gumBolt": GumBolt,
-    "DiVAEppCalo": DiVAEPPCalo
+    "DiVAEppCalo": DiVAEPPCalo,
+    "GumBoltCalo": GumBoltCalo
 }
 
 class ModelCreator(object):
