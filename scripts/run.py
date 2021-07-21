@@ -53,7 +53,6 @@ def main(cfg=None):
     run(config=cfg)
 
 def run(config=None):
-    return
 
     #create model handling object
     modelCreator=ModelCreator(cfg=config)
@@ -80,7 +79,7 @@ def run(config=None):
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
-    
+
     # Load the model on the GPU if applicable
     dev = None
     if (config.device == 'gpu') and config.gpu_list:
@@ -107,7 +106,11 @@ def run(config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-    engine=instantiate(config.engine, cfg=config)
+    engine=instantiate(config.engine)
+    #TODO for some reason hydra double instantiates the engine in a
+    #newer version if cfg=config is passed as an argument. This is a workaround.
+    #Find out why that is...
+    engine._config=config
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
     #add device instance to engine namespace

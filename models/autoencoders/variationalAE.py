@@ -24,7 +24,10 @@ class VariationalAutoEncoder(AutoEncoder):
         self._decoder_nodes=[]
         
         enc_hidden_nodes=list(self._config.model.encoder_hidden_nodes)
-        enc_node_list=[self._flat_input_size]+enc_hidden_nodes
+        #TODO is this the most general solution? If we have multiple input
+        #images, we sum up the dimensions to roll out all images into one input layer
+        flattened_input_dim=sum(self._flat_input_size) if len(self._flat_input_size)>1 else self._flat_input_size
+        enc_node_list=[flattened_input_dim]+enc_hidden_nodes
 
         for num_nodes in range(0,len(enc_node_list)-1):
             nodepair=(enc_node_list[num_nodes],enc_node_list[num_nodes+1])
@@ -33,7 +36,7 @@ class VariationalAutoEncoder(AutoEncoder):
         self._reparam_nodes=(enc_hidden_nodes[-1],self._latent_dimensions)
        
         dec_hidden_node_list=list(self._config.model.decoder_hidden_nodes)
-        dec_node_list=[self._latent_dimensions]+dec_hidden_node_list+[self._flat_input_size]
+        dec_node_list=[self._latent_dimensions]+dec_hidden_node_list+[flattened_input_dim]
 
         for num_nodes in range(0,len(dec_node_list)-1):
             nodepair=(dec_node_list[num_nodes],dec_node_list[num_nodes+1])
