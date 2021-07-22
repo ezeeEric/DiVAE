@@ -1,5 +1,5 @@
 """
-Total energy Histogram
+E_ratio histogram
 """
 
 # Coffea histogramming library
@@ -10,22 +10,24 @@ import numpy as np
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class TotalEnergyHist(object):
-    def __init__(self, min_bin=1, max_bin=100, n_bins=100):
+class EratioHist(object):
+    def __init__(self, start_idx, end_idx, min_bin=0, max_bin=1, n_bins=50):
         self._hist = hist.Hist(label="Events",
                                axes=(hist.Cat("dataset", "dataset type"),
-                                     hist.Bin("E", "Observed Energy (GeV)",
-                                              n_bins, min_bin, max_bin)))
+                                     hist.Bin("sparsity", "Sparsity", n_bins, min_bin, max_bin)))
+        self._start_idx = start_idx
+        self._end_idx = end_idx
         self._scale = "linear"
         
     def update(self, in_data, recon_data, sample_data):
         labels = ["input", "recon", "samples"]
         datasets = [in_data, recon_data, sample_data]
-        datasets = [data.sum(axis=1) for data in datasets]
+        layer_datasets = [dataset[:, self._start_idx:self._end_idx] for dataset in datasets]
+        layer_sparsities = [np.count_nonzero(layer_dataset, axis=1)/layer_dataset.shape[1] for layer_dataset in layer_datasets]
         
-        for label, dataset in zip(labels, datasets):
-            self._hist.fill(dataset=label, E=dataset)
-            
+        for label, layer_sparsity in zip(labels, layer_sparsities):
+            self._hist.fill(dataset=label, sparsity=layer_sparsity)
+    
     def clear(self):
         self._hist.clear()
         

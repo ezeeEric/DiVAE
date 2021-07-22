@@ -11,4 +11,4 @@ n_gibbs_sampling_steps: 40
 weight_decay_factor: 0.0001
 momentum_coefficient: 0.5
 kl_enabled: 0
-kl_annealing: 1
+kl_annealing: 0

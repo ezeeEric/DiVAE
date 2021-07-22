@@ -6,11 +6,13 @@ from coffea import hist
 from io import BytesIO
 from PIL import Image
 import wandb
+import numpy as np
 
 from utils.hists.totalEnergyHist import TotalEnergyHist
 from utils.hists.diffEnergyHist import DiffEnergyHist
 from utils.hists.layerEnergyHist import LayerEnergyHist
 from utils.hists.fracTotalEnergyHist import FracTotalEnergyHist
+from utils.hists.sparsityHist import SparsityHist
 #from utils.hists.maxDepthHist import MaxDepthHist
 
 _LAYER_SIZES={"layer_0" : [0, 288],
@@ -28,9 +30,11 @@ class HistHandler(object):
             start_idx, end_idx = _LAYER_SIZES[layer]
             self._hdict[layer + "_EnergyHist"] = LayerEnergyHist(start_idx, end_idx)
             self._hdict[layer + "_fracEnergyHist"] = FracTotalEnergyHist(start_idx, end_idx)
+            self._hdict[layer + "_sparsityHist"] = SparsityHist(start_idx, end_idx)
             
         layer_dict = {layer : _LAYER_SIZES[layer] for layer in cfg.data.calo_layers}
         #self._hdict["maxDepthHist"] = MaxDepthHist(layer_dict)
+        
         
     def update(self, in_data, recon_data, sample_data):
         for hkey in self._hdict.keys():
@@ -47,10 +51,10 @@ class HistHandler(object):
         """
         image_dict = {}
         for hkey in list(self._hdict.keys()):
-            image_dict[hkey] = self.get_hist_image(self._hdict[hkey].get_hist())
+            image_dict[hkey] = self.get_hist_image(self._hdict[hkey].get_hist(), self._hdict[hkey].get_scale())
         return image_dict
         
-    def get_hist_image(self, c_hist):
+    def get_hist_image(self, c_hist, scale='linear'):
         """
         Args:
             c_hist - coffea hist object
@@ -79,14 +83,12 @@ class HistHandler(object):
         ax = fig.add_subplot(111)
         for cat_name in cat_names:
             ax.step(bins, value_dict[cat_name], label=cat_name)
-            
+         
         ax.legend(title=cat_ax.label)
         ax.set_xlabel(bin_ax.label)
         ax.set_ylabel(c_hist.label)
 
-        if bins[0]<0:
-            ax.set_xscale('symlog')
-        else:
+        if scale == 'log':
             ax.set_xscale('log')
             
         ax.set_yscale('log')
@@ -97,5 +99,6 @@ class HistHandler(object):
         buf.seek(0)
         image = wandb.Image(Image.open(buf))
         buf.close()
+        plt.close()
         
         return image

@@ -20,6 +20,7 @@ class FracTotalEnergyHist(object):
                                               np.logspace(np.log10(min_bin), np.log10(max_bin), n_bins))))
         self._start_idx = start_idx
         self._end_idx = end_idx
+        self._scale = "log"
     
     def update(self, in_data, recon_data, sample_data):
         labels = ["input", "recon", "samples"]
@@ -39,3 +40,6 @@ class FracTotalEnergyHist(object):
         
     def get_hist(self):
         return self._hist
+    
+    def get_scale(self):
+        return self._scale
