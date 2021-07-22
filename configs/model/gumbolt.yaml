@@ -1,4 +1,4 @@
-# @package _group_
+
 model_type: gumBolt
 activation_fct: relu
 beta_smoothing_fct: 5

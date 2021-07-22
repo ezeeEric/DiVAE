@@ -54,7 +54,7 @@ class AutoEncoder(AutoEncoderBase):
 
     def _create_decoder(self):
         logger.debug("_create_decoder")
-        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Sigmoid())
+        return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, output_activation_fct=nn.Identity())
 
     def forward(self, input_data):
         #see definition for einput_dataplanation

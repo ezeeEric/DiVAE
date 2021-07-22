@@ -23,7 +23,11 @@ from models.autoencoders.discreteVAE import DiVAE
 from models.autoencoders.dvaepp import DiVAEPP
 from models.autoencoders.gumbolt import GumBolt
 from models.autoencoders.dvaeppcalo import DiVAEPPCalo
+<<<<<<< HEAD
 from models.autoencoders.gumboltCalo import GumBoltCalo
+=======
+from models.autoencoders.atlasVAE import ATLASVAE
+>>>>>>> origin/atlas_calo_vae
 
 _MODEL_DICT={
     "AE": AutoEncoder, 
@@ -36,7 +40,8 @@ _MODEL_DICT={
     "DiVAEpp": DiVAEPP,
     "gumBolt": GumBolt,
     "DiVAEppCalo": DiVAEPPCalo,
-    "GumBoltCalo": GumBoltCalo
+    "GumBoltCalo": GumBoltCalo,
+    "ATLASVAE": ATLASVAE
 }
 
 class ModelCreator(object):
@@ -84,7 +89,7 @@ class ModelCreator(object):
 
     def save_model(self,cfg_string='test'):
         logger.info("Saving Model")
-        f=open(os.path.join(self._config.output_path,"model_{0}.pt".format(cfg_string)),'wb')
+        f=open(os.path.join(os.getcwd(),"model_{0}.pt".format(cfg_string)),'wb')
         torch.save(self._model.state_dict(),f)
         f.close()
         return

@@ -1,3 +1,4 @@
+
 tag: default
 debug: False
 load_data_from_pkl: 0
@@ -8,15 +9,15 @@ create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
-device: gpu
+device: cpu
 gpu_list:
-  - 7
+  - 1
 
 task:
   - train
   - validate
 
 defaults:
-  - model: atlasVAE
-  - data: calo
+  - model: atlasvae
+  - data: calo_eric
   - engine: atlascalo_training

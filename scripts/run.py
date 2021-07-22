@@ -44,21 +44,18 @@ from models.modelCreator import ModelCreator
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
-
-    #TODO hydra update: output path not needed anymore. Replace all instances
-    #with current work directory instead. (Hydra sets that automatically)
-    cfg.output_path=os.getcwd()
-
+    #initialise wandb logging. Note that this function has many more options,
+    #reference: https://docs.wandb.ai/ref/python/init
+    #this is the setting for individual, ungrouped runs
     wandb.init(entity="qvae", project="divae", config=cfg)  
-    print(OmegaConf.to_yaml(cfg))
+
+    #run the ting
+    run(config=cfg)
+
+def run(config=None):
 
     #create model handling object
-    modelCreator=ModelCreator(cfg=cfg)
-    
-    #run the ting
-    run(modelCreator, config=cfg)
-
-def run(modelCreator=None, config=None):
+    modelCreator=ModelCreator(cfg=config)
 
     #container for our Dataloaders
     dataMgr=DataManager(cfg=config)
@@ -82,7 +79,7 @@ def run(modelCreator=None, config=None):
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
-    
+
     # Load the model on the GPU if applicable
     dev = None
     if (config.device == 'gpu') and config.gpu_list:
@@ -109,7 +106,11 @@ def run(modelCreator=None, config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-    engine=instantiate(config.engine, cfg=config)
+    engine=instantiate(config.engine)
+    #TODO for some reason hydra double instantiates the engine in a
+    #newer version if cfg=config is passed as an argument. This is a workaround.
+    #Find out why that is...
+    engine._config=config
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
     #add device instance to engine namespace

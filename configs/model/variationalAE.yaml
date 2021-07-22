@@ -1,4 +1,4 @@
-# @package _group_
+
 model_type: VAE
 activation_fct: RELU
 encoder_hidden_nodes: 
