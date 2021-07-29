@@ -65,7 +65,8 @@ class ATLASVAE(VariationalAutoEncoder):
         loss_reco=self._output_loss(fwd_out.output_activations, input_data)
         
         #KL loss term, assuming Gaussian prior
-        loss_kl=0.5 * torch.sum(1 + fwd_out.logvar - fwd_out.mu.pow(2) - torch.exp(fwd_out.logvar)).double()
+        
+        loss_kl=0.5 * torch.sum(- 1 - fwd_out.logvar + fwd_out.mu.pow(2) + torch.exp(fwd_out.logvar)).double()
         
         #total energy loss
         #avoid numerical instability by setting lower bound (used as divisor further below)
