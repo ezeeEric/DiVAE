@@ -23,7 +23,6 @@ class EngineCalo(Engine):
     def __init__(self, cfg=None, **kwargs):
         logger.info("Setting up engine Calo.")
         super(EngineCalo, self).__init__(cfg, **kwargs)
-        
         self._hist_handler = HistHandler(cfg)
 
     def fit(self, epoch, is_training=True):
@@ -75,7 +74,7 @@ class EngineCalo(Engine):
                         
                     batch_loss_dict["gamma"] = kl_gamma
                     batch_loss_dict["epoch"] = gamma*num_epochs
-                    batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"]
+                    batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"] + batch_loss_dict["hit_loss"]
                     batch_loss_dict["loss"].backward()
                     self._optimiser.step()
                 else:
@@ -151,7 +150,7 @@ class EngineCalo(Engine):
                         wandb.log(batch_loss_dict)
                         
         if not is_training:
-            val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images()}
+            val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
             self._hist_handler.clear()
                 
             # Average the validation loss values over the validation set

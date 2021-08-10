@@ -23,11 +23,8 @@ from models.autoencoders.discreteVAE import DiVAE
 from models.autoencoders.dvaepp import DiVAEPP
 from models.autoencoders.gumbolt import GumBolt
 from models.autoencoders.dvaeppcalo import DiVAEPPCalo
-<<<<<<< HEAD
 from models.autoencoders.gumboltCalo import GumBoltCalo
-=======
 from models.autoencoders.atlasVAE import ATLASVAE
->>>>>>> origin/atlas_calo_vae
 
 _MODEL_DICT={
     "AE": AutoEncoder, 

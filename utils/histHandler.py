@@ -53,11 +53,23 @@ class HistHandler(object):
         for hkey in list(self._hdict.keys()):
             image_dict[hkey] = self.get_hist_image(self._hdict[hkey].get_hist(), self._hdict[hkey].get_scale())
         return image_dict
+    
+    def get_scatter_plots(self):
+        """
+        Returns:
+            image_dict - Dict containing PIL images for each scatter plot
+        """
+        image_dict = {}
+        for hkey in list(self._hdict.keys()):
+            if "totalEnergyHist" in hkey or "_EnergyHist" in hkey:
+                image_dict[hkey+"Scatter"] = self.get_scatter_plot(self._hdict[hkey].get_data_dict())
+        return image_dict
         
     def get_hist_image(self, c_hist, scale='linear'):
         """
         Args:
             c_hist - coffea hist object
+            scale - scale of the histogram (log, linear, ...)
         Returns:
             image - PIL image object
         """
@@ -93,6 +105,35 @@ class HistHandler(object):
             
         ax.set_yscale('log')
         ax.set_ylim(bottom=1)
+        
+        buf = BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        image = wandb.Image(Image.open(buf))
+        buf.close()
+        plt.close()
+        
+        return image
+    
+    def get_scatter_plot(self, data_dict):
+        """
+        Args:
+            data_dict - Dictionary with energy values
+        
+        Returns:
+            image - PIL image object
+        """
+        assert ("input" in data_dict.keys() and "recon" in data_dict.keys())
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(data_dict["input"], data_dict["recon"], alpha=0.5, marker='.')
+        max_e = max(max(data_dict["input"]), max(data_dict["recon"]))
+        ax.scatter(np.arange(1, max_e, 0.1), np.arange(1, max_e, 0.1), alpha=1., marker='.', c='r')
+        ax.set_xlabel("Input Energy (GeV)")
+        ax.set_ylabel("Recon Energy (GeV)")
+        ax.set_xlim(1, max_e)
+        ax.set_ylim(1, max_e)
         
         buf = BytesIO()
         plt.savefig(buf, format='png')

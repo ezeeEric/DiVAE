@@ -5,19 +5,17 @@ load_data_from_pkl: 0
 load_model: 0
 save_model: 0
 input_model: 0
-create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
 device: gpu
 gpu_list:
-  - 6
-
-task:
-  - train
-  - validate
+  - 1
 
 defaults:
-  - model: gumboltcalo
-  - data: calo
-  - engine: dvaecalo_training
+  - model: gumbolt
+  - data: mnist
+  - engine: training_divae
+#this loads options defining what tasks to run, i.e. train/test/create_plots
+#etc. Change the options in task.yaml
+  - task

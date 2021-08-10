@@ -4,7 +4,7 @@ VAE for calo data adapted from ATL-SOFT-PUB-2018-001
 
 # Torch imports
 import torch
-from torch.nn import ELU, MSELoss
+from torch.nn import ReLU, ELU, MSELoss
 from torch.nn.modules.activation import Sigmoid
 
 # DiVAE.models imports
@@ -19,6 +19,7 @@ class ATLASVAE(VariationalAutoEncoder):
         super(ATLASVAE, self).__init__(**kwargs)
         self._model_type = "ATLASVAE"
         self._output_activation_fct = Sigmoid()
+        #self._output_activation_fct = ReLU()
         self._output_loss = MSELoss(reduction="sum")
         
         #ELU chosen in paper
@@ -55,8 +56,7 @@ class ATLASVAE(VariationalAutoEncoder):
         out.zeta = torch.cat([zeta_tmp,energy],dim=1).float()
 
         out.output_activations = self._output_activation_fct(self.decoder(out.zeta))
-        
-        out.output_activations = torch.mul(out.output_activations,energy).float()
+        out.output_activations = torch.mul(out.output_activations, energy).float()
         return out
     
     def loss(self, input_data, fwd_out, in_dim=None):

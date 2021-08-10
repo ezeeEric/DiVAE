@@ -6,7 +6,7 @@ Author : Abhi (abhishek@myumanitoba.ca)
 
 # Torch imports
 import torch
-from torch.nn import ReLU, MSELoss
+from torch.nn import ReLU, MSELoss, BCELoss
 
 # DiVAE.models imports
 from models.autoencoders.gumbolt import GumBolt
@@ -21,6 +21,7 @@ class GumBoltCalo(GumBolt):
         self._model_type = "GumBoltCalo"
         self._output_activation_fct = ReLU()
         self._output_loss = MSELoss(reduction="none")
+        self._hit_loss = BCELoss(reduction="none")
         
     def forward(self, x):
         """
@@ -53,9 +54,12 @@ class GumBoltCalo(GumBolt):
         ae_loss = self._output_loss(input_data, fwd_out.output_activations)
         ae_loss = torch.mean(torch.sum(ae_loss, dim=1), dim=0)
         
-        loss = ae_loss + kl_loss
+        hit_loss = self._hit_loss(torch.where(fwd_out.output_activations > 0, 1., 0.),
+                                  torch.where(input_data > 0, 1., 0.))
+        hit_loss = torch.mean(torch.sum(hit_loss, dim=1), dim=0)
+        loss = ae_loss + kl_loss + hit_loss
         
-        return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss,
+        return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss, "hit_loss":hit_loss,
                 "entropy":entropy, "pos_energy":pos_energy, "neg_energy":neg_energy}
     
     def generate_samples(self, num_samples=64):

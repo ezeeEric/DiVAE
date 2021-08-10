@@ -20,7 +20,6 @@ class Engine(EngineBase):
     def __init__(self, cfg=None, **kwargs):
         logger.info("Setting up default engine.")
         super(Engine,self).__init__(cfg, **kwargs)
-        
 
     def generate_samples(self):
         #generate the samples. Each model has its own specific settings which

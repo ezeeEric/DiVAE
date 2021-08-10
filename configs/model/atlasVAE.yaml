@@ -1,5 +1,6 @@
+# @package _group_
 model_type: ATLASVAE
-activation_fct:  ELU
+activation_fct: ELU
 encoder_hidden_nodes: 
   - 200
   - 150

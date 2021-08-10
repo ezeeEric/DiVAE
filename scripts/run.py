@@ -47,8 +47,8 @@ def main(cfg=None):
     #initialise wandb logging. Note that this function has many more options,
     #reference: https://docs.wandb.ai/ref/python/init
     #this is the setting for individual, ungrouped runs
-    wandb.init(entity="qvae", project="divae", config=cfg)  
-
+    wandb.init(entity="qvae", project="divae", config=cfg)
+    
     #run the ting
     run(config=cfg)
 
@@ -106,7 +106,7 @@ def run(config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-    engine=instantiate(config.engine)
+    engine=instantiate(config.engine, cfg=config)
     #TODO for some reason hydra double instantiates the engine in a
     #newer version if cfg=config is passed as an argument. This is a workaround.
     #Find out why that is...

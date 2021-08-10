@@ -23,3 +23,4 @@ class LayerEnergyHist(TotalEnergyHist):
         
         for label, dataset in zip(labels, datasets):
             self._hist.fill(dataset=label, E=dataset)
+            self._data_dict[label].extend(dataset)
