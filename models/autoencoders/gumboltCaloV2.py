@@ -12,7 +12,7 @@ from torch.nn import ReLU, MSELoss, BCEWithLogitsLoss, Sigmoid
 
 # DiVAE.models imports
 from models.autoencoders.gumbolt import GumBolt
-from models.networks.basicCoders import BasicDecoderV2
+from models.networks.basicCoders import BasicDecoderV2, BasicDecoderV3
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -86,4 +86,4 @@ class GumBoltCaloV2(GumBolt):
     
     def _create_decoder(self):
         logger.debug("GumBoltCaloV2:_create_decoder")
-        return BasicDecoderV2(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, cfg=self._config)
+        return BasicDecoderV3(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct,  cfg=self._config)

@@ -6,8 +6,8 @@ calo_layers:
   - layer_1
   - layer_2
 particle_type: eplus
-frac_test_dataset: 0.0001
-frac_train_dataset: 0.8
+frac_test_dataset: 0.999
+frac_train_dataset: 0.005
 
 scaled: True
 scaler_path: /fast_scratch/QVAE/data/calo_scaled/eplus_scaler.gz
