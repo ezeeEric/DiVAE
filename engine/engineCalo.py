@@ -46,6 +46,7 @@ class EngineCalo(Engine):
         
         kl_enabled = self._config.engine.kl_enabled
         kl_annealing = self._config.engine.kl_annealing
+        ae_enabled = self._config.engine.ae_enabled
         
         with torch.set_grad_enabled(is_training):
             for batch_idx, (input_data, label) in enumerate(data_loader):
@@ -72,15 +73,26 @@ class EngineCalo(Engine):
                     else:
                         kl_gamma = 0.
                         
+                    if ae_enabled:
+                        ae_gamma = 1.
+                    else:
+                        ae_gamma = 0.
+                        
                     batch_loss_dict["gamma"] = kl_gamma
                     batch_loss_dict["epoch"] = gamma*num_epochs
-                    batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"] + batch_loss_dict["hit_loss"]
+                    if "hit_loss" in batch_loss_dict.keys():
+                        batch_loss_dict["loss"] = ae_gamma*batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"] + batch_loss_dict["hit_loss"]
+                    else:
+                        batch_loss_dict["loss"] = ae_gamma*batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"]
                     batch_loss_dict["loss"].backward()
                     self._optimiser.step()
                 else:
                     batch_loss_dict["gamma"] = 1.0
                     batch_loss_dict["epoch"] = epoch
-                    batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + batch_loss_dict["kl_loss"]
+                    if "hit_loss" in batch_loss_dict.keys():
+                        batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + batch_loss_dict["kl_loss"] + batch_loss_dict["hit_loss"]
+                    else:
+                        batch_loss_dict["loss"] = batch_loss_dict["ae_loss"] + batch_loss_dict["kl_loss"]
                     for key, value in batch_loss_dict.items():
                         try:
                             val_loss_dict[key] += value

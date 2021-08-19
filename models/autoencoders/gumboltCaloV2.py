@@ -1,27 +1,31 @@
 """
 GumBolt implementation for Calorimeter data
+V2 - Using 2-headed decoder to recconstruct an activation mask
+in addition to the calorimeter depositions
 
 Author : Abhi (abhishek@myumanitoba.ca)
 """
 
 # Torch imports
 import torch
-from torch.nn import ReLU, MSELoss, BCELoss
+from torch.nn import ReLU, MSELoss, BCEWithLogitsLoss, Sigmoid
 
 # DiVAE.models imports
 from models.autoencoders.gumbolt import GumBolt
+from models.networks.basicCoders import BasicDecoderV2
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class GumBoltCalo(GumBolt):
+class GumBoltCaloV2(GumBolt):
     
     def __init__(self, **kwargs):
-        super(GumBoltCalo, self).__init__(**kwargs)
-        self._model_type = "GumBoltCalo"
-        self._output_activation_fct = ReLU()
+        super(GumBoltCaloV2, self).__init__(**kwargs)
+        self._model_type = "GumBoltCaloV2"
+        self._energy_activation_fct = ReLU()
+        self._hit_activation_fct = Sigmoid()
         self._output_loss = MSELoss(reduction="none")
-        self._hit_loss = BCELoss(reduction="none")
+        self._hit_loss = BCEWithLogitsLoss(reduction="none")
         
     def forward(self, x):
         """
@@ -42,20 +46,20 @@ class GumBoltCalo(GumBolt):
         out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
         post_samples = torch.cat(out.post_samples, 1)
         
-        output_activations = self.decoder(post_samples)
-        #out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
-        out.output_activations = self._output_activation_fct(output_activations)
+        output_hits, output_activations = self.decoder(post_samples)
+        
+        out.output_hits = output_hits        
+        out.output_activations = self._energy_activation_fct(output_activations) * torch.where(self._hit_activation_fct(output_hits) > 0.5, 1., 0.)
         return out
     
     def loss(self, input_data, fwd_out):
         logger.debug("loss")
         
-        kl_loss, entropy, pos_energy, neg_energy=self.kl_divergence(fwd_out.post_logits, fwd_out.post_samples)
+        kl_loss, entropy, pos_energy, neg_energy = self.kl_divergence(fwd_out.post_logits, fwd_out.post_samples)
         ae_loss = self._output_loss(input_data, fwd_out.output_activations)
         ae_loss = torch.mean(torch.sum(ae_loss, dim=1), dim=0)
         
-        hit_loss = self._hit_loss(torch.where(fwd_out.output_activations > 0, 1., 0.),
-                                  torch.where(input_data > 0, 1., 0.))
+        hit_loss = self._hit_loss(fwd_out.output_hits, torch.where(input_data > 0, 1., 0.))
         hit_loss = torch.mean(torch.sum(hit_loss, dim=1), dim=0)
         loss = ae_loss + kl_loss + hit_loss
         
@@ -73,6 +77,13 @@ class GumBoltCalo(GumBolt):
             rbm_vis = rbm_visible_samples.detach()
             rbm_hid = rbm_hidden_samples.detach()
             prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
-            samples.append(self._output_activation_fct(self.decoder(prior_samples)))
+            
+            output_hits, output_activations = self.decoder(prior_samples)
+            sample = self._energy_activation_fct(output_activations) * torch.where(self._hit_activation_fct(output_hits) > 0.5, 1., 0.)
+            samples.append(sample)
             
         return torch.cat(samples, dim=0)
+    
+    def _create_decoder(self):
+        logger.debug("GumBoltCaloV2:_create_decoder")
+        return BasicDecoderV2(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct, cfg=self._config)

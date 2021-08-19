@@ -5,13 +5,13 @@ calo_layers:
   - layer_0
   - layer_1
   - layer_2
-particle_type: piplus
+particle_type: eplus
 frac_test_dataset: 0.0001
 frac_train_dataset: 0.8
 
 scaled: True
-scaler_path: /fast_scratch/QVAE/data/calo_scaled/piplus_scaler.gz
-scaler_amin: /fast_scratch/QVAE/data/calo_scaled/piplus_amin.npy
+scaler_path: /fast_scratch/QVAE/data/calo_scaled/eplus_scaler.gz
+scaler_amin: /fast_scratch/QVAE/data/calo_scaled/eplus_amin.npy
 #scaler_path: 0
 #scaler_amin: 0
 calo_input_eplus: /fast_scratch/QVAE/data/calo_scaled/eplus.hdf5

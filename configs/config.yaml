@@ -11,13 +11,13 @@ create_plots: 0
 output_path: ???
 device: gpu
 gpu_list:
-  - 6
+  - 1
 
 task:
   - train
   - validate
 
 defaults:
-  - model: gumboltcalo
+  - model: gumboltcaloV2
   - data: calo
   - engine: dvaecalo_training

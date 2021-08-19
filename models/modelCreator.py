@@ -24,6 +24,7 @@ from models.autoencoders.dvaepp import DiVAEPP
 from models.autoencoders.gumbolt import GumBolt
 from models.autoencoders.dvaeppcalo import DiVAEPPCalo
 from models.autoencoders.gumboltCalo import GumBoltCalo
+from models.autoencoders.gumboltCaloV2 import GumBoltCaloV2
 from models.autoencoders.atlasVAE import ATLASVAE
 
 _MODEL_DICT={
@@ -38,6 +39,7 @@ _MODEL_DICT={
     "gumBolt": GumBolt,
     "DiVAEppCalo": DiVAEPPCalo,
     "GumBoltCalo": GumBoltCalo,
+    "GumBoltCaloV2": GumBoltCaloV2,
     "ATLASVAE": ATLASVAE
 }
 

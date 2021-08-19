@@ -96,9 +96,10 @@ class HistHandler(object):
         for cat_name in cat_names:
             ax.step(bins, value_dict[cat_name], label=cat_name)
          
-        ax.legend(title=cat_ax.label)
-        ax.set_xlabel(bin_ax.label)
-        ax.set_ylabel(c_hist.label)
+        ax.legend(title=cat_ax.label, prop={'size': 15})
+        ax.set_xlabel(bin_ax.label, fontsize='15')
+        ax.set_ylabel(c_hist.label, fontsize='15')
+        ax.tick_params(axis='both', which='major', labelsize=15)
 
         if scale == 'log':
             ax.set_xscale('log')
@@ -130,8 +131,9 @@ class HistHandler(object):
         ax.scatter(data_dict["input"], data_dict["recon"], alpha=0.5, marker='.')
         max_e = max(max(data_dict["input"]), max(data_dict["recon"]))
         ax.scatter(np.arange(1, max_e, 0.1), np.arange(1, max_e, 0.1), alpha=1., marker='.', c='r')
-        ax.set_xlabel("Input Energy (GeV)")
-        ax.set_ylabel("Recon Energy (GeV)")
+        ax.set_xlabel("Input Energy (GeV)", fontsize='15')
+        ax.set_ylabel("Recon Energy (GeV)", fontsize='15')
+        ax.tick_params(axis='both', which='major', labelsize=15)
         ax.set_xlim(1, max_e)
         ax.set_ylim(1, max_e)
         
