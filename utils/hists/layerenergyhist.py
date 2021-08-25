@@ -3,7 +3,7 @@ Per layer energy Histogram
 """
 
 # Coffea histogramming library
-from utils.hists.totalEnergyHist import TotalEnergyHist
+from utils.hists.totalenergyhist import TotalEnergyHist
 
 # DiVAE logging
 from DiVAE import logging

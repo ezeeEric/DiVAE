@@ -46,6 +46,7 @@ class EngineCalo(Engine):
         
         kl_enabled = self._config.engine.kl_enabled
         kl_annealing = self._config.engine.kl_annealing
+        kl_annealing_ratio = self._config.engine.kl_annealing_ratio
         ae_enabled = self._config.engine.ae_enabled
         
         with torch.set_grad_enabled(is_training):
@@ -60,11 +61,11 @@ class EngineCalo(Engine):
                     in_data = in_data/1000.
                     
                 in_data = in_data.to(self._device)
-                fwd_output=self._model(in_data)
+                fwd_output=self._model(in_data, is_training)
                 batch_loss_dict = self._model.loss(in_data, fwd_output)
                     
                 if is_training:
-                    gamma = (((epoch-1)*num_batches)+(batch_idx+1))/total_batches
+                    gamma = min((((epoch-1)*num_batches)+(batch_idx+1))/(total_batches*kl_annealing_ratio), 1.0)
                     if kl_enabled:
                         if kl_annealing:
                             kl_gamma = gamma
@@ -84,6 +85,7 @@ class EngineCalo(Engine):
                         batch_loss_dict["loss"] = ae_gamma*batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"] + batch_loss_dict["hit_loss"]
                     else:
                         batch_loss_dict["loss"] = ae_gamma*batch_loss_dict["ae_loss"] + kl_gamma*batch_loss_dict["kl_loss"]
+                        
                     batch_loss_dict["loss"].backward()
                     self._optimiser.step()
                 else:

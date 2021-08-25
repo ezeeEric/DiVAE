@@ -9,9 +9,9 @@ import torch.nn as nn
                   
 from models.networks.basicCoders import BasicEncoder
 from utils.dists.distributions import SpikeAndExponentialSmoother
-from utils.dists.MixtureExp import MixtureExp
-from utils.dists.MixtureExpMod import MixtureExpMod
-from utils.dists.GumbelMod import GumbelMod
+from utils.dists.mixtureexp import MixtureExp
+from utils.dists.mixtureexpmod import MixtureExpMod
+from utils.dists.gumbelmod import GumbelMod
 
 _SMOOTHER_DICT = {"SpikeExp" : SpikeAndExponentialSmoother, 
                   "MixtureExp" : MixtureExp,
@@ -71,7 +71,7 @@ class HierarchicalEncoder(BasicEncoder):
         
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
-        for lvl in  range(self.n_latent_hierarchy_lvls):
+        for lvl in range(self.n_latent_hierarchy_lvls):
             network=self._create_hierarchy_network(level=lvl, skip_latent_layer=skip_latent_layer)
             self._networks.append(network)
 
@@ -138,7 +138,7 @@ class HierarchicalEncoder(BasicEncoder):
             
         return posterior, post_samples
 
-    def forward(self, x):
+    def forward(self, x, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
             to n_latent_hierarchy_lvls and each element in the list is a DistUtil object containing posterior distribution 
             for the group of latent nodes in each hierarchy level. 
@@ -161,7 +161,7 @@ class HierarchicalEncoder(BasicEncoder):
         for lvl in range(self.n_latent_hierarchy_lvls):
             
             current_net=self._networks[lvl]
-            current_input=torch.cat([x]+post_samples,dim=-1)
+            current_input=torch.cat([x]+post_samples,dim=1)
 
             # Clamping logit values
             logits=torch.clamp(current_net(current_input), min=-88., max=88.)
@@ -170,9 +170,9 @@ class HierarchicalEncoder(BasicEncoder):
             # Scalar tensor - device doesn't matter but made explicit
             beta = torch.tensor(self._config.model.beta_smoothing_fct,
                                 dtype=torch.float, device=logits.device,
-                                requires_grad=True)
+                                requires_grad=False)
             
-            samples=self.smoothing_dist_mod(logits, beta)
+            samples=self.smoothing_dist_mod(logits, beta, is_training)
             post_samples.append(samples)
             
         return beta, post_logits, post_samples

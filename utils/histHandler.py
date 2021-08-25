@@ -8,16 +8,19 @@ from PIL import Image
 import wandb
 import numpy as np
 
-from utils.hists.totalEnergyHist import TotalEnergyHist
-from utils.hists.diffEnergyHist import DiffEnergyHist
-from utils.hists.layerEnergyHist import LayerEnergyHist
-from utils.hists.fracTotalEnergyHist import FracTotalEnergyHist
-from utils.hists.sparsityHist import SparsityHist
+from utils.hists.totalenergyhist import TotalEnergyHist
+from utils.hists.diffenergyhist import DiffEnergyHist
+from utils.hists.layerenergyhist import LayerEnergyHist
+from utils.hists.fractotalenergyhist import FracTotalEnergyHist
+from utils.hists.sparsityhist import SparsityHist
 #from utils.hists.maxDepthHist import MaxDepthHist
+from utils.hists.dwtotalenergyhist import DWTotalEnergyHist
+from utils.hists.showerdepthhist import ShowerDepthHist
 
 _LAYER_SIZES={"layer_0" : [0, 288],
               "layer_1" : [288, 432],
               "layer_2" : [432, 504]}
+_SCATTER_KEYS = ["totalEnergyHist", "_EnergyHist", "_sparsityHist"]
 
 class HistHandler(object):
     
@@ -34,7 +37,8 @@ class HistHandler(object):
             
         layer_dict = {layer : _LAYER_SIZES[layer] for layer in cfg.data.calo_layers}
         #self._hdict["maxDepthHist"] = MaxDepthHist(layer_dict)
-        
+        self._hdict["dwTotalEnergyHist"] = DWTotalEnergyHist(layer_dict)
+        self._hdict["showerDepthHist"] = ShowerDepthHist(layer_dict)
         
     def update(self, in_data, recon_data, sample_data):
         for hkey in self._hdict.keys():
@@ -61,8 +65,8 @@ class HistHandler(object):
         """
         image_dict = {}
         for hkey in list(self._hdict.keys()):
-            if "totalEnergyHist" in hkey or "_EnergyHist" in hkey:
-                image_dict[hkey+"Scatter"] = self.get_scatter_plot(self._hdict[hkey].get_data_dict())
+            if any(sctr_key in hkey for sctr_key in _SCATTER_KEYS):
+                image_dict[hkey+"Scatter"] = self.get_scatter_plot(self._hdict[hkey].get_hist(), self._hdict[hkey].get_data_dict())
         return image_dict
         
     def get_hist_image(self, c_hist, scale='linear'):
@@ -73,7 +77,7 @@ class HistHandler(object):
         Returns:
             image - PIL image object
         """
-        assert len(c_hist.axes()) == 2, "Histogram should only have two axes - Dataset type and Energy bins"
+        assert len(c_hist.axes()) == 2, "Histogram should only have two axes - Dataset type and Bins"
         ax_0, ax_1 = c_hist.axes()[0], c_hist.axes()[1]
         
         if isinstance(ax_0, hist.Cat) and isinstance(ax_1, hist.Bin):
@@ -116,7 +120,7 @@ class HistHandler(object):
         
         return image
     
-    def get_scatter_plot(self, data_dict):
+    def get_scatter_plot(self, c_hist, data_dict):
         """
         Args:
             data_dict - Dictionary with energy values
@@ -124,18 +128,33 @@ class HistHandler(object):
         Returns:
             image - PIL image object
         """
+        assert len(c_hist.axes()) == 2, "Histogram should only have two axes - Dataset type and Bins"
+        ax_0, ax_1 = c_hist.axes()[0], c_hist.axes()[1]
+        
+        if isinstance(ax_0, hist.Cat) and isinstance(ax_1, hist.Bin):
+            cat_ax = ax_0
+            bin_ax = ax_1
+        elif isinstance(ax_0, hist.Bin) and isinstance(ax_0, hist.Cat):
+            bin_ax = ax_0
+            cat_ax = ax_1
+        else:
+            raise ValueError("Expected categorical and bin axis")
+            
         assert ("input" in data_dict.keys() and "recon" in data_dict.keys())
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(data_dict["input"], data_dict["recon"], alpha=0.5, marker='.')
-        max_e = max(max(data_dict["input"]), max(data_dict["recon"]))
-        ax.scatter(np.arange(1, max_e, 0.1), np.arange(1, max_e, 0.1), alpha=1., marker='.', c='r')
-        ax.set_xlabel("Input Energy (GeV)", fontsize='15')
-        ax.set_ylabel("Recon Energy (GeV)", fontsize='15')
+        min_val = min(min(data_dict["input"]), min(data_dict["recon"]))
+        max_val = max(max(data_dict["input"]), max(data_dict["recon"]))
+        
+        gap = (max_val-min_val)/1000.
+        ax.scatter(np.arange(min_val, max_val, gap), np.arange(min_val, max_val, gap), alpha=1., marker='.', c='r')
+        ax.set_xlabel("Input " + bin_ax.label, fontsize='15')
+        ax.set_ylabel("Recon " + bin_ax.label, fontsize='15')
         ax.tick_params(axis='both', which='major', labelsize=15)
-        ax.set_xlim(1, max_e)
-        ax.set_ylim(1, max_e)
+        ax.set_xlim(min_val, max_val)
+        ax.set_ylim(min_val, max_val)
         
         buf = BytesIO()
         plt.savefig(buf, format='png')

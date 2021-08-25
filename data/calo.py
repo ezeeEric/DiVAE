@@ -74,7 +74,7 @@ class CaloImageContainer(Dataset):
         return len(self._indices) if self._indices else self._dataset_size
 
     #pytorch dataloader needs this method
-    def __getitem__(self,ordered_idx):
+    def __getitem__(self, ordered_idx):
         #indexing the shuffled list of event indices of our full dataset
         #creates random event selection
         rnd_idx=self._indices[ordered_idx]
@@ -157,11 +157,11 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     #create lists of split indices
     train_idx_list=idx_list[:num_evts_train]
     test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
-    val_idx_list=idx_list[(num_evts_train+num_evts_test):num_evts_total]
+    val_idx_list=idx_list[(num_evts_train+num_evts_test):]
 
-    train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list,label="train")
-    test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list,label="test")
-    val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list,label="val")
+    train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list, label="train")
+    test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list, label="test")
+    val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list, label="val")
 
     return train_dataset,test_dataset,val_dataset
 

@@ -11,7 +11,7 @@ create_plots: 0
 output_path: ???
 device: gpu
 gpu_list:
-  - 1
+  - 6
 
 task:
   - train

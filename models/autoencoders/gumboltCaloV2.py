@@ -8,11 +8,14 @@ Author : Abhi (abhishek@myumanitoba.ca)
 
 # Torch imports
 import torch
-from torch.nn import ReLU, MSELoss, BCEWithLogitsLoss, Sigmoid
+from torch.nn import ReLU, MSELoss, BCEWithLogitsLoss, L1Loss, Sigmoid
 
 # DiVAE.models imports
 from models.autoencoders.gumbolt import GumBolt
 from models.networks.basicCoders import BasicDecoderV2, BasicDecoderV3
+
+# DiVAE.utils imports
+from utils.dists.gumbelmod import GumbelMod
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -25,9 +28,12 @@ class GumBoltCaloV2(GumBolt):
         self._energy_activation_fct = ReLU()
         self._hit_activation_fct = Sigmoid()
         self._output_loss = MSELoss(reduction="none")
+        #self._tot_energy_loss = MSELoss(reduction="none")
         self._hit_loss = BCEWithLogitsLoss(reduction="none")
         
-    def forward(self, x):
+        self._hit_smoothing_dist_mod = GumbelMod()
+        
+    def forward(self, x, is_training):
         """
         - Overrides forward in dvaepp.py
         
@@ -43,13 +49,14 @@ class GumBoltCaloV2(GumBolt):
         input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
-        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
+        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered, is_training)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_hits, output_activations = self.decoder(post_samples)
         
-        out.output_hits = output_hits        
-        out.output_activations = self._energy_activation_fct(output_activations) * torch.where(self._hit_activation_fct(output_hits) > 0.5, 1., 0.)
+        out.output_hits = output_hits
+        beta = torch.tensor(self._config.model.beta_smoothing_fct, dtype=torch.float, device=output_hits.device, requires_grad=False)
+        out.output_activations = self._energy_activation_fct(output_activations) * self._hit_smoothing_dist_mod(output_hits, beta, is_training)
         return out
     
     def loss(self, input_data, fwd_out):
@@ -61,9 +68,11 @@ class GumBoltCaloV2(GumBolt):
         
         hit_loss = self._hit_loss(fwd_out.output_hits, torch.where(input_data > 0, 1., 0.))
         hit_loss = torch.mean(torch.sum(hit_loss, dim=1), dim=0)
-        loss = ae_loss + kl_loss + hit_loss
         
-        return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss, "hit_loss":hit_loss,
+        #tot_energy_loss = self._tot_energy_loss(torch.sum(fwd_out.output_hits, dim=1), torch.sum(input_data, dim=1))
+        #tot_energy_loss = torch.mean(tot_energy_loss, dim=0)
+        
+        return {"ae_loss":ae_loss, "kl_loss":kl_loss, "hit_loss":hit_loss,
                 "entropy":entropy, "pos_energy":pos_energy, "neg_energy":neg_energy}
     
     def generate_samples(self, num_samples=64):
@@ -79,7 +88,8 @@ class GumBoltCaloV2(GumBolt):
             prior_samples = torch.cat([rbm_vis, rbm_hid], 1)
             
             output_hits, output_activations = self.decoder(prior_samples)
-            sample = self._energy_activation_fct(output_activations) * torch.where(self._hit_activation_fct(output_hits) > 0.5, 1., 0.)
+            beta = torch.tensor(self._config.model.beta_smoothing_fct, dtype=torch.float, device=output_hits.device, requires_grad=False)
+            sample = self._energy_activation_fct(output_activations) * self._hit_smoothing_dist_mod(output_hits, beta, False)
             samples.append(sample)
             
         return torch.cat(samples, dim=0)

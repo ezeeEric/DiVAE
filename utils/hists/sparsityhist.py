@@ -10,6 +10,9 @@ import numpy as np
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
+# Dataset labels
+_LABELS = ["input", "recon", "samples"]
+
 class SparsityHist(object):
     def __init__(self, start_idx, end_idx, min_bin=0, max_bin=1, n_bins=50):
         self._hist = hist.Hist(label="Events",
@@ -18,6 +21,7 @@ class SparsityHist(object):
         self._start_idx = start_idx
         self._end_idx = end_idx
         self._scale = "linear"
+        self._data_dict = {key:[] for key in _LABELS}
         
     def update(self, in_data, recon_data, sample_data):
         labels = ["input", "recon", "samples"]
@@ -27,6 +31,7 @@ class SparsityHist(object):
         
         for label, layer_sparsity in zip(labels, layer_sparsities):
             self._hist.fill(dataset=label, sparsity=layer_sparsity)
+            self._data_dict[label].extend(layer_sparsity)
     
     def clear(self):
         self._hist.clear()
@@ -36,3 +41,6 @@ class SparsityHist(object):
     
     def get_scale(self):
         return self._scale
+    
+    def get_data_dict(self):
+        return self._data_dict
