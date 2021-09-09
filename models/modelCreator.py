@@ -37,7 +37,7 @@ _MODEL_DICT={
     "gumBolt": GumBolt,
     "DiVAEppCalo": DiVAEPPCalo,
     "ATLASVAE": ATLASVAE
-}
+    }
 
 class ModelCreator(object):
 
