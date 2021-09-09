@@ -16,6 +16,7 @@ from utils.hists.sparsityhist import SparsityHist
 #from utils.hists.maxDepthHist import MaxDepthHist
 from utils.hists.dwtotalenergyhist import DWTotalEnergyHist
 from utils.hists.showerdepthhist import ShowerDepthHist
+from utils.hists.sampleenergyhist import SampleEnergyHist
 
 _LAYER_SIZES={"layer_0" : [0, 288],
               "layer_1" : [288, 432],
@@ -40,9 +41,15 @@ class HistHandler(object):
         self._hdict["dwTotalEnergyHist"] = DWTotalEnergyHist(layer_dict)
         self._hdict["showerDepthHist"] = ShowerDepthHist(layer_dict)
         
+        self._samplehdict = {"sampleEnergyHist":SampleEnergyHist()}
+        
     def update(self, in_data, recon_data, sample_data):
         for hkey in self._hdict.keys():
             self._hdict[hkey].update(in_data, recon_data, sample_data)
+            
+    def update_samples(self, sample_data):
+        for hkey in self._samplehdict.keys():
+                self._samplehdict[hkey].update(sample_data)
             
     def clear(self):
         for hkey in self._hdict.keys():
@@ -54,8 +61,11 @@ class HistHandler(object):
             image_dict - Dict containing PIL images for each histogram
         """
         image_dict = {}
-        for hkey in list(self._hdict.keys()):
+        for hkey in self._hdict.keys():
             image_dict[hkey] = self.get_hist_image(self._hdict[hkey].get_hist(), self._hdict[hkey].get_scale())
+        for hkey in self._samplehdict.keys():
+            image_dict[hkey] = self.get_hist_image(self._samplehdict[hkey].get_hist(), self._samplehdict[hkey].get_scale())
+            
         return image_dict
     
     def get_scatter_plots(self):

@@ -4,7 +4,10 @@ debug: False
 load_data_from_pkl: 0
 load_model: 0
 save_model: 0
-input_model: 0
+save_state: 1
+load_state: 0
+run_path: /home/akajal/DiVAE/outputs/2021-09-05/15-12-41/wandb/run-20210905_151242-o5jp2qc9/files/GumBoltCaloV5_calo_default.pth
+input_model: 
 create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
@@ -18,6 +21,6 @@ task:
   - validate
 
 defaults:
-  - model: gumboltcaloV2
+  - model: gumboltcaloV
   - data: calo
   - engine: dvaecalo_training

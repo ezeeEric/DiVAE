@@ -129,14 +129,17 @@ def run(config=None):
         #pretrained values but need to have been instantiated first.
         modelCreator.load_model()
         logger.info("Model loaded from file, skipping training.")
-        pass
-    else:
-        for epoch in range(1, config.engine.n_epochs+1): 
-            if "train" in config.task:
-                engine.fit(epoch=epoch, is_training=True)
+    
+    if config.load_state:
+        config_string="_".join(str(i) for i in [config.model.model_type, config.data.data_type, config.tag])
+        modelCreator.load_state(config.run_path, config_string, dev)
+    
+    for epoch in range(1, config.engine.n_epochs+1):
+        if "train" in config.task:
+            engine.fit(epoch=epoch, is_training=True)
             
-            if "validate" in config.task:
-                engine.fit(epoch=epoch, is_training=False)
+        if "validate" in config.task:
+            engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
@@ -145,6 +148,10 @@ def run(config=None):
         date=datetime.datetime.now().strftime("%y%m%d")
         config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
+        
+    if config.save_state:
+        config_string = "_".join(str(i) for i in [config.model.model_type, config.data.data_type, config.tag])
+        modelCreator.save_state(config_string)
 
     if config.create_plots:
         #call a forward method derivative - for output object.

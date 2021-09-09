@@ -161,7 +161,10 @@ class HierarchicalEncoder(BasicEncoder):
         for lvl in range(self.n_latent_hierarchy_lvls):
             
             current_net=self._networks[lvl]
-            current_input=torch.cat([x]+post_samples,dim=1)
+            if type(x) is tuple:
+                current_input=torch.cat([x[0]]+post_samples,dim=1)
+            else:
+                current_input=torch.cat([x]+post_samples,dim=1)
 
             # Clamping logit values
             logits=torch.clamp(current_net(current_input), min=-88., max=88.)
@@ -173,6 +176,10 @@ class HierarchicalEncoder(BasicEncoder):
                                 requires_grad=False)
             
             samples=self.smoothing_dist_mod(logits, beta, is_training)
+            
+            if type(x) is tuple:
+                samples = torch.bmm(samples.unsqueeze(2), x[1].unsqueeze(2)).squeeze(2)
+                
             post_samples.append(samples)
             
         return beta, post_logits, post_samples

@@ -1,7 +1,6 @@
 """
 GumBolt implementation for Calorimeter data
-V2 - Using 2-headed decoder to recconstruct an activation mask
-in addition to the calorimeter depositions
+V3 - Energy conditioning added over V2
 
 Author : Abhi (abhishek@myumanitoba.ca)
 """
@@ -20,11 +19,11 @@ from utils.dists.gumbelmod import GumbelMod
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class GumBoltCaloV2(GumBolt):
+class GumBoltCaloV3(GumBolt):
     
     def __init__(self, **kwargs):
-        super(GumBoltCaloV2, self).__init__(**kwargs)
-        self._model_type = "GumBoltCaloV2"
+        super(GumBoltCaloV3, self).__init__(**kwargs)
+        self._model_type = "GumBoltCaloV3"
         self._energy_activation_fct = ReLU()
         self._hit_activation_fct = Sigmoid()
         self._output_loss = MSELoss(reduction="none")
@@ -43,12 +42,9 @@ class GumBoltCaloV2(GumBolt):
         
         #see definition for explanation
         out=self._output_container.clear()
-      	
-	    #TODO data prep - study if this does good things
-        input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
-        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered, is_training)
+        out.beta, out.post_logits, out.post_samples = self.encoder(x, is_training)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_hits, output_activations = self.decoder(post_samples)
@@ -91,5 +87,5 @@ class GumBoltCaloV2(GumBolt):
         return torch.cat(samples, dim=0)
     
     def _create_decoder(self):
-        logger.debug("GumBoltCaloV2:_create_decoder")
+        logger.debug("GumBoltCaloV3:_create_decoder")
         return BasicDecoderV3(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct,  cfg=self._config)

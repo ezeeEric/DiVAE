@@ -8,6 +8,7 @@ Author: Eric Drechsler (eric_drechsler@sfu.ca)
 
 import os
 import torch
+import wandb
 
 from DiVAE import logging
 logger = logging.getLogger(__name__)
@@ -25,6 +26,9 @@ from models.autoencoders.gumbolt import GumBolt
 from models.autoencoders.dvaeppcalo import DiVAEPPCalo
 from models.autoencoders.gumboltCalo import GumBoltCalo
 from models.autoencoders.gumboltCaloV2 import GumBoltCaloV2
+from models.autoencoders.gumboltCaloV3 import GumBoltCaloV3
+from models.autoencoders.gumboltCaloV4 import GumBoltCaloV4
+from models.autoencoders.gumboltCaloV5 import GumBoltCaloV5
 from models.autoencoders.atlasVAE import ATLASVAE
 
 _MODEL_DICT={
@@ -40,6 +44,9 @@ _MODEL_DICT={
     "DiVAEppCalo": DiVAEPPCalo,
     "GumBoltCalo": GumBoltCalo,
     "GumBoltCaloV2": GumBoltCaloV2,
+    "GumBoltCaloV3": GumBoltCaloV3,
+    "GumBoltCaloV4": GumBoltCaloV4,
+    "GumBoltCaloV5": GumBoltCaloV5,
     "ATLASVAE": ATLASVAE
 }
 
@@ -88,17 +95,44 @@ class ModelCreator(object):
 
     def save_model(self,cfg_string='test'):
         logger.info("Saving Model")
-        f=open(os.path.join(os.getcwd(),"model_{0}.pt".format(cfg_string)),'wb')
-        torch.save(self._model.state_dict(),f)
+        f = open(os.path.join(wandb.run.dir, "{0}.pth".format(cfg_string)),'wb')
+        torch.save(self._model.state_dict(), f)
         f.close()
         return
+    
+    def save_state(self, cfg_string='test'):
+        logger.info("Saving state")
+        path = os.path.join(wandb.run.dir, "{0}.pth".format(cfg_string))
+        
+        # Extract modules from the model dict and add to start_dict 
+        modules=list(self._model._modules.keys())
+        state_dict={module: getattr(self._model, module).state_dict() for module in modules}
+        
+        # Save the model parameter dict
+        torch.save(state_dict, path)
+        
+    def load_state(self, run_path, cfg_string, device):
+        logger.info("Loading state")
+        #model_loc = wandb.restore("{0}.pth".format(cfg_string), run_path=run_path)
+        model_loc = run_path
+        
+        # Open a file in read-binary mode
+        with open(model_loc, 'rb') as f:
+            # Interpret the file using torch.load()
+            checkpoint=torch.load(f, map_location=device)
+
+            logger.info("Loading weights from file : {0}".format(run_path))
+            
+            local_module_keys=list(self._model._modules.keys())
+            for module in checkpoint.keys():
+                if module in local_module_keys:
+                    print("Loading weights for module = ", module)
+                    getattr(self._model, module).load_state_dict(checkpoint[module])
 
     def load_model(self):
         logger.info("Loading Model")
         #load_state_dict is a pytorch method (https://pytorch.org/tutorials/beginner/saving_loading_models.html)
         self._model.load_state_dict(torch.load(self._config.input_model))
-        #set evaluation mode for model
-        self._model.eval()
         return
 
 if __name__=="__main__":
