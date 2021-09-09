@@ -75,17 +75,12 @@ class CaloImageContainer(Dataset):
 
     #pytorch dataloader needs this method
     def __getitem__(self,ordered_idx):
-        
         #indexing the shuffled list of event indices of our full dataset
         #creates random event selection
         rnd_idx=self._indices[ordered_idx]
 
-        #TODO this is divided by 100, because the CaloGAN dataset restricts
-        #their jet energies to [0,100] GeV. This condition forces the energies
-        #in range [0,1] which at the moment is needed for proper NN training
-        #(i.e. sequentialVAE). Needs change, like norm to maximum in batch/full dataset.
-        norm_true_energy=self._true_energies[rnd_idx]/100
-        norm_overflow_energy=self._overflow_energies[rnd_idx]/100
+        norm_true_energy=self._true_energies[rnd_idx]
+        norm_overflow_energy=self._overflow_energies[rnd_idx]
         
         images=[]
         #if we request a subset of the calorimeter layers only

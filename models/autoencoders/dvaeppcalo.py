@@ -38,18 +38,17 @@ class DiVAEPPCalo(DiVAEPP):
         input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
-        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
+        out.zeta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_activations = self.decoder(post_samples)
-        #out.output_activations = torch.clamp(output_activations+self._train_bias, min=-88., max=88.)
         out.output_activations = self._output_activation_fct(output_activations)
         return out
     
     def loss(self, input_data, fwd_out):
         logger.debug("loss")
         
-        kl_loss, cross_entropy, entropy, neg_energy=self.kl_divergence(fwd_out.beta, fwd_out.post_logits, fwd_out.post_samples)
+        kl_loss, cross_entropy, entropy, neg_energy=self.kl_divergence(fwd_out.zeta, fwd_out.post_logits, fwd_out.post_samples)
         ae_loss = self._output_loss(input_data, fwd_out.output_activations)
         ae_loss = torch.mean(torch.sum(ae_loss, dim=1), dim=0)
         
