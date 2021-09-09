@@ -2,6 +2,10 @@
 model_type: gumBolt
 activation_fct: relu
 beta_smoothing_fct: 5
+encoder_hidden_nodes:
+  - 64
+  - 64
+  - 64
 decoder_hidden_nodes:
   - 64
   - 64

@@ -1,0 +1,12 @@
+data_type: calo
+calo_layers: 
+  - layer_0
+  - layer_1
+  - layer_2
+particle_type: gamma
+frac_test_dataset: 0.0001
+frac_train_dataset: 0.7
+
+calo_input_eplus:  /scratch/edrechsl/calogan/eplus.hdf5
+calo_input_gamma:  /scratch/edrechsl/calogan/gamma.hdf5
+calo_input_piplus: /scratch/edrechsl/calogan/piplus.hdf5

@@ -13,7 +13,8 @@ import wandb
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-from  scripts.run import run
+from scripts.testRun import runTest
+from scripts.run import run
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
@@ -27,7 +28,11 @@ def main(cfg=None):
     #useful for manual hyperpara optimisation
     current_run=wandb.init(entity="qvae", project="divae", dir=os.getcwd(), config=cfg, reinit=True)
     logger.info("Current hydra run: wandb run {0}".format(current_run.id))
+    os.system("sh copyData.sh")
+    os.system("export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK")
     #run the ting
+    #runTest(config=cfg)
+    print(cfg)
     run(config=cfg)
 
     #log and finalise current wandb run
