@@ -11,13 +11,11 @@ from torch.distributions import Distribution, Normal, Uniform
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class RBM(nn.Module):
-    def __init__(self, n_visible, n_hidden, **kwargs):
-        super(RBM, self).__init__(**kwargs)
+from models.rbm.rbmBase import RBMBase
 
-        self._n_visible=n_visible
-        self._n_hidden=n_hidden
-        
+class RBM(RBMBase):
+    def __init__(self, **kwargs):
+        super(RBM, self).__init__(**kwargs)
         # random weights and biases for all layers
         # weights between visible and hidden nodes. 784x128 (that is 28x28 input
         #size, 128 arbitrary choice)
@@ -25,26 +23,11 @@ class RBM(nn.Module):
         # through backpropagation
         require_grad=True
         #arbitrarily scaled by 0.01 
-        self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=require_grad)
-          # #all biases initialised to 0.5
-        self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=require_grad)
-        # #applying a 0 bias to the hidden nodes
-        self._hidden_bias = nn.Parameter(torch.zeros(n_hidden), requires_grad=require_grad)
-
-    @property
-    def visible_bias(self):
-        return self._visible_bias
-    
-    @property
-    def hidden_bias(self):
-        return self._hidden_bias
-
-    @property
-    def weights(self):
-        return self._weights
-
-    def __repr__(self):
-        return "RBM: n_vis={0}, n_hid={1}".format(self._n_visible,self._n_hidden)
+        self.weights = nn.Parameter(torch.randn(self._n_visible, self._n_hidden) * 0.01, requires_grad=require_grad)
+        #all biases initialised to 0.5
+        self.visible_bias = nn.Parameter(torch.ones(self._n_visible) * 0.5, requires_grad=require_grad)
+        #applying a 0 bias to the hidden nodes
+        self.hidden_bias = nn.Parameter(torch.zeros(self._n_hidden), requires_grad=require_grad)
 
     def get_logZ_value(self):
         #TODO include calculation of this value

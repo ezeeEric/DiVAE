@@ -1,0 +1,12 @@
+# @package _group_
+run_exact_cross_check: 1
+n_visible: 10
+n_hidden: 10
+n_betas: 1000
+n_gibbs_sampling_steps: 1
+n_ais_chains: 100
+load_rbm_from_file: 
+  #/Users/drdre/codez/qVAE/DiVAE/output/210324_eps/rbm_1010.pkl
+
+#set by  hydra
+output_path: ???
