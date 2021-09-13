@@ -27,7 +27,7 @@ class EngineCaloV3(Engine):
 
     def fit(self, epoch, is_training=True):
         logger.debug("Fitting model. Train mode: {0}".format(is_training))
-
+        
         # Switch model between training and evaluation mode
         # Change dataloader depending on mode
         if is_training:
@@ -151,11 +151,11 @@ class EngineCaloV3(Engine):
                             in_data = in_data*1000.
                             recon_data = fwd_output.output_activations*1000.
                             sample_energies, sample_data = self._model.generate_samples()
-                            sample_data = ssample_data*1000.
-                            
+                            sample_data = sample_data*1000.
                         input_images = []
                         recon_images = []
                         sample_images = []
+
 
                         start_index = 0
                         for layer, layer_data_flat in enumerate(in_data_flat):
@@ -173,9 +173,10 @@ class EngineCaloV3(Engine):
                             recon_images.append(recon_image)
                             sample_images.append(sample_image)
                         
-                        batch_loss_dict["input"] = plot_calo_images(input_images)
-                        batch_loss_dict["recon"] = plot_calo_images(recon_images)
-                        batch_loss_dict["sample"] = plot_calo_images(sample_images)
+                        if self._config.create_plots:
+                            batch_loss_dict["input"] = plot_calo_images(input_images)
+                            batch_loss_dict["recon"] = plot_calo_images(recon_images)
+                            batch_loss_dict["sample"] = plot_calo_images(sample_images)
                         
                         if not is_training:
                             for key in batch_loss_dict.keys():
@@ -187,6 +188,8 @@ class EngineCaloV3(Engine):
                         
         if not is_training:
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
+            
+            print(val_loss_dict)
             self._hist_handler.clear()
                 
             # Average the validation loss values over the validation set
@@ -198,7 +201,11 @@ class EngineCaloV3(Engine):
                 except TypeError:
                     val_loss_dict['val_' + str(key)] = val_loss_dict[key]
                     val_loss_dict.pop(key)
-                    
+
+            if self._config.hp_scan:
+                metric_dict={**val_loss_dict, **self._hist_handler.get_metrics()}
+                wandb.log()
+                
             wandb.log(val_loss_dict)
 
 if __name__=="__main__":

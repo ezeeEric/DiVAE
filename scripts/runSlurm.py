@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 from scripts.testRun import runTest
 from scripts.run import run
 
-@hydra.main(config_path="../configs", config_name="config")
+@hydra.main(config_path="../configs", config_name="config_cedar")
 def main(cfg=None):
     logger.info("Starting main()")
     #initialise wandb logging. Note that this function has many more options,

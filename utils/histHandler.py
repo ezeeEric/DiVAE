@@ -18,6 +18,10 @@ from utils.hists.dwtotalenergyhist import DWTotalEnergyHist
 from utils.hists.showerdepthhist import ShowerDepthHist
 from utils.hists.sampleenergyhist import SampleEnergyHist
 
+#self defined imports
+from DiVAE import logging
+logger = logging.getLogger(__name__)
+
 _LAYER_SIZES={"layer_0" : [0, 288],
               "layer_1" : [288, 432],
               "layer_2" : [432, 504]}
@@ -25,18 +29,20 @@ _SCATTER_KEYS = ["totalEnergyHist", "_EnergyHist", "_sparsityHist"]
 
 class HistHandler(object):
     
-    def __init__(self, cfg):
+    def __init__(self, cfg=None):
         self._cfg = cfg
         self._hdict = {"totalEnergyHist":TotalEnergyHist(),
                        "diffEnergyHist":DiffEnergyHist()}
-        
-        for layer in cfg.data.calo_layers:
+
+    def initialise(self):
+        logger.info("initialise HistHandler")
+        for layer in self._cfg.data.calo_layers:
             start_idx, end_idx = _LAYER_SIZES[layer]
             self._hdict[layer + "_EnergyHist"] = LayerEnergyHist(start_idx, end_idx)
             self._hdict[layer + "_fracEnergyHist"] = FracTotalEnergyHist(start_idx, end_idx)
             self._hdict[layer + "_sparsityHist"] = SparsityHist(start_idx, end_idx)
             
-        layer_dict = {layer : _LAYER_SIZES[layer] for layer in cfg.data.calo_layers}
+        layer_dict = {layer : _LAYER_SIZES[layer] for layer in self._cfg.data.calo_layers}
         #self._hdict["maxDepthHist"] = MaxDepthHist(layer_dict)
         self._hdict["dwTotalEnergyHist"] = DWTotalEnergyHist(layer_dict)
         self._hdict["showerDepthHist"] = ShowerDepthHist(layer_dict)

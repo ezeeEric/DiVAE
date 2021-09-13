@@ -3,17 +3,16 @@ debug: False
 load_data_from_pkl: 0
 load_model: 0
 save_model: 0
-save_state: 1
+save_state: 0
 load_state: 0
 run_path: /home/akajal/DiVAE/outputs/2021-09-05/15-12-41/wandb/run-20210905_151242-o5jp2qc9/files/GumBoltCaloV5_calo_default.pth
 input_model: 
 create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
-output_path: ???
 device: gpu
 gpu_list:
-  - 6
+  - 0
 
 task:
   - train
@@ -23,7 +22,7 @@ defaults:
   - model: gumboltcaloV
   - data: calo_cedar
   - engine: dvaecalo_training
-      - override hydra/launcher: submitit_local
+  - override hydra/launcher: submitit_local
         #  - override hydra/launcher: submitit_slurm
         #  #    #hydra:
         #  #    #  launcher:

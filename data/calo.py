@@ -126,7 +126,7 @@ class CaloImageContainer(Dataset):
         self._true_energies=input_data["energy"][:]
         self._overflow_energies=input_data["overflow"][:]
 
-def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac_train_dataset=0.6, frac_test_dataset=0.2):
+def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac_train_dataset=0.6, frac_test_dataset=0.2, frac_val_dataset=-1):
     
     #read in all input files for all jet types and layers
     dataStore={}
@@ -158,6 +158,9 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     train_idx_list=idx_list[:num_evts_train]
     test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
     val_idx_list=idx_list[(num_evts_train+num_evts_test):]
+    if frac_val_dataset > 0:
+        num_evts_val=int(frac_val_dataset*num_evts_total)
+        val_idx_list=idx_list[(num_evts_train+num_evts_test):(num_evts_train+num_evts_test+num_evts_val)]
 
     train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list, label="train")
     test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list, label="test")

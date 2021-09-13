@@ -23,7 +23,7 @@ class EngineCalo(Engine):
     def __init__(self, cfg=None, **kwargs):
         logger.info("Setting up engine Calo.")
         super(EngineCalo, self).__init__(cfg, **kwargs)
-        self._hist_handler = HistHandler(cfg)
+        self._hist_handler = HistHandler(self._config)
 
     def fit(self, epoch, is_training=True):
         logger.debug("Fitting model. Train mode: {0}".format(is_training))

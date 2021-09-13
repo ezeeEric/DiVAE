@@ -152,6 +152,7 @@ class DataManager(object):
                 layer_subset=self._config.data.calo_layers,
                 frac_train_dataset=self._config.data.frac_train_dataset,
                 frac_test_dataset=self._config.data.frac_test_dataset, 
+                frac_val_dataset=self._config.data.frac_val_dataset, 
                 )
                 
         #create the DataLoader for the training dataset

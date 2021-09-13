@@ -131,6 +131,11 @@ A quick summary of the inner workings:
 
 
 ## TODOs
+
+### New Entries Summer 2021
+- add script for data preparation (scaling)
+- switch models via hydra target
+
 ### General
 - various generic NN training routines could improve our results:
   - batch normalisation
@@ -153,6 +158,7 @@ A quick summary of the inner workings:
   of the whole shower is normalised to [0,1] as well. 
 - Extend the whole algorithm chain to deal with more than one particle type at a
   time.
+
 
 
 ### References

@@ -53,7 +53,8 @@ def main(cfg=None):
     run(config=cfg)
 
 def run(config=None):
-
+    
+    #config=OmegaConf.to_yaml(config)
     #create model handling object
     modelCreator=ModelCreator(cfg=config)
 
@@ -106,11 +107,14 @@ def run(config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-    engine=instantiate(config.engine, cfg=config)
+#    engine=instantiate(config.engine, cfg=config)
+    engine=instantiate(config.engine)
     #TODO for some reason hydra double instantiates the engine in a
     #newer version if cfg=config is passed as an argument. This is a workaround.
     #Find out why that is...
     engine._config=config
+    engine._hist_handler._cfg=config
+    engine._hist_handler.initialise()
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
     #add device instance to engine namespace
@@ -120,7 +124,6 @@ def run(config=None):
     #add the model instance to the engine namespace
     engine.model = model
 
-    
     #no need to train if we load from file.
     if config.load_model:
         #return pre-trained model after loading from file
@@ -133,6 +136,7 @@ def run(config=None):
     if config.load_state:
         config_string="_".join(str(i) for i in [config.model.model_type, config.data.data_type, config.tag])
         modelCreator.load_state(config.run_path, config_string, dev)
+    
     
     for epoch in range(1, config.engine.n_epochs+1):
         if "train" in config.task:
