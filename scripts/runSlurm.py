@@ -26,16 +26,16 @@ def main(cfg=None):
     #current hydra dir
     #TODO it is possible to use grouped runs to view in wandb, this would be
     #useful for manual hyperpara optimisation
-    current_run=wandb.init(entity="qvae", project="divae", dir=os.getcwd(), config=cfg, reinit=True)
-    logger.info("Current hydra run: wandb run {0}".format(current_run.id))
+    #current_run=wandb.init(entity="qvae", project="divae", dir=os.getcwd(), config=cfg, reinit=True)
+    #logger.info("Current hydra run: wandb run {0}".format(current_run.id))
     os.system("sh copyData.sh")
     os.system("export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK")
     #run the ting
-    #run(config=cfg)
-    runTest(config=cfg)
+    run(config=cfg)
+    #runTest(config=cfg)
 
     #log and finalise current wandb run
-    current_run.finish()
+    #current_run.finish()
     logger.info("Success")
 
 

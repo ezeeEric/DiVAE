@@ -1,2 +1,7 @@
-export PYTHONPATH=$PYTHONPATH:$PWD/..:$PWD
+DIVAEPATH=/home/edrechsl/codez/qVAE/DiVAE/
+cd $DIVAEPATH
+source venv_divae/bin/activate
+export PYTHONPATH=$PYTHONPATH:$DIVAEPATH:$DIVAEPATH/..
 export WANDB_MODE=offline
+alias rundivae="python /home/edrechsl/codez/qVAE/DiVAE/scripts/run.py"
+cd /scratch/edrechsl/

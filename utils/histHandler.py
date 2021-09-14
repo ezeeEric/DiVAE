@@ -48,7 +48,7 @@ class HistHandler(object):
         self._hdict["showerDepthHist"] = ShowerDepthHist(layer_dict)
         
         self._samplehdict = {"sampleEnergyHist":SampleEnergyHist()}
-        
+    
     def update(self, in_data, recon_data, sample_data):
         for hkey in self._hdict.keys():
             self._hdict[hkey].update(in_data, recon_data, sample_data)
@@ -180,3 +180,7 @@ class HistHandler(object):
         plt.close()
         
         return image
+    
+    def get_metrics(self):
+        return {"atestmetric": 42}
+

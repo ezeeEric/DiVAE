@@ -72,7 +72,7 @@ def run(config=None):
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
-
+    
     #instantiate the chosen model
     #loads from file 
     model=modelCreator.init_model(load_from_file=config.load_model, dataMgr=dataMgr)

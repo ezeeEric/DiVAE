@@ -189,7 +189,16 @@ class EngineCaloV3(Engine):
         if not is_training:
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
             
-            print(val_loss_dict)
+            if self._config.hp_scan:
+                metric_dict={**batch_loss_dict, **self._hist_handler.get_metrics()}
+                
+                import pickle
+                f=open("./hpscan.pkl","wb")
+                pickle.dump(metric_dict,f)
+                pickle.dump(self._config,f)
+                f.close()
+                #wandb.log(metric_dict)
+            
             self._hist_handler.clear()
                 
             # Average the validation loss values over the validation set
@@ -202,9 +211,6 @@ class EngineCaloV3(Engine):
                     val_loss_dict['val_' + str(key)] = val_loss_dict[key]
                     val_loss_dict.pop(key)
 
-            if self._config.hp_scan:
-                metric_dict={**val_loss_dict, **self._hist_handler.get_metrics()}
-                wandb.log()
                 
             wandb.log(val_loss_dict)
 

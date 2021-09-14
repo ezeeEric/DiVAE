@@ -6,14 +6,14 @@ calo_layers:
 particle_type: gamma
 frac_test_dataset: 0.001
 frac_train_dataset: 0.7
-frac_val_dataset: -1.
+frac_val_dataset: 0.1
 
 calo_input_eplus:  /scratch/edrechsl/calogan_scaled/eplus.hdf5
 calo_input_gamma:  /scratch/edrechsl/calogan_scaled/gamma.hdf5
 calo_input_piplus: /scratch/edrechsl/calogan_scaled/piplus.hdf5
 
 scaled: True
-scaler_path: /scratch/edrechsl/calogan/eplus_scaler.gz
-scaler_amin: /scratch/edrechsl/calogan/eplus_amin.npy
+scaler_path: /scratch/edrechsl/calogan/gamma_scaler.gz
+scaler_amin: /scratch/edrechsl/calogan/gamma_amin.npy
 #scaler_path: 0
 #scaler_amin: 0
