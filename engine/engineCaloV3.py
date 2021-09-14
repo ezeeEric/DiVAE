@@ -190,7 +190,7 @@ class EngineCaloV3(Engine):
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
             
             if self._config.hp_scan:
-                metric_dict={**batch_loss_dict, **self._hist_handler.get_metrics(),**self._hist_handler.histograms}
+                metric_dict={**batch_loss_dict, **self._hist_handler.get_metrics()}#,*self._hist_handler.histograms}
                 
                 import pickle
                 f=open("./hpscan.pkl","wb")
