@@ -102,7 +102,8 @@ class ModelCreator(object):
     
     def save_state(self, cfg_string='test'):
         logger.info("Saving state")
-        path = os.path.join(wandb.run.dir, "{0}.pth".format(cfg_string))
+        outpath = os.getcwd()
+        path = os.path.join(outpath, "{0}.pth".format(cfg_string))
         
         # Extract modules from the model dict and add to start_dict 
         modules=list(self._model._modules.keys())
