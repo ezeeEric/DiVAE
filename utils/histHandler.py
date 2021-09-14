@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 import wandb
 import numpy as np
+import os
 
 from utils.hists.totalenergyhist import TotalEnergyHist
 from utils.hists.diffenergyhist import DiffEnergyHist
@@ -33,6 +34,9 @@ class HistHandler(object):
         self._cfg = cfg
         self._hdict = {"totalEnergyHist":TotalEnergyHist(),
                        "diffEnergyHist":DiffEnergyHist()}
+    @property
+    def histograms(self):
+        return self._hdict
 
     def initialise(self):
         logger.info("initialise HistHandler")
@@ -180,7 +184,91 @@ class HistHandler(object):
         plt.close()
         
         return image
-    
+
+    def store_hist_images(self, c_hist,name="default"):
+        """Store histogram images directly to disc."""
+        assert len(c_hist.axes()) == 2, "Histogram should only have two axes - Dataset type and Bins"
+        ax_0, ax_1 = c_hist.axes()[0], c_hist.axes()[1]
+        
+        if isinstance(ax_0, hist.Cat) and isinstance(ax_1, hist.Bin):
+            cat_ax = ax_0
+            bin_ax = ax_1
+        elif isinstance(ax_0, hist.Bin) and isinstance(ax_0, hist.Cat):
+            bin_ax = ax_0
+            cat_ax = ax_1
+        else:
+            raise ValueError("Expected categorical and bin axis")
+        
+        cat_names = [identifier.name for identifier in cat_ax.identifiers()]
+        bins = [ax_bin.mid for ax_bin in bin_ax.identifiers()]
+        
+        value_dict = {cat_name:c_hist.values(overflow='all')[(cat_name,)] for cat_name in cat_names}
+        bins = [bins[0]] + bins + [bins[len(bins)-1]]
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for cat_name in cat_names:
+            ax.step(bins, value_dict[cat_name], label=cat_name)
+            
+        ax.legend(title=cat_ax.label, prop={'size': 15})
+        ax.set_xlabel(bin_ax.label, fontsize='15')
+        ax.set_ylabel(c_hist.label, fontsize='15')
+        ax.tick_params(axis='both', which='major', labelsize=15)
+
+        # if scale == 'log':
+        #     ax.set_xscale('log')
+            
+        ax.set_yscale('log')
+        ax.set_ylim(bottom=1)
+        os.system("mkdir -p histograms")
+        plt.savefig("./histograms/{0}.png".format(name), format='png')
+        plt.close()
+
     def get_metrics(self):
-        return {"atestmetric": 42}
+        import math 
+        from scipy.stats import ks_2samp as kstest
+        from scipy.stats import ttest_ind as ttest
+        # import pickle
+        # f=open("./hdict_for_metric_dev.pkl","wb")
+        # pickle.dump(self._hdict,f)
+        # f.close()
+        all_hist_metrics={}
+        for key, hist_obj in self._hdict.items():
+            all_hist_metrics[key]={}
+            c_hist=hist_obj.get_hist()
+            self.store_hist_images(c_hist,name=key)
+
+            ax_0, ax_1 = c_hist.axes()[0], c_hist.axes()[1]
+
+            if isinstance(ax_0, hist.Cat) and isinstance(ax_1, hist.Bin):
+                cat_ax = ax_0
+                bin_ax = ax_1
+            elif isinstance(ax_0, hist.Bin) and isinstance(ax_0, hist.Cat):
+                bin_ax = ax_0
+                cat_ax = ax_1
+            else:
+                raise ValueError("Expected categorical and bin axis")
+            
+            cat_names = [identifier.name for identifier in cat_ax.identifiers()]
+            bins = [ax_bin.mid for ax_bin in bin_ax.identifiers()]
+            
+            value_dict = {cat_name:c_hist.values(overflow='all')[(cat_name,)] for cat_name in cat_names}
+            bins = [bins[0]] + bins + [bins[len(bins)-1]]
+            
+            #remove value dict with "calo" key only
+            if not "input" in value_dict.keys():
+                continue
+            
+            in_dict=value_dict["input"]
+            sample_dict=value_dict["samples"]
+
+            squared_dist=0
+            for i,val in enumerate(in_dict):
+                squared_dist+=(val-sample_dict[i])**2
+            dist=math.sqrt(squared_dist)
+            kstest_stat,kstest_pval=kstest(in_dict,sample_dict)
+            ttest_stat,ttest_pval=ttest(in_dict,sample_dict)
+            all_hist_metrics[key]={"dist": dist,"kstest":(kstest_stat,kstest_pval),"ttest":(ttest_stat,ttest_pval)}
+            
+        return all_hist_metrics
 
