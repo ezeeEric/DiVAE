@@ -23,7 +23,7 @@ class GumBoltCalo(GumBolt):
         self._output_loss = MSELoss(reduction="none")
         self._hit_loss = BCELoss(reduction="none")
         
-    def forward(self, x):
+    def forward(self, x, is_training):
         """
         - Overrides forward in dvaepp.py
         
@@ -39,7 +39,7 @@ class GumBoltCalo(GumBolt):
         input_data_centered=x.view(-1, self._flat_input_size)#-self._dataset_mean
         
 	    #Step 1: Feed data through encoder
-        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered)
+        out.beta, out.post_logits, out.post_samples = self.encoder(input_data_centered, is_training)
         post_samples = torch.cat(out.post_samples, 1)
         
         output_activations = self.decoder(post_samples)
@@ -54,12 +54,9 @@ class GumBoltCalo(GumBolt):
         ae_loss = self._output_loss(input_data, fwd_out.output_activations)
         ae_loss = torch.mean(torch.sum(ae_loss, dim=1), dim=0)
         
-        hit_loss = self._hit_loss(torch.where(fwd_out.output_activations > 0, 1., 0.),
-                                  torch.where(input_data > 0, 1., 0.))
-        hit_loss = torch.mean(torch.sum(hit_loss, dim=1), dim=0)
-        loss = ae_loss + kl_loss + hit_loss
+        loss = ae_loss + kl_loss
         
-        return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss, "hit_loss":hit_loss,
+        return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss,
                 "entropy":entropy, "pos_energy":pos_energy, "neg_energy":neg_energy}
     
     def generate_samples(self, num_samples=64):

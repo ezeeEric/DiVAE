@@ -154,12 +154,12 @@ class HistHandler(object):
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.scatter(data_dict["input"], data_dict["recon"], alpha=0.5, marker='.')
+        ax.scatter(data_dict["input"], data_dict["recon"], marker='.', alpha=.2)
         min_val = min(min(data_dict["input"]), min(data_dict["recon"]))
         max_val = max(max(data_dict["input"]), max(data_dict["recon"]))
         
         gap = (max_val-min_val)/1000.
-        ax.scatter(np.arange(min_val, max_val, gap), np.arange(min_val, max_val, gap), alpha=1., marker='.', c='r')
+        ax.scatter(np.arange(min_val, max_val, gap), np.arange(min_val, max_val, gap), marker='.', c='r')
         ax.set_xlabel("Input " + bin_ax.label, fontsize='15')
         ax.set_ylabel("Recon " + bin_ax.label, fontsize='15')
         ax.tick_params(axis='both', which='major', labelsize=15)

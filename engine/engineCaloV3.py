@@ -132,6 +132,17 @@ class EngineCaloV3(Engine):
                         self._hist_handler.update(in_data.detach().cpu().numpy(),
                                                   fwd_output.output_activations.detach().cpu().numpy(),
                                                   sample_data.detach().cpu().numpy())
+                        
+                        # Samples with specific energies
+                        conditioning_energies = self._config.engine.sample_energies
+                        conditioned_samples = []
+                        for energy in conditioning_energies:
+                            sample_energies, sample_data = self._model.generate_samples(self._config.engine.n_valid_batch_size, energy)
+                            sample_data = sample_data.detach().cpu().numpy()
+                            conditioned_samples.append(torch.tensor(sample_data))
+                        
+                        conditioned_samples = torch.cat(conditioned_samples, dim=0).numpy()
+                        self._hist_handler.update_samples(conditioned_samples)
                     
                 if (batch_idx % log_batch_idx) == 0:
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(epoch,
@@ -151,7 +162,7 @@ class EngineCaloV3(Engine):
                             in_data = in_data*1000.
                             recon_data = fwd_output.output_activations*1000.
                             sample_energies, sample_data = self._model.generate_samples()
-                            sample_data = ssample_data*1000.
+                            sample_data = sample_data*1000.
                             
                         input_images = []
                         recon_images = []
