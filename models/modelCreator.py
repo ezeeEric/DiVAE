@@ -2,8 +2,6 @@
 ModelCreator - Interface between run scripts and models.
 
 Provides initialisation of models.
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import os
@@ -29,6 +27,7 @@ from models.autoencoders.gumboltCaloV2 import GumBoltCaloV2
 from models.autoencoders.gumboltCaloV3 import GumBoltCaloV3
 from models.autoencoders.gumboltCaloV4 import GumBoltCaloV4
 from models.autoencoders.gumboltCaloV5 import GumBoltCaloV5
+from models.autoencoders.gumboltCaloV6 import GumBoltCaloV6
 from models.autoencoders.atlasVAE import ATLASVAE
 
 _MODEL_DICT={
@@ -47,6 +46,7 @@ _MODEL_DICT={
     "GumBoltCaloV3": GumBoltCaloV3,
     "GumBoltCaloV4": GumBoltCaloV4,
     "GumBoltCaloV5": GumBoltCaloV5,
+    "GumBoltCaloV6": GumBoltCaloV6,
     "ATLASVAE": ATLASVAE
 }
 

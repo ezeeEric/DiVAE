@@ -9,7 +9,8 @@ encoder_hidden_nodes:
   - 400
   - 300
   - 200
-n_encoder_layer_nodes: 64
-n_encoder_layers: 2
 n_latent_hierarchy_lvls: 2
 n_latent_nodes: 64
+
+n_encoder_layer_nodes: -1
+n_encoder_layers: -1

@@ -1,7 +1,5 @@
 """
 Hierarchical Encoder
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
