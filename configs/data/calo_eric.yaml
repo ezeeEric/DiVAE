@@ -1,0 +1,18 @@
+#TODO where to put this - proper mnist/calo data split
+data_type: calo
+calo_layers: 
+  - layer_0
+  - layer_1
+  - layer_2
+particle_type: eplus
+frac_test_dataset: 0.01
+frac_train_dataset: 0.008
+frac_val_dataset: 0.01
+
+calo_input_eplus: /Users/drdre/inputz/calogan/calo_scaled/eplus.hdf5
+calo_input_gamma: /Users/drdre/inputz/calogan/calo_scaled/eplus.hdf5
+calo_input_piplus: /Users/drdre/inputz/calogan/calo_scaled/eplus.hdf5
+
+scaled: True
+scaler_path: /Users/drdre/inputz/calogan/calo_scaled/eplus_scaler.gz
+scaler_amin: /Users/drdre/inputz/calogan/calo_scaled/eplus_amin.npy

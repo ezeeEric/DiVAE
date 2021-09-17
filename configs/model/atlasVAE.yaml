@@ -1,0 +1,21 @@
+# @package _group_
+model_type: ATLASVAE
+activation_fct: ELU
+encoder_hidden_nodes: 
+  - 200
+  - 150
+  - 100
+  - 50
+decoder_hidden_nodes: 
+  - 50
+  - 100 
+  - 150 
+  - 200
+n_latent_nodes: 10
+w_reco: 0.01
+w_kl: 0.001
+w_etot: 0.01
+w_ei:
+  - 0.08
+  - 0.6
+  - 0.1

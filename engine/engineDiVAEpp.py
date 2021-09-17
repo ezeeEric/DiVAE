@@ -95,4 +95,3 @@ class EngineDiVAEpp(Engine):
                     
                     wandb.log(batch_loss_dict)
         return batch_loss_dict["loss"]
-

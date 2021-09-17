@@ -26,6 +26,8 @@ class RBM(nn.Module):
         require_grad=True
         #arbitrarily scaled by 0.01 
         self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0.01, requires_grad=require_grad)
+        # Turn off RBM for one exp.
+        #self._weights = nn.Parameter(torch.randn(n_visible, n_hidden) * 0., requires_grad=False)
           # #all biases initialised to 0.5
         self._visible_bias = nn.Parameter(torch.ones(n_visible) * 0.5, requires_grad=require_grad)
         # #applying a 0 bias to the hidden nodes

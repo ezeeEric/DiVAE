@@ -44,21 +44,18 @@ from models.modelCreator import ModelCreator
 
 @hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
-
-    #TODO hydra update: output path not needed anymore. Replace all instances
-    #with current work directory instead. (Hydra sets that automatically)
-    cfg.output_path=os.getcwd()
-
-    wandb.init(entity="qvae", project="divae", config=cfg)  
-    print(OmegaConf.to_yaml(cfg))
-
-    #create model handling object
-    modelCreator=ModelCreator(cfg=cfg)
+    #initialise wandb logging. Note that this function has many more options,
+    #reference: https://docs.wandb.ai/ref/python/init
+    #this is the setting for individual, ungrouped runs
+    wandb.init(entity="qvae", project="divae", config=cfg)
     
     #run the ting
-    run(modelCreator, config=cfg)
+    run(config=cfg)
 
-def run(modelCreator=None, config=None):
+def run(config=None):
+    
+    #create model handling object
+    modelCreator=ModelCreator(cfg=config)
 
     #container for our Dataloaders
     dataMgr=DataManager(cfg=config)
@@ -74,7 +71,7 @@ def run(modelCreator=None, config=None):
     else:
         logger.warning("Setting identity as default activation fct")
         modelCreator.default_activation_fct=torch.nn.Identity() 
-
+    
     #instantiate the chosen model
     #loads from file 
     model=modelCreator.init_model(load_from_file=config.load_model, dataMgr=dataMgr)
@@ -82,7 +79,7 @@ def run(modelCreator=None, config=None):
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
-    
+
     # Load the model on the GPU if applicable
     dev = None
     if (config.device == 'gpu') and config.gpu_list:
@@ -109,7 +106,13 @@ def run(modelCreator=None, config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-    engine=instantiate(config.engine, cfg=config)
+    engine=instantiate(config.engine)
+    #TODO for some reason hydra double instantiates the engine in a
+    #newer version if cfg=config is passed as an argument. This is a workaround.
+    #Find out why that is...
+    engine._config=config
+    engine._hist_handler._cfg=config
+    engine._hist_handler.initialise()
     #add dataMgr instance to engine namespace
     engine.data_mgr=dataMgr
     #add device instance to engine namespace
@@ -127,14 +130,18 @@ def run(modelCreator=None, config=None):
         #pretrained values but need to have been instantiated first.
         modelCreator.load_model()
         logger.info("Model loaded from file, skipping training.")
-        pass
-    else:
-        for epoch in range(1, config.engine.n_epochs+1): 
-            if config.train:
-                train_loss = engine.fit(epoch=epoch, is_training=True)
+    
+    if config.load_state:
+        config_string="_".join(str(i) for i in [config.model.model_type, config.data.data_type, config.tag])
+        modelCreator.load_state(config.run_path, config_string, dev)
+    
+    
+    for epoch in range(1, config.engine.n_epochs+1):
+        if "train" in config.task:
+            engine.fit(epoch=epoch, is_training=True)
             
-            if config.test:
-                test_loss = engine.fit(epoch=epoch, is_training=False)
+        if "validate" in config.task:
+            engine.fit(epoch=epoch, is_training=False)
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping
@@ -143,6 +150,10 @@ def run(modelCreator=None, config=None):
         date=datetime.datetime.now().strftime("%y%m%d")
         config_string="_".join(str(i) for i in [config.model.model_type,config.data.data_type,date,config.tag])
         modelCreator.save_model(config_string)
+        
+    if config.save_state:
+        config_string = "_".join(str(i) for i in [config.model.model_type, config.data.data_type, config.tag])
+        modelCreator.save_state(config_string)
 
     if config.create_plots:
         #call a forward method derivative - for output object.
@@ -154,7 +165,11 @@ def run(modelCreator=None, config=None):
             eval_output.output_generated=output_generated
 
         #instantiate plotting infrastructure
-        pp=PlotProvider(data_container=eval_output, plotFunctions=config.plotting.plotFunctions, config_string=config_string,date_tag=date, cfg=config)
+        pp=PlotProvider(data_container=eval_output,
+                        plotFunctions=config.plotting.plotFunctions,
+                        config_string=config_string,
+                        date_tag=date,
+                        cfg=config)
         
         #TODO is there a neater integration than to add this as member?
         pp.data_dimensions=dataMgr.get_input_dimensions()

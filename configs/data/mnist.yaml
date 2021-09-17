@@ -1,4 +1,4 @@
-# @package _group_
+
 data_type: mnist
 binarise_dataset: threshold
 # load_data_from_pkl: 0

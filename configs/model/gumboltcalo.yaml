@@ -1,0 +1,16 @@
+# @package _group_
+model_type: GumBoltCalo
+activation_fct: relu
+beta_smoothing_fct: 5
+decoder_hidden_nodes:
+  - 200
+  - 300
+  - 400
+encoder_hidden_nodes:
+  - 400
+  - 300
+  - 200
+n_encoder_layer_nodes: 64
+n_encoder_layers: 2
+n_latent_hierarchy_lvls: 2
+n_latent_nodes: 64

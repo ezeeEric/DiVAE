@@ -1,22 +1,26 @@
-  # @package _group_
+
 tag: default
 debug: False
 load_data_from_pkl: 0
 load_model: 0
 save_model: 0
+save_state: 1
+load_state: 0
 input_model: 0
+create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
-device: cpu
+device: gpu
+hp_scan: 1
 gpu_list:
   - 0
 
+task:
+  - train
+  - validate
+
 defaults:
-  - model: sequentialVAE
-  - data: calo
-  - engine: calo_training
-  - plotting: plot_calo
-#this loads options defining what tasks to run, i.e. train/test/create_plots
-#etc. Change the options in task.yaml
-  - task
+  - model: gumboltcaloV
+  - data: calo_eric
+  - engine: dvaecalo_training

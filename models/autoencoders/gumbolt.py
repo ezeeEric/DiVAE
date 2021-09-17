@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class GumBolt(DiVAEPP):
     
     def __init__(self, **kwargs):
-        super(DiVAEPP, self).__init__(**kwargs)
+        super(GumBolt, self).__init__(**kwargs)
         self._model_type = "GumBolt"
         self._bce_loss = BCEWithLogitsLoss(reduction="none")
         
@@ -54,7 +54,7 @@ class GumBolt(DiVAEPP):
         """
         logger.debug("GumBolt::loss")
         
-        kl_loss, cross_entropy, pos_energy, neg_energy = self.kl_divergence(fwd_out.post_logits,
+        kl_loss, entropy, pos_energy, neg_energy = self.kl_divergence(fwd_out.post_logits,
                                                                             fwd_out.post_samples)
         
         ae_loss_matrix = -fwd_out.output_distribution.log_prob_per_var(input_data.view(-1, self._flat_input_size))
@@ -64,7 +64,7 @@ class GumBolt(DiVAEPP):
         loss = ae_loss + kl_loss
         
         return {"loss":loss, "ae_loss":ae_loss, "kl_loss":kl_loss,
-                "cross_entropy":cross_entropy, "pos_energy":pos_energy, "neg_energy":neg_energy}
+                "entropy":entropy, "pos_energy":pos_energy, "neg_energy":neg_energy}
 
     def kl_divergence(self, post_logits, post_samples, is_training=True):
         """
@@ -86,8 +86,8 @@ class GumBolt(DiVAEPP):
         post_zetas = torch.cat(post_samples, 1)
         
         # Compute cross-entropy b/w post_logits and post_samples
-        cross_entropy = - self._bce_loss(logits_q_z, post_zetas)
-        cross_entropy = torch.mean(torch.sum(cross_entropy, 1), 0)
+        entropy = - self._bce_loss(logits_q_z, post_zetas)
+        entropy = torch.mean(torch.sum(entropy, 1), 0)
         
         # Compute positive energy expval using hierarchical posterior samples
         
@@ -103,8 +103,8 @@ class GumBolt(DiVAEPP):
         rbm_vis, rbm_hid = rbm_visible_samples.detach(), rbm_hidden_samples.detach()
         neg_energy = - self.energy_exp(rbm_vis, rbm_hid)
         
-        kl_loss = cross_entropy + pos_energy + neg_energy
-        return kl_loss, cross_entropy, pos_energy, neg_energy 
+        kl_loss = entropy + pos_energy + neg_energy
+        return kl_loss, entropy, pos_energy, neg_energy 
         
     def energy_exp(self, rbm_vis, rbm_hid):
         """

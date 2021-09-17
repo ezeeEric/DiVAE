@@ -32,7 +32,8 @@ class CaloImage(object):
         return img
 
     def _get_image(self,idx):
-        return self.normalise(self._image[idx])
+        return self._image[idx]
+        #return self.normalise(self._image[idx])
     
     def get_flattened_input_size(self):
         return self._input_size
@@ -73,18 +74,13 @@ class CaloImageContainer(Dataset):
         return len(self._indices) if self._indices else self._dataset_size
 
     #pytorch dataloader needs this method
-    def __getitem__(self,ordered_idx):
-        
+    def __getitem__(self, ordered_idx):
         #indexing the shuffled list of event indices of our full dataset
         #creates random event selection
         rnd_idx=self._indices[ordered_idx]
 
-        #TODO this is divided by 100, because the CaloGAN dataset restricts
-        #their jet energies to [0,100] GeV. This condition forces the energies
-        #in range [0,1] which at the moment is needed for proper NN training
-        #(i.e. sequentialVAE). Needs change, like norm to maximum in batch/full dataset.
-        norm_true_energy=self._true_energies[rnd_idx]/100
-        norm_overflow_energy=self._overflow_energies[rnd_idx]/100
+        norm_true_energy=self._true_energies[rnd_idx]
+        norm_overflow_energy=self._overflow_energies[rnd_idx]
         
         images=[]
         #if we request a subset of the calorimeter layers only
@@ -130,7 +126,7 @@ class CaloImageContainer(Dataset):
         self._true_energies=input_data["energy"][:]
         self._overflow_energies=input_data["overflow"][:]
 
-def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac_train_dataset=0.6, frac_test_dataset=0.2):
+def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac_train_dataset=0.6, frac_test_dataset=0.2, frac_val_dataset=-1):
     
     #read in all input files for all jet types and layers
     dataStore={}
@@ -161,11 +157,14 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     #create lists of split indices
     train_idx_list=idx_list[:num_evts_train]
     test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
-    val_idx_list=idx_list[(num_evts_train+num_evts_test):num_evts_total]
+    val_idx_list=idx_list[(num_evts_train+num_evts_test):]
+    if frac_val_dataset > 0:
+        num_evts_val=int(frac_val_dataset*num_evts_total)
+        val_idx_list=idx_list[(num_evts_train+num_evts_test):(num_evts_train+num_evts_test+num_evts_val)]
 
-    train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list,label="train")
-    test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list,label="test")
-    val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list,label="val")
+    train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list, label="train")
+    test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list, label="test")
+    val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list, label="val")
 
     return train_dataset,test_dataset,val_dataset
 

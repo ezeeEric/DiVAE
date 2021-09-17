@@ -4,18 +4,23 @@ debug: False
 load_data_from_pkl: 0
 load_model: 0
 save_model: 0
-input_model: 0
+save_state: 1
+load_state: 0
+run_path: /home/akajal/DiVAE/outputs/2021-09-05/15-12-41/wandb/run-20210905_151242-o5jp2qc9/files/GumBoltCaloV5_calo_default.pth
+input_model: 
+create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 output_path: ???
 device: gpu
 gpu_list:
-  - 1
+  - 6
+
+task:
+  - train
+  - validate
 
 defaults:
-  - model: gumbolt
-  - data: mnist
-  - engine: training_divae
-#this loads options defining what tasks to run, i.e. train/test/create_plots
-#etc. Change the options in task.yaml
-  - task
+  - model: gumboltcaloV
+  - data: calo
+  - engine: dvaecalo_training

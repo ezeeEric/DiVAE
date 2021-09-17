@@ -1,7 +1,5 @@
 """
 Hierarchical Encoder
-
-Author: Eric Drechsler (eric_drechsler@sfu.ca)
 """
 
 import torch
@@ -9,9 +7,9 @@ import torch.nn as nn
                   
 from models.networks.basicCoders import BasicEncoder
 from utils.dists.distributions import SpikeAndExponentialSmoother
-from utils.dists.MixtureExp import MixtureExp
-from utils.dists.MixtureExpMod import MixtureExpMod
-from utils.dists.GumbelMod import GumbelMod
+from utils.dists.mixtureexp import MixtureExp
+from utils.dists.mixtureexpmod import MixtureExpMod
+from utils.dists.gumbelmod import GumbelMod
 
 _SMOOTHER_DICT = {"SpikeExp" : SpikeAndExponentialSmoother, 
                   "MixtureExp" : MixtureExp,
@@ -30,7 +28,10 @@ class HierarchicalEncoder(BasicEncoder):
         super(HierarchicalEncoder, self).__init__(**kwargs)
         
         #TODO this assumes MNIST dataset without sequential layers
-        self.num_input_nodes=input_dimension
+        if isinstance(input_dimension, int):
+            self.num_input_nodes = input_dimension
+        elif isinstance(input_dimension, list):
+            self.num_input_nodes = sum(input_dimension)
 
         #number of hierarchy levels in encoder. This is the number of latent
         #layers. At each hiearchy level an output layer is formed.
@@ -68,7 +69,7 @@ class HierarchicalEncoder(BasicEncoder):
         
         #for each hierarchy level create a network. Input unit count will increase
         #per level.
-        for lvl in  range(self.n_latent_hierarchy_lvls):
+        for lvl in range(self.n_latent_hierarchy_lvls):
             network=self._create_hierarchy_network(level=lvl, skip_latent_layer=skip_latent_layer)
             self._networks.append(network)
 
@@ -76,8 +77,11 @@ class HierarchicalEncoder(BasicEncoder):
         #skip_latent_layer: instead of having a single latent layer, use
         #Gaussian trick of VAE: construct mu+eps*sqrt(var) on each hierarchy level
         # this is done outside this class...  
-        #TODO this should be revised with better structure for input layer config  
-        layers=[self.num_input_nodes+level*self.n_latent_nodes]+[self.n_encoder_layer_nodes]*self.n_encoder_layers+[self.n_latent_nodes]
+        #TODO this should be revised with better structure for input layer config
+        if level == 0:
+            layers = [self.num_input_nodes] + list(self._config.model.encoder_hidden_nodes) + [self.n_latent_nodes]
+        else:
+            layers=[self.num_input_nodes+(level*self.n_latent_nodes)]+[self.n_encoder_layer_nodes]*self.n_encoder_layers+[self.n_latent_nodes]
         
         #in case we want to sample gaussian variables
         if skip_latent_layer: 
@@ -85,12 +89,8 @@ class HierarchicalEncoder(BasicEncoder):
 
         moduleLayers=nn.ModuleList([])
         for l in range(len(layers)-1):
-            n_in_nodes=layers[l]
-            n_out_nodes=layers[l+1]
-
-            moduleLayers.append(nn.Linear(n_in_nodes,n_out_nodes))
-            #apply the activation function for all layers except the last
-            #(latent) layer 
+            moduleLayers.append(nn.Linear(layers[l], layers[l+1]))
+            #apply the activation function for all layers except the last (latent) layer 
             act_fct = nn.Identity() if l==len(layers)-2 else self.activation_fct
             moduleLayers.append(act_fct)
 
@@ -136,7 +136,7 @@ class HierarchicalEncoder(BasicEncoder):
             
         return posterior, post_samples
 
-    def forward(self, x):
+    def forward(self, x, is_training=True):
         """ This function defines a hierarchical approximate posterior distribution. The length of the output is equal 
             to n_latent_hierarchy_lvls and each element in the list is a DistUtil object containing posterior distribution 
             for the group of latent nodes in each hierarchy level. 
@@ -159,7 +159,10 @@ class HierarchicalEncoder(BasicEncoder):
         for lvl in range(self.n_latent_hierarchy_lvls):
             
             current_net=self._networks[lvl]
-            current_input=torch.cat([x]+post_samples,dim=-1)
+            if type(x) is tuple:
+                current_input=torch.cat([x[0]]+post_samples,dim=1)
+            else:
+                current_input=torch.cat([x]+post_samples,dim=1)
 
             # Clamping logit values
             logits=torch.clamp(current_net(current_input), min=-88., max=88.)
@@ -168,9 +171,13 @@ class HierarchicalEncoder(BasicEncoder):
             # Scalar tensor - device doesn't matter but made explicit
             beta = torch.tensor(self._config.model.beta_smoothing_fct,
                                 dtype=torch.float, device=logits.device,
-                                requires_grad=True)
+                                requires_grad=False)
             
-            samples=self.smoothing_dist_mod(logits, beta)
+            samples=self.smoothing_dist_mod(logits, beta, is_training)
+            
+            if type(x) is tuple:
+                samples = torch.bmm(samples.unsqueeze(2), x[1].unsqueeze(2)).squeeze(2)
+                
             post_samples.append(samples)
             
         return beta, post_logits, post_samples
