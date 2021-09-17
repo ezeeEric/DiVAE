@@ -54,7 +54,6 @@ def main(cfg=None):
 
 def run(config=None):
     
-    #config=OmegaConf.to_yaml(config)
     #create model handling object
     modelCreator=ModelCreator(cfg=config)
 
@@ -107,7 +106,6 @@ def run(config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-#    engine=instantiate(config.engine, cfg=config)
     engine=instantiate(config.engine)
     #TODO for some reason hydra double instantiates the engine in a
     #newer version if cfg=config is passed as an argument. This is a workaround.
