@@ -51,7 +51,7 @@ class GumBoltCaloV4(GumBolt):
         output_hits, output_activations = self.decoder(post_samples)
         
         out.output_hits = output_hits
-        beta = torch.tensor(self._config.model.beta_smoothing_fct, dtype=torch.float, device=output_hits.device, requires_grad=False)
+        beta = torch.tensor(self._config.model.output_smoothing_fct, dtype=torch.float, device=output_hits.device, requires_grad=False)
         out.output_activations = self._energy_activation_fct(output_activations) * self._hit_smoothing_dist_mod(output_hits, beta, is_training)
         return out
     

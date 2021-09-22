@@ -10,10 +10,10 @@ from models.networks.hierarchicalEncoderV2 import HierarchicalEncoderV2
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class GumBoltCaloV6(GumBoltCaloV5):
+class GumBoltCaloV7(GumBoltCaloV5):
     
     def __init__(self, **kwargs):
-        super(GumBoltCaloV6, self).__init__(**kwargs)
+        super(GumBoltCaloV7, self).__init__(**kwargs)
         self._model_type = "GumBoltCaloV6"
  
     def _create_encoder(self):
@@ -23,7 +23,7 @@ class GumBoltCaloV6(GumBoltCaloV5):
         Returns:
             Hierarchical Encoder instance
         """
-        logger.debug("GumBoltCaloV6::_create_encoder")
+        logger.debug("GumBoltCaloV7::_create_encoder")
         return HierarchicalEncoderV2(
             input_dimension=self._flat_input_size+1,
             n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,
