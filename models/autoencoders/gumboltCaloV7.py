@@ -1,6 +1,6 @@
 """
 GumBolt implementation for Calorimeter data - Special model for piplus
-V6 - Energy conditioning added to the decoder - Energy conditioning added to the encoder - No hit masking
+V7 - Energy conditioning added to the decoder - Energy conditioning added to the encoder - No hit masking
 
 Author : Abhi (abhishek@myumanitoba.ca)
 """
@@ -17,11 +17,11 @@ from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class GumBoltCaloV6(GumBolt):
+class GumBoltCaloV7(GumBolt):
     
     def __init__(self, **kwargs):
-        super(GumBoltCaloV6, self).__init__(**kwargs)
-        self._model_type = "GumBoltCaloV6"
+        super(GumBoltCaloV7, self).__init__(**kwargs)
+        self._model_type = "GumBoltCaloV7"
         self._energy_activation_fct = ReLU()
         self._output_loss = MSELoss(reduction="none")
         
@@ -84,7 +84,7 @@ class GumBoltCaloV6(GumBolt):
         return torch.cat(true_energies, dim=0), torch.cat(samples, dim=0)
     
     def _create_decoder(self):
-        logger.debug("GumBoltCaloV6::_create_decoder")
+        logger.debug("GumBoltCaloV7::_create_decoder")
         self._decoder_nodes[0] = (self._decoder_nodes[0][0]+1, self._decoder_nodes[0][1])
         return BasicDecoder(node_sequence=self._decoder_nodes, activation_fct=self._activation_fct,  cfg=self._config)
     
