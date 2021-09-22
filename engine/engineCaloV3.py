@@ -66,7 +66,8 @@ class EngineCaloV3(Engine):
                 true_energy = true_energy.to(self._device).float()
                 
                 fwd_output=self._model((in_data, true_energy), is_training)
-                batch_loss_dict = self._model.loss(in_data, fwd_output)
+                pos_weight_data = torch.tensor(self._data_mgr.inv_transform(in_data.detach().cpu().numpy())/100., dtype=torch.float, device=in_data.device)
+                batch_loss_dict = self._model.loss(in_data, fwd_output, pos_weight_data)
                     
                 if is_training:
                     gamma = min((((epoch-1)*num_batches)+(batch_idx+1))/(total_batches*kl_annealing_ratio), 1.0)

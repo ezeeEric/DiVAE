@@ -2,7 +2,7 @@
 model_type: GumBoltCaloV5
 activation_fct: relu
 beta_smoothing_fct: 5
-output_smoothing_fct: 3
+output_smoothing_fct: 5
 decoder_hidden_nodes:
   - 200
   - 300

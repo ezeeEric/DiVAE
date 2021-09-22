@@ -58,7 +58,7 @@ class GumBoltCaloV5(GumBolt):
         out.output_activations = self._energy_activation_fct(output_activations) * self._hit_smoothing_dist_mod(output_hits, beta, is_training)
         return out
     
-    def loss(self, input_data, fwd_out):
+    def loss(self, input_data, fwd_out, pos_weight_data):
         logger.debug("loss")
         
         kl_loss, entropy, pos_energy, neg_energy = self.kl_divergence(fwd_out.post_logits, fwd_out.post_samples)
@@ -67,7 +67,9 @@ class GumBoltCaloV5(GumBolt):
         
         #hit_loss = self._hit_loss(fwd_out.output_hits, torch.where(input_data > 0, 1., 0.))
         #hit_loss = torch.mean(torch.sum(hit_loss, dim=1), dim=0)
-        hit_loss = binary_cross_entropy_with_logits(fwd_out.output_hits, torch.where(input_data > 0, 1., 0.), reduction='none', pos_weight=input_data)
+        pos_weight_data += 1.
+        pos_weight_cons = torch.ones(input_data.size(), device=input_data.device, dtype=torch.float)
+        hit_loss = binary_cross_entropy_with_logits(fwd_out.output_hits, torch.where(input_data > 0, 1., 0.), reduction='none', pos_weight=pos_weight_cons)
         hit_loss = torch.mean(torch.sum(hit_loss, dim=1), dim=0)
         
         return {"ae_loss":ae_loss, "kl_loss":kl_loss, "hit_loss":hit_loss,

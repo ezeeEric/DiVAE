@@ -35,6 +35,7 @@ class SparsityHist(object):
     
     def clear(self):
         self._hist.clear()
+        self._data_dict = {key:[] for key in _LABELS}
         
     def get_hist(self):
         return self._hist
