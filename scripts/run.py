@@ -48,12 +48,10 @@ def main(cfg=None):
     #reference: https://docs.wandb.ai/ref/python/init
     #this is the setting for individual, ungrouped runs
     wandb.init(entity="qvae", project="divae", config=cfg)
-    
     #run the ting
     run(config=cfg)
 
 def run(config=None):
-    
     #create model handling object
     modelCreator=ModelCreator(cfg=config)
 
@@ -79,8 +77,8 @@ def run(config=None):
     model.create_networks()
     #Not printing much useful info at the moment to avoid clutter. TODO optimise
     model.print_model_info()
-
-    # Load the model on the GPU if applicable
+    
+# Load the model on the GPU if applicable
     dev = None
     if (config.device == 'gpu') and config.gpu_list:
         logger.info('Requesting GPUs. GPU list :' + str(config.gpu_list))

@@ -187,10 +187,23 @@ class EngineCaloV3(Engine):
                         wandb.log(batch_loss_dict)
                         
         if not is_training:
+            
+            hp_scan_val_loss_dict={}
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
             
+            # Average the validation loss values over the validation set
+            # Modify the logging keys to prefix with 'val_'
+            for key in list(val_loss_dict.keys()):
+                try:
+                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]/num_batches
+                    hp_scan_val_loss_dict['val_' + str(key)] = val_loss_dict[key]/num_batches
+                    val_loss_dict.pop(key)
+                except TypeError:
+                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]
+                    val_loss_dict.pop(key)
+            
             if self._config.hp_scan:
-                metric_dict={**batch_loss_dict, **self._hist_handler.get_metrics()}#,*self._hist_handler.histograms}
+                metric_dict={**hp_scan_val_loss_dict, **self._hist_handler.get_metrics()}#,*self._hist_handler.histograms}
                 
                 import pickle
                 f=open("./hpscan.pkl","wb")
@@ -201,15 +214,6 @@ class EngineCaloV3(Engine):
             
             self._hist_handler.clear()
                 
-            # Average the validation loss values over the validation set
-            # Modify the logging keys to prefix with 'val_'
-            for key in list(val_loss_dict.keys()):
-                try:
-                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]/num_batches
-                    val_loss_dict.pop(key)
-                except TypeError:
-                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]
-                    val_loss_dict.pop(key)
 
                 
             wandb.log(val_loss_dict)

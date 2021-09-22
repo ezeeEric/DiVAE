@@ -218,8 +218,8 @@ class HistHandler(object):
         # if scale == 'log':
         #     ax.set_xscale('log')
             
-        ax.set_yscale('log')
-        ax.set_ylim(bottom=1)
+        #ax.set_yscale('log')
+        #ax.set_ylim(bottom=1)
         os.system("mkdir -p histograms")
         plt.savefig("./histograms/{0}.png".format(name), format='png')
         plt.close()

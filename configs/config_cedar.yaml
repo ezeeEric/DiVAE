@@ -11,6 +11,7 @@ create_plots: 0
 #output path is set in code to hydra's current working directory
 #variable is then used downstream to set paths.
 device: gpu
+#device: cpu
 hp_scan: 1
 gpu_list:
   - 0
@@ -23,16 +24,32 @@ defaults:
   - model: gumboltcaloV
   - data: calo_cedar
   - engine: dvaecalo_training
-    #  - override hydra/launcher: submitit_local
+    #- override hydra/launcher: submitit_local
   - override hydra/launcher: submitit_slurm
+    #this is important - it enables the behaviour that all default configs are overwritten by items listed in this yaml file.
+    # see https://hydra.cc/docs/upgrades/1.0_to_1.1/default_composition_order/
+  - _self_
+
 
 hydra:
-  launcher:
-    nodes: 1
-    tasks_per_node: 1
-    cpus_per_task: 1
-    gpus_per_task: 1
-    mem_per_gpu: 3GB
-    additional_parameters:
-      account: def-doneil_gpu
-      time: 00-00:10:00
+    launcher:
+        nodes: 1
+        tasks_per_node: 1
+        cpus_per_task: 1
+        gpus_per_task: 1
+        mem_per_gpu: 4000M
+        additional_parameters:
+            account: def-doneil_gpu
+            #account: ctb-stelzer
+            time: 00-05:00:00
+    sweep:
+        dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-XX}/${data.particle_type}
+        subdir: ${hydra.job.num}--${hydra.job.override_dirname}
+
+    job:
+      config:
+          override_dirname:
+              kv_sep: ".."
+              item_sep: "--"
+              exclude_keys:
+                  - data.particle_type

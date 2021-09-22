@@ -128,9 +128,14 @@ class CaloImageContainer(Dataset):
 
 def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac_train_dataset=0.6, frac_test_dataset=0.2, frac_val_dataset=-1):
     
+    assert len(particle_type)==1, "Currently only datasets for one particle type at a time\
+         can be retrieved. Requested {0}".format(particle_type)
+    ptype=particle_type[0]
+    
     #read in all input files for all jet types and layers
     dataStore={}
     for key,fpath in inFiles.items():     
+        if not key.lower() == ptype: continue
         in_data=h5py.File(fpath,'r')
         #for each particle_type, create a Container instance for our needs   
         dataStore[key]=CaloImageContainer(  particle_type=key,
@@ -139,9 +144,6 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
         #convert image dataframes to tensors and get energies
         dataStore[key].process_data(input_data=in_data)
 
-    assert len(particle_type)==1, "Currently only datasets for one particle type at a time\
-         can be retrieved. Requested {0}".format(particle_type)
-    ptype=particle_type[0]
 
     #let's split our datasets
     #get total num evts

@@ -6,7 +6,7 @@ calo_layers:
 particle_type: gamma
 frac_test_dataset: 0.001
 frac_train_dataset: 0.7
-frac_val_dataset: 0.1
+frac_val_dataset: 0.19
 
 calo_input_eplus:  /scratch/edrechsl/calogan_scaled/eplus.hdf5
 calo_input_gamma:  /scratch/edrechsl/calogan_scaled/gamma.hdf5
