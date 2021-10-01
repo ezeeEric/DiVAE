@@ -5,42 +5,86 @@ Slurm executable.
 
 #external libraries
 import os
-import hydra
-# Weights and Biases
-import wandb
+import time
+import subprocess
+import itertools
 
 #self defined imports
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-from scripts.testRun import runTest
-from scripts.run import run
+COMMONPAR={
+        "model.beta_smoothing_fct":[5,7,9],
+        "model.output_smoothing_fct":[5,7,9],
+        "engine.n_epochs":[75],
+        }
 
-@hydra.main(config_path="../configs", config_name="config_cedar")
-def main(cfg=None):
-    logger.info("Starting main()")
-    #initialise wandb logging. Note that this function has many more options,
-    #reference: https://docs.wandb.ai/ref/python/init
-    #this function main() will be called multiple times in a hydra multirun.
-    #therefore we need to set reinit=True and reset the output directory to the
-    #current hydra dir
-    #TODO it is possible to use grouped runs to view in wandb, this would be
-    #useful for manual hyperpara optimisation
-    #current_run=wandb.init(entity="qvae", project="divae", dir=os.getcwd(), config=cfg, reinit=True)
-    #logger.info("Current hydra run: wandb run {0}".format(current_run.id))
-    os.system("sh copyData.sh")
-    os.system("export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK")
-    #run the ting
-    run(config=cfg)
-    #runTest(config=cfg)
+TRAINPAR={"gamma":{
+        "data.particle_type": ["gamma"],
+        "data.scaler_path": ["/scratch/edrechsl/calogan/gamma_scaler.gz"],
+        "data.scaler_amin": ["/scratch/edrechsl/calogan/gamma_amin.npy"],
+        "engine.learning_rate":[0.00005],
+        "engine.n_train_batch_size":[100,128],
+        "engine.n_gibbs_sampling_steps":[60],
+        **COMMONPAR,
+        },
+        "eplus":{
+        "data.particle_type": ["eplus"],
+        "data.scaler_path": ["/scratch/edrechsl/calogan/eplus_scaler.gz"],
+        "data.scaler_amin": ["/scratch/edrechsl/calogan/eplus_amin.npy"],
+        "engine.learning_rate":[0.0001],
+        "engine.n_train_batch_size":[50,75,100],
+        "engine.n_gibbs_sampling_steps":[50,60],
+        **COMMONPAR,
+        },
+        "piplus":{
+        "data.particle_type": ["piplus"],
+        "data.scaler_path": ["/scratch/edrechsl/calogan/piplus_scaler.gz"],
+        "data.scaler_amin": ["/scratch/edrechsl/calogan/piplus_amin.npy"],
+        "engine.learning_rate":[0.0001,0.00005],
+        "engine.n_train_batch_size":[50,75,100],
+        "engine.n_gibbs_sampling_steps":[40,50],
+        **COMMONPAR,
+        },
+        }
 
-    #log and finalise current wandb run
-    #current_run.finish()
+MODELPAR={
+        "model": ["gumboltcaloV6_deep","gumboltcaloV6_deeper","gumboltcaloV6_deeper_big"],
+        }
+    
+import itertools
+
+def dict_product(dicts):
+    """
+    >>> list(dict_product(dict(number=[1,2], character='ab')))
+    [{'character': 'a', 'number': 1},
+     {'character': 'a', 'number': 2},
+     {'character': 'b', 'number': 1},
+     {'character': 'b', 'number': 2}]
+    """
+    return list(dict(zip(dicts, x)) for x in itertools.product(*dicts.values()))
+
+def dict_item_product(dicts):
+    combinedString=[]
+    for key, val in dicts.items():
+        combinedString.append("{0}={1}".format(key,",".join([str(x) for x in val])))
+    return " ".join(combinedString)
+
+def submit():
+    logger.info("Starting Submission")
+    os.system("export WANDB_MODE=disabled")
+    
+    
+    script="/home/edrechsl/codez/qVAE/DiVAE/scripts/run.py"
+    
+    for ptype, hpdict in TRAINPAR.items():
+        HYPERDICT={**hpdict,**MODELPAR}
+        cfgString=dict_item_product(HYPERDICT)
+        #print("python {0} --config-name config_cedar --multirun {1} &".format(script,cfgString))
+        os.system("python {0} --config-name config_cedar --multirun {1} &".format(script,cfgString))
+
     logger.info("Success")
 
 
 if __name__=="__main__":
-    #this function is wrapped by hydra.main(). In a multirun, this function is
-    #called as many times as the argument list requires. I.e. --multirun
-    #config.myopt=1,2 calls the below
-    main()
+    submit()

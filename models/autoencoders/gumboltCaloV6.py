@@ -23,7 +23,7 @@ class GumBoltCaloV6(GumBoltCaloV5):
         Returns:
             Hierarchical Encoder instance
         """
-        logger.debug("GumBoltCaloV6::_create_encoder")
+        logger.debug("GumBoltCaloV7::_create_encoder")
         return HierarchicalEncoderV2(
             input_dimension=self._flat_input_size+1,
             n_latent_hierarchy_lvls=self.n_latent_hierarchy_lvls,

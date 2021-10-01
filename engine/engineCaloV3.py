@@ -66,7 +66,8 @@ class EngineCaloV3(Engine):
                 true_energy = true_energy.to(self._device).float()
                 
                 fwd_output=self._model((in_data, true_energy), is_training)
-                batch_loss_dict = self._model.loss(in_data, fwd_output)
+                pos_weight_data = torch.tensor(self._data_mgr.inv_transform(in_data.detach().cpu().numpy())/100., dtype=torch.float, device=in_data.device)
+                batch_loss_dict = self._model.loss(in_data, fwd_output, pos_weight_data)
                     
                 if is_training:
                     gamma = min((((epoch-1)*num_batches)+(batch_idx+1))/(total_batches*kl_annealing_ratio), 1.0)
@@ -132,6 +133,17 @@ class EngineCaloV3(Engine):
                         self._hist_handler.update(in_data.detach().cpu().numpy(),
                                                   fwd_output.output_activations.detach().cpu().numpy(),
                                                   sample_data.detach().cpu().numpy())
+                        
+                        # Samples with specific energies
+                        conditioning_energies = self._config.engine.sample_energies
+                        conditioned_samples = []
+                        for energy in conditioning_energies:
+                            sample_energies, sample_data = self._model.generate_samples(self._config.engine.n_valid_batch_size, energy)
+                            sample_data = sample_data.detach().cpu().numpy()
+                            conditioned_samples.append(torch.tensor(sample_data))
+                        
+                        conditioned_samples = torch.cat(conditioned_samples, dim=0).numpy()
+                        self._hist_handler.update_samples(conditioned_samples)
                     
                 if (batch_idx % log_batch_idx) == 0:
                     logger.info('Epoch: {} [{}/{} ({:.0f}%)]\t Batch Loss: {:.4f}'.format(epoch,
@@ -152,6 +164,7 @@ class EngineCaloV3(Engine):
                             recon_data = fwd_output.output_activations*1000.
                             sample_energies, sample_data = self._model.generate_samples()
                             sample_data = sample_data*1000.
+                        
                         input_images = []
                         recon_images = []
                         sample_images = []
@@ -187,10 +200,23 @@ class EngineCaloV3(Engine):
                         wandb.log(batch_loss_dict)
                         
         if not is_training:
+            
+            hp_scan_val_loss_dict={}
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
             
+            # Average the validation loss values over the validation set
+            # Modify the logging keys to prefix with 'val_'
+            for key in list(val_loss_dict.keys()):
+                try:
+                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]/num_batches
+                    hp_scan_val_loss_dict['val_' + str(key)] = val_loss_dict[key]/num_batches
+                    val_loss_dict.pop(key)
+                except TypeError:
+                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]
+                    val_loss_dict.pop(key)
+            
             if self._config.hp_scan:
-                metric_dict={**batch_loss_dict, **self._hist_handler.get_metrics()}#,*self._hist_handler.histograms}
+                metric_dict={**hp_scan_val_loss_dict, **self._hist_handler.get_metrics()}#,*self._hist_handler.histograms}
                 
                 import pickle
                 f=open("./hpscan.pkl","wb")
@@ -201,15 +227,6 @@ class EngineCaloV3(Engine):
             
             self._hist_handler.clear()
                 
-            # Average the validation loss values over the validation set
-            # Modify the logging keys to prefix with 'val_'
-            for key in list(val_loss_dict.keys()):
-                try:
-                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]/num_batches
-                    val_loss_dict.pop(key)
-                except TypeError:
-                    val_loss_dict['val_' + str(key)] = val_loss_dict[key]
-                    val_loss_dict.pop(key)
 
                 
             wandb.log(val_loss_dict)
