@@ -53,3 +53,5 @@ hydra:
               item_sep: "--"
               exclude_keys:
                   - data.particle_type
+                  - data.scaler_path
+                  - data.scaler_amin

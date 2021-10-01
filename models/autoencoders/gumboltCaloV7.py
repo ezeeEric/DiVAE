@@ -17,7 +17,7 @@ from models.networks.hierarchicalEncoder import HierarchicalEncoder
 from DiVAE import logging
 logger = logging.getLogger(__name__)
 
-class GumBoltCaloV6(GumBolt):
+class GumBoltCaloV7(GumBolt):
     
     def __init__(self, **kwargs):
         super(GumBoltCaloV6, self).__init__(**kwargs)
