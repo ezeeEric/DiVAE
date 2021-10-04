@@ -16,6 +16,7 @@ import sys
 import torch
 torch.manual_seed(32)
 import numpy as np
+np.random.seed(32)
 import matplotlib.pyplot as plt
 import hydra
 from hydra.utils import instantiate
@@ -132,14 +133,17 @@ def run(config=None):
     
     if config.load_state:
         config_string="_".join(str(i) for i in [config.model.model_type, config.data.data_type, config.tag])
-        modelCreator.load_state(config.run_path, config_string, dev)
+        modelCreator.load_state(config.run_path, dev)
     
     for epoch in range(1, config.engine.n_epochs+1):
         if "train" in config.task:
-            engine.fit(epoch=epoch, is_training=True)
+            engine.fit(epoch=epoch, is_training=True, mode="train")
             
         if "validate" in config.task:
-            engine.fit(epoch=epoch, is_training=False)
+            engine.fit(epoch=epoch, is_training=False, mode="validate")
+            
+        if "test" in config.task:
+            engine.fit(epoch=epoch, is_training=False, mode="test")
     
     #save our trained model
     #also save the current configuration with the same tag for bookkeeping

@@ -2,11 +2,15 @@
 tag: default
 debug: False
 load_data_from_pkl: 0
+
 load_model: 0
 save_model: 0
-save_state: 1
-load_state: 0
-run_path: /home/akajal/DiVAE/outputs/2021-09-11/21-56-20/wandb/run-20210911_215623-2to9d28i/files/GumBoltCaloV5_calo_default.pth
+
+save_state: 0
+load_state: 1
+save_hists: 1
+run_path: /home/akajal/DiVAE/outputs/2021-09-26/18-12-07/wandb/run-20210926_181208-2xdc9ez1/files/GumBoltCaloV6_calo_default.pth
+ 
 input_model: 
 create_plots: 0
 #output path is set in code to hydra's current working directory
@@ -14,13 +18,12 @@ create_plots: 0
 output_path: ???
 device: gpu
 gpu_list:
-  - 6
+  - 0
 
 task:
-  - train
-  - validate
+  - test
 
 defaults:
-  - model: gumboltcaloV
+  - model: gumboltcaloV6
   - data: calo
   - engine: dvaecalo_training

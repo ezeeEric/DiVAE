@@ -20,5 +20,5 @@ class GumbelMod(torch.nn.Module):
         if is_training:
             out = self.activation_fct(logits_gumbel * beta)
         else:
-            out = torch.heaviside(logits_gumbel, torch.tensor([1.], device=logits.device))
+            out = torch.heaviside(logits_gumbel, torch.tensor([0.], device=logits.device))
         return out

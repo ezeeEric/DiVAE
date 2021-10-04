@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _LABELS = ["true", "samples"]
 
 class SampleEnergyHist(object):
-    def __init__(self, min_bin=0, max_bin=300, n_bins=600):
+    def __init__(self, min_bin=0, max_bin=175, n_bins=300):
         self._hist = hist.Hist(label="Events",
                                axes=(hist.Cat("dataset", "dataset type"),
                                      hist.Bin("E", "Observed Energy (GeV)",

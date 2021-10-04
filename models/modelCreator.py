@@ -115,9 +115,8 @@ class ModelCreator(object):
         # Save the model parameter dict
         torch.save(state_dict, path)
         
-    def load_state(self, run_path, cfg_string, device):
+    def load_state(self, run_path, device):
         logger.info("Loading state")
-        #model_loc = wandb.restore("{0}.pth".format(cfg_string), run_path=run_path)
         model_loc = run_path
         
         # Open a file in read-binary mode

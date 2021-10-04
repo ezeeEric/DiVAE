@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 _LABELS = ["input", "recon", "samples"]
 
 class DWTotalEnergyHist(object):
-    def __init__(self, layer_dict, n_bins=100):
+    def __init__(self, layer_dict, n_bins=50):
         self._layer_dict = layer_dict
         self._hist = hist.Hist(label="Events",
                                axes=(hist.Cat("dataset", "dataset type"),
-                                     hist.Bin("dw", "Depth-weighted total energy",
-                                              np.logspace(np.log10(1), np.log10(10**3), n_bins))))
+                                     hist.Bin("dw", "Depth-weighted total energy (GeV)",
+                                              np.logspace(np.log10(1e-2), np.log10(10**2), n_bins))))
         self._scale = "log"
         
     def update(self, in_data, recon_data, sample_data):

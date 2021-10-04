@@ -17,6 +17,7 @@ from utils.hists.sparsityhist import SparsityHist
 from utils.hists.dwtotalenergyhist import DWTotalEnergyHist
 from utils.hists.showerdepthhist import ShowerDepthHist
 from utils.hists.sampleenergyhist import SampleEnergyHist
+from utils.hists.eratiohist import ERatioHist
 
 _LAYER_SIZES={"layer_0" : [0, 288],
               "layer_1" : [288, 432],
@@ -32,12 +33,16 @@ class HistHandler(object):
         
         for layer in cfg.data.calo_layers:
             start_idx, end_idx = _LAYER_SIZES[layer]
-            self._hdict[layer + "_EnergyHist"] = LayerEnergyHist(start_idx, end_idx)
-            self._hdict[layer + "_fracEnergyHist"] = FracTotalEnergyHist(start_idx, end_idx)
+            if layer in ["layer_0", "layer_2"]:
+                self._hdict[layer + "_EnergyHist"] = LayerEnergyHist(start_idx, end_idx, max_bin=25, n_bins=25)
+                self._hdict[layer + "_fracEnergyHist"] = FracTotalEnergyHist(start_idx, end_idx)
+            else:
+                self._hdict[layer + "_EnergyHist"] = LayerEnergyHist(start_idx, end_idx)
+                self._hdict[layer + "_fracEnergyHist"] = FracTotalEnergyHist(start_idx, end_idx, min_bin=1e-1)
             self._hdict[layer + "_sparsityHist"] = SparsityHist(start_idx, end_idx)
+            self._hdict[layer + "_eRatioHist"] = ERatioHist(start_idx, end_idx)
             
         layer_dict = {layer : _LAYER_SIZES[layer] for layer in cfg.data.calo_layers}
-        #self._hdict["maxDepthHist"] = MaxDepthHist(layer_dict)
         self._hdict["dwTotalEnergyHist"] = DWTotalEnergyHist(layer_dict)
         self._hdict["showerDepthHist"] = ShowerDepthHist(layer_dict)
         
@@ -54,6 +59,19 @@ class HistHandler(object):
     def clear(self):
         for hkey in self._hdict.keys():
             self._hdict[hkey].clear()
+            
+    def get_hist_dict(self):
+        """
+        Returns:
+            chist_dict - Dict containing the coffea hist objects
+        """
+        chist_dict = {}
+        for hkey in self._hdict.keys():
+            chist_dict[hkey] = self._hdict[hkey].get_hist()
+        for hkey in self._samplehdict.keys():
+            chist_dict[hkey] = self._samplehdict[hkey].get_hist()
+            
+        return chist_dict
             
     def get_hist_images(self):
         """

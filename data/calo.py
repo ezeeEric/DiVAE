@@ -146,24 +146,24 @@ def get_calo_datasets(inFiles={}, particle_type=["gamma"], layer_subset=[], frac
     #let's split our datasets
     #get total num evts
     num_evts_total=dataStore[ptype].get_dataset_size()
+    
     #create a sequential list of indices
-    idx_list=[i for i in range(0,num_evts_total)]
-    #randomly shuffle the list
-    np.random.shuffle(idx_list)
-    #compute number of split evts from fraction
-    num_evts_train=int(frac_train_dataset*num_evts_total)
-    num_evts_test=int(frac_test_dataset*num_evts_total)
+    idx_list = [i for i in range(0, num_evts_total)]
+    
+    # compute number of split evts from fraction
+    num_evts_train = int(frac_train_dataset*num_evts_total)
+    num_evts_test = int(frac_test_dataset*num_evts_total)
 
     #create lists of split indices
-    train_idx_list=idx_list[:num_evts_train]
-    test_idx_list=idx_list[num_evts_train:(num_evts_train+num_evts_test)]
-    val_idx_list=idx_list[(num_evts_train+num_evts_test):]
+    train_idx_list = idx_list[:num_evts_train]
+    test_idx_list = idx_list[num_evts_train:(num_evts_train+num_evts_test)]
+    val_idx_list = idx_list[(num_evts_train+num_evts_test):]
 
-    train_dataset   =dataStore[ptype].create_subset(idx_list=train_idx_list, label="train")
-    test_dataset    =dataStore[ptype].create_subset(idx_list=test_idx_list, label="test")
-    val_dataset     =dataStore[ptype].create_subset(idx_list=val_idx_list, label="val")
+    train_dataset = dataStore[ptype].create_subset(idx_list=train_idx_list, label="train")
+    test_dataset = dataStore[ptype].create_subset(idx_list=test_idx_list, label="test")
+    val_dataset = dataStore[ptype].create_subset(idx_list=val_idx_list, label="val")
 
-    return train_dataset,test_dataset,val_dataset
+    return train_dataset, test_dataset, val_dataset
 
 if __name__=="__main__":
     inFiles={

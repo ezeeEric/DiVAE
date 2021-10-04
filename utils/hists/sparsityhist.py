@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 _LABELS = ["input", "recon", "samples"]
 
 class SparsityHist(object):
-    def __init__(self, start_idx, end_idx, min_bin=0, max_bin=1, n_bins=50):
+    def __init__(self, start_idx, end_idx, min_bin=0, max_bin=1, n_bins=25):
         self._hist = hist.Hist(label="Events",
                                axes=(hist.Cat("dataset", "dataset type"),
                                      hist.Bin("sparsity", "Sparsity", n_bins, min_bin, max_bin)))

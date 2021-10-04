@@ -6,6 +6,8 @@ Tested with:
 """
 
 import torch
+import os
+import coffea
 
 # Weights and Biases
 import wandb
@@ -25,7 +27,7 @@ class EngineCaloV3(Engine):
         super(EngineCaloV3, self).__init__(cfg, **kwargs)
         self._hist_handler = HistHandler(cfg)
 
-    def fit(self, epoch, is_training=True):
+    def fit(self, epoch, is_training=True, mode="train"):
         logger.debug("Fitting model. Train mode: {0}".format(is_training))
 
         # Switch model between training and evaluation mode
@@ -34,8 +36,11 @@ class EngineCaloV3(Engine):
             self._model.train()
             data_loader = self.data_mgr.train_loader
         else:
-            self._model.eval()            
-            data_loader = self.data_mgr.val_loader
+            self._model.eval()
+            if mode == "validate":
+                data_loader = self.data_mgr.val_loader
+            elif mode == "test":
+                data_loader = self.data_mgr.test_loader
             val_loss_dict = {'epoch': epoch}
 
         num_batches = len(data_loader)
@@ -199,6 +204,13 @@ class EngineCaloV3(Engine):
                         
         if not is_training:
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}
+            
+            if self._config.save_hists:
+                hist_dict = self._hist_handler.get_hist_dict()
+                for key in hist_dict.keys():
+                    path = os.path.join(wandb.run.dir, "{0}.coffea".format(self._config.data.particle_type + "_" + str(key)))
+                    coffea.util.save(hist_dict[key], path)
+                
             self._hist_handler.clear()
                 
             # Average the validation loss values over the validation set

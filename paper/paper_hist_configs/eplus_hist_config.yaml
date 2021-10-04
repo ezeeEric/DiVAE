@@ -1,0 +1,93 @@
+# @package _group_
+#TODO where to put this - proper mnist/calo data split
+data_type: calo
+calo_layers: 
+  - layer_0
+  - layer_1
+  - layer_2
+particle_type: eplus
+frac_test_dataset: 0.1
+frac_train_dataset: 0.8
+
+scaled: True
+scaler_path: /fast_scratch/QVAE/data/calo_scaled/eplus_scaler.gz
+scaler_amin: /fast_scratch/QVAE/data/calo_scaled/eplus_amin.npy
+
+calo_input_eplus: /fast_scratch/QVAE/data/calo_scaled/eplus.hdf5
+calo_input_gamma: /fast_scratch/QVAE/data/calo_scaled/gamma.hdf5
+calo_input_piplus: /fast_scratch/QVAE/data/calo_scaled/piplus.hdf5
+
+# @package _group_
+_target_: engine.engineCaloV3.EngineCaloV3
+learning_rate: 0.0001
+n_train_batch_size: 100
+n_test_batch_size: 1024
+n_valid_batch_size: 1024
+n_plot_samples: 10
+n_batches_log_train: 100
+n_epochs: 1
+n_gibbs_sampling_steps: 50
+weight_decay_factor: 0.0001
+momentum_coefficient: 0.5
+kl_enabled: 1
+kl_annealing: 1
+kl_annealing_ratio: 0.3
+ae_enabled: 1
+sample_energies:
+  - 1
+  - 25
+  - 50
+  - 100
+  - 150
+  
+# @package _group_
+model_type: GumBoltCaloV6
+activation_fct: relu
+beta_smoothing_fct: 5
+output_smoothing_fct: 5
+decoder_hidden_nodes:
+  - 200
+  - 300
+  - 350
+  - 400
+encoder_hidden_nodes:
+  - 400
+  - 350
+  - 300
+  - 200
+n_latent_hierarchy_lvls: 4
+n_latent_nodes: 128
+
+n_encoder_layer_nodes: -1
+n_encoder_layers: -1
+
+
+# @package _group_
+tag: default
+debug: False
+load_data_from_pkl: 0
+
+load_model: 0
+save_model: 0
+
+save_state: 0
+load_state: 1
+save_hists: 1
+run_path: /home/akajal/DiVAE/outputs/2021-09-26/18-14-00/wandb/run-20210926_181401-2jpfg8wh/files/GumBoltCaloV6_calo_default.pth
+ 
+input_model: 
+create_plots: 0
+#output path is set in code to hydra's current working directory
+#variable is then used downstream to set paths.
+output_path: ???
+device: gpu
+gpu_list:
+  - 0
+
+task:
+  - test
+
+defaults:
+  - model: gumboltcaloV6
+  - data: calo
+  - engine: dvaecalo_training

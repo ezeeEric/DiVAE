@@ -1,13 +1,13 @@
 # @package _group_
 _target_: engine.engineCaloV3.EngineCaloV3
-learning_rate: 0.001
-n_train_batch_size: 128
-n_test_batch_size: 64
+learning_rate: 0.0001
+n_train_batch_size: 100
+n_test_batch_size: 1024
 n_valid_batch_size: 1024
 n_plot_samples: 10
 n_batches_log_train: 100
-n_epochs: 20
-n_gibbs_sampling_steps: 40
+n_epochs: 1
+n_gibbs_sampling_steps: 50
 weight_decay_factor: 0.0001
 momentum_coefficient: 0.5
 kl_enabled: 1
