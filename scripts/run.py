@@ -49,7 +49,6 @@ def main(cfg=None):
     #reference: https://docs.wandb.ai/ref/python/init
     #this is the setting for individual, ungrouped runs
     wandb.init(entity="qvae", project="divae", config=cfg)
-    
     #run the ting
     run(config=cfg)
 
@@ -107,7 +106,9 @@ def run(config=None):
     # Log metrics with wandb
     wandb.watch(model)
 
-    engine=instantiate(config.engine, cfg=config)
+    # For some reason, need to use postional parameter cfg instead of named parameter
+    # with updated Hydra - used to work with named param but now is cfg=None 
+    engine=instantiate(config.engine, config)
     #TODO for some reason hydra double instantiates the engine in a
     #newer version if cfg=config is passed as an argument. This is a workaround.
     #Find out why that is...
@@ -120,7 +121,6 @@ def run(config=None):
     engine.optimiser = torch.optim.Adam(model.parameters(), lr=config.engine.learning_rate)
     #add the model instance to the engine namespace
     engine.model = model
-
     
     #no need to train if we load from file.
     if config.load_model:

@@ -1,5 +1,3 @@
-# @package _group_
-#TODO where to put this - proper mnist/calo data split
 data_type: calo
 calo_layers: 
   - layer_0

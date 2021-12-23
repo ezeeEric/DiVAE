@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class EngineCaloV3(Engine):
 
-    def __init__(self, cfg=None, **kwargs):
+    def __init__(self, cfg, **kwargs):
         logger.info("Setting up engine Calo.")
         super(EngineCaloV3, self).__init__(cfg, **kwargs)
         self._hist_handler = HistHandler(cfg)
@@ -201,6 +201,20 @@ class EngineCaloV3(Engine):
                         
                     if is_training:
                         wandb.log(batch_loss_dict)
+                        
+                        prior_weights = self._model.prior.weights.detach().cpu().numpy()
+                        prior_visible_bias = self._model.prior.visible_bias.detach().cpu().numpy()
+                        prior_hidden_bias = self._model.prior.hidden_bias.detach().cpu().numpy()
+                        
+                        # Tracking RBM parameter distributions during training
+                        wandb.log({"prior._weights":wandb.Histogram(prior_weights),
+                                   "prior._visible_bias":wandb.Histogram(prior_visible_bias),
+                                   "prior._hidden_bias":wandb.Histogram(prior_hidden_bias)})
+                        
+                        # Tracking the range of RBM parameters
+                        wandb.log({"prior._weights_max":np.amax(prior_weights), "prior._weights_min":np.amin(prior_weights),
+                                   "prior._visible_bias_max":np.amax(prior_visible_bias), "prior._visible_bias_min":np.amin(prior_visible_bias),
+                                   "prior._hidden_bias_max":np.amax(prior_hidden_bias), "prior._hidden_bias_min":np.amin(prior_hidden_bias)})
                         
         if not is_training:
             val_loss_dict = {**val_loss_dict, **self._hist_handler.get_hist_images(), **self._hist_handler.get_scatter_plots()}

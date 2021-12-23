@@ -54,7 +54,9 @@ class DiVAEPP(DiVAE):
         Returns:
             PCD Sampler
         """
-        return PCD(batch_size=128, RBM=self.prior, n_gibbs_sampling_steps=40)
+        return PCD(batch_size=self._config.engine.rbm_batch_size,
+                   RBM=self.prior,
+                   n_gibbs_sampling_steps=self._config.engine.n_gibbs_sampling_steps)
     
     def forward(self, x):
         """

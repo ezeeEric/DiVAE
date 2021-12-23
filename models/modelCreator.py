@@ -31,6 +31,7 @@ from models.autoencoders.gumboltCaloV4 import GumBoltCaloV4
 from models.autoencoders.gumboltCaloV5 import GumBoltCaloV5
 from models.autoencoders.gumboltCaloV6 import GumBoltCaloV6
 from models.autoencoders.gumboltCaloV7 import GumBoltCaloV7
+from models.autoencoders.gumboltCaloCRBM import GumBoltCaloCRBM
 from models.autoencoders.atlasVAE import ATLASVAE
 
 _MODEL_DICT={
@@ -51,6 +52,7 @@ _MODEL_DICT={
     "GumBoltCaloV5": GumBoltCaloV5,
     "GumBoltCaloV6": GumBoltCaloV6,
     "GumBoltCaloV7": GumBoltCaloV7,
+    "GumBoltCaloCRBM": GumBoltCaloCRBM,
     "ATLASVAE": ATLASVAE
 }
 

@@ -11,7 +11,7 @@ class PCD(BaseSampler):
     
     def __init__(self, batch_size, RBM, **kwargs):
         super(PCD, self).__init__(**kwargs)
-        
+        assert RBM is not None
         self._RBM = RBM
         self._MCState = (torch.rand(batch_size, self._RBM.visible_bias.size(0)) >= 
                          torch.rand(batch_size, self._RBM.visible_bias.size(0))).float()
@@ -62,7 +62,7 @@ class PCD(BaseSampler):
             visible_states = self.visible_samples(hidden_states)
         
         # PCD to standard Gibbs sampling
-        #self._MCState = visible_states
+        # self._MCState = visible_states
         self._MCState = (torch.rand(self._batch_size , self._RBM.visible_bias.size(0)) >= 
                          torch.rand(self._batch_size , self._RBM.visible_bias.size(0))).float()
         

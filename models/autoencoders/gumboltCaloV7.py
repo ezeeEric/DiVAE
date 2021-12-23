@@ -1,6 +1,6 @@
 """
 GumBolt implementation for Calorimeter data - Special model for piplus
-V7 - Energy conditioning added to the decoder - Energy conditioning added to the encoder - No hit masking
+V7 - Energy conditioning added to the decoder - Energy conditioning added to the encoder - No hit masking - Compare to V5 with hit masking
 
 Author : Abhi (abhishek@myumanitoba.ca)
 """

@@ -39,12 +39,14 @@ from utils.plotProvider import PlotProvider
 from engine.engine import Engine
 from models.modelCreator import ModelCreator
 
-@hydra.main(config_path="configs", config_name="config")
+@hydra.main(config_path="../configs", config_name="config")
 def main(cfg=None):
 
     #TODO hydra update: output path not needed anymore. Replace all instances
     #with current work directory instead. (Hydra sets that automatically)
     cfg.output_path=os.getcwd()
+    
+    print("Config :", cfg)
 
     wandb.init(entity="qvae", project="divae", config=cfg)  
     print(OmegaConf.to_yaml(cfg))
